@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "813562009552",
+    "project_id": "gen-lang-client-0404933506",
+    "storage_bucket": "gen-lang-client-0404933506.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:813562009552:android:52b2eb59353174c4ef8bd5",
+        "android_client_info": {
+          "package_name": "com.huborganizado.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "813562009552-kht82f09jar4j0boepf9t004gipvdm59.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.huborganizado.app",
+            "certificate_hash": "aabbccddeeff00112233445566778899aabbccdd"
+          }
+        },
+        {
+          "client_id": "813562009552-21o2qp2qpbffnbhl9hc779il23baqq4a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjMruF6xBW4oLH1unsi41uRCkoVsd6sCA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "813562009552-21o2qp2qpbffnbhl9hc779il23baqq4a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

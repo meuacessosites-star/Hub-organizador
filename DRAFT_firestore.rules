@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Phase 3: Primitive Definitions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 4: Fortress Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) 
+                      && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']);
+
+      function isValidUser(data) {
+        return data.keys().hasAll(['email']) 
+          && data.email is string && data.email.size() <= 256
+          && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+          && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512));
+      }
+
+      // Subcollections
+      match /tags/{tagId} {
+        allow list, get: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(tagId) && isValidTag(incoming());
+        allow delete: if isOwner(userId);
+
+        function isValidTag(data) {
+          return data.keys().hasAll(['id', 'label', 'color'])
+            && data.id == tagId
+            && data.label is string && data.label.size() <= 64
+            && data.color is string && data.color.size() <= 20;
+        }
+      }
+
+      match /categories/{categoryId} {
+        allow list, get: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(categoryId) && isValidCategory(incoming());
+        allow delete: if isOwner(userId);
+
+        function isValidCategory(data) {
+          return data.keys().hasAll(['id', 'label', 'icon', 'color'])
+            && data.id == categoryId
+            && data.label is string && data.label.size() <= 64
+            && data.icon is string && data.icon.size() <= 64
+            && data.color is string && data.color.size() <= 20;
+        }
+      }
+
+      match /platforms/{platformId} {
+        allow list, get: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(platformId) && isValidPlatform(incoming());
+        allow delete: if isOwner(userId);
+
+        function isValidPlatform(data) {
+          return data.keys().hasAll(['id', 'name'])
+            && data.id == platformId
+            && data.name is string && data.name.size() <= 128
+            && (!('url' in data) || (data.url is string && data.url.size() <= 512))
+            && (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 512))
+            && (!('categoryId' in data) || (data.categoryId is string && data.categoryId.size() <= 128))
+            && (!('profiles' in data) || (data.profiles is list && data.profiles.size() <= 50))
+            && (!('purchases' in data) || (data.purchases is list && data.purchases.size() <= 500));
+        }
+      }
+
+      match /statuses/{statusId} {
+        allow list, get: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(statusId) && isValidStatus(incoming());
+        allow delete: if isOwner(userId);
+
+        function isValidStatus(data) {
+          return data.keys().hasAll(['id', 'label', 'color'])
+            && data.id == statusId
+            && data.label is string && data.label.size() <= 64
+            && data.color is string && data.color.size() <= 20;
+        }
+      }
+    }
+  }
+}

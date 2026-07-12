@@ -1,11 +1,17 @@
-<div align="center">
+# Hub Organizado - Gerenciador Premium (Android Nativo)
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Este projeto foi transformado de um PWA para um aplicativo **Android Nativo** usando **Jetpack Compose**, mantendo toda a lógica e estilo do Hub Organizado original.
 
-  <h1>Built with AI Studio</h2>
+## 📂 Estrutura do Projeto
+- `/src`: Contém o código React original (Lógica e Estilo).
+- `/android`: Projeto Android Nativo completo, configurado para o Android Studio.
+- `/public`: Ícones e ativos do aplicativo.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## 🚀 Como Publicar
+Para instruções detalhadas de como compilar e postar na Google Play, veja o arquivo:
+👉 **[ANDROID_GUIDE.md](./ANDROID_GUIDE.md)**
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+## ✨ Tecnologias
+- **Frontend**: React + Tailwind (Base de Design)
+- **Mobile**: Kotlin + Jetpack Compose
+- **Backend**: Firebase Firestore (Banco de dados seguro)

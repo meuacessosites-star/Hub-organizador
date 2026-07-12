@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Tag": {
+      "title": "Tag",
+      "description": "Custom tags for organizing platforms",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["id", "label", "color"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Platform categories",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["id", "label", "icon", "color"]
+    },
+    "Platform": {
+      "title": "Platform",
+      "description": "Platform credentials and data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "profiles": { "type": "array" },
+        "purchases": { "type": "array" }
+      },
+      "required": ["id", "name"]
+    },
+    "Status": {
+      "title": "Status",
+      "description": "Purchase status options",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["id", "label", "color"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Main user document"
+    },
+    "/users/{userId}/tags/{tagId}": {
+      "schema": "Tag",
+      "description": "User custom tags"
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "User custom categories"
+    },
+    "/users/{userId}/platforms/{platformId}": {
+      "schema": "Platform",
+      "description": "User platforms and accounts"
+    },
+    "/users/{userId}/statuses/{statusId}": {
+      "schema": "Status",
+      "description": "User custom purchase statuses"
+    }
+  }
+}

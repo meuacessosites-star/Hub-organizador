@@ -1,0 +1,1257 @@
+import { resizeImage } from "../utils/imageHelper";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Category, ProfileAvatar, Platform, Profile } from '../types';
+import { X, Globe, Link, Eye, EyeOff, Shield, Image as ImageIcon, Smile, Palette, Upload, Check, Trash2, Search, User, Mail } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { getLogoUrl, getDomainFromInput, getInitials, getPlatformColor } from '../utils/logoHelper';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { safeParse, safeSetItem } from '../lib/utils';
+
+interface CustomPreset {
+  name: string;
+  url: string;
+  logoUrl: string;
+}
+
+interface NewPlatformModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  categories: Category[];
+  onSubmit: (platformData: {
+    name: string;
+    url: string;
+    logoUrl?: string;
+    categoryId: string;
+    firstProfile: Omit<Profile, 'id'>;
+  }) => void;
+}
+
+
+const PRESET_PROFILE_NAMES = [
+  'Pessoal',
+  'Trabalho',
+  'Família',
+  'Estudos',
+  'Freelance',
+  'Empresa',
+];
+
+const PRESET_COLORS = [
+  '#3b82f6', // Blue
+  '#ec4899', // Pink
+  '#8b5cf6', // Violet
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#ef4444', // Red
+  '#06b6d4', // Cyan
+  '#f43f5e', // Rose
+  '#84cc16', // Lime
+  '#a855f7', // Purple
+];
+
+const PRESET_EMOJIS = [
+  '👤', '💼', '🏠', '🎓', '🛠️', '🏢', '💰', '🎬', '🛍️', '📁',
+  '💻', '📱', '🎮', '❤️', '🌟', '🚀', '🔒', '🔑', '🎨', '✈️'
+];
+
+const POPULAR_PRESETS = [
+  { name: 'Netflix', domain: 'netflix.com' },
+  { name: 'Spotify', domain: 'spotify.com' },
+  { name: 'Disney+', domain: 'disneyplus.com' },
+  { name: 'HBO Max', domain: 'max.com' },
+  { name: 'Prime Video', domain: 'primevideo.com' },
+  { name: 'YouTube', domain: 'youtube.com' },
+  { name: 'Nubank', domain: 'nubank.com.br' },
+  { name: 'Mercado Livre', domain: 'mercadolivre.com.br' },
+  { name: 'Amazon', domain: 'amazon.com.br' },
+  { name: 'Shopee', domain: 'shopee.com.br' },
+  { name: 'GitHub', domain: 'github.com' },
+  { name: 'Notion', domain: 'notion.so' },
+  { name: 'Figma', domain: 'figma.com' },
+  { name: 'Canva', domain: 'canva.com' },
+  { name: 'Google', domain: 'google.com' },
+  { name: 'Steam', domain: 'steampowered.com' },
+  { name: 'Playstation', domain: 'playstation.com' },
+  { name: 'Xbox', domain: 'xbox.com' },
+];
+
+export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
+  isOpen,
+  onClose,
+  categories,
+  onSubmit,
+}) => {
+  const { user } = useAuth();
+  const { addToast } = useToast();
+  
+  const getCustomPresetsKey = () => user ? `hub_user_${user.uid}_custom_presets` : 'hub_custom_presets';
+  const getProfileNamesKey = () => user ? `hub_user_${user.uid}_profile_names` : 'hub_profile_names';
+
+  const [step, setStep] = useState(1);
+
+  // Step 1: Platform Data
+  const [platformName, setPlatformName] = useState('');
+  const [platformUrl, setPlatformUrl] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(categories[0]?.id || 'outros');
+
+  // Platform logo states
+  const [logoMode, setLogoMode] = useState<'auto' | 'presets' | 'url' | 'upload'>('auto');
+  const [selectedPresetDomain, setSelectedPresetDomain] = useState('');
+  const [logoUrlInput, setLogoUrlInput] = useState('');
+  const [logoUploadBase64, setLogoUploadBase64] = useState('');
+
+  // Custom presets states
+  const [customPresets, setCustomPresets] = useState<CustomPreset[]>(() => {
+    let saved = localStorage.getItem(getCustomPresetsKey());
+    if (!saved && user) saved = localStorage.getItem('hub_custom_presets');
+    return safeParse(saved, []);
+  });
+  
+  const [saveAsPreset, setSaveAsPreset] = useState(false);
+  const [logoPreviewErrorCount, setLogoPreviewErrorCount] = useState(0);
+
+  const handleDeleteCustomPreset = (name: string) => {
+    setCustomPresets((prev) => {
+      const updated = prev.filter(p => p.name.toLowerCase() !== name.toLowerCase());
+      safeSetItem(getCustomPresetsKey(), JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Step 2: First Profile Data
+  const [profileNames, setProfileNames] = useState<string[]>(() => {
+    let saved = localStorage.getItem(getProfileNamesKey());
+    if (!saved && user) saved = localStorage.getItem('hub_profile_names');
+    return safeParse(saved, ['Pessoal', 'Trabalho', 'Família', 'Estudos', 'Freelance', 'Empresa']);
+  });
+  
+  const [isEditingNamesList, setIsEditingNamesList] = useState(false);
+
+  const saveProfileNames = (names: string[]) => {
+    setProfileNames(names);
+    safeSetItem(getProfileNamesKey(), JSON.stringify(names));
+  };
+
+  const [profileName, setProfileName] = useState(() => {
+    let saved = localStorage.getItem(getProfileNamesKey());
+    if (!saved && user) saved = localStorage.getItem('hub_profile_names');
+    const parsed = safeParse(saved, ['Pessoal']);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    return 'Pessoal';
+  });
+  const [customProfileName, setCustomProfileName] = useState('');
+  const [isCustomProfile, setIsCustomProfile] = useState(false);
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [accessLink, setAccessLink] = useState('');
+  const [description, setDescription] = useState('');
+
+  // Avatar states
+  const [avatarTab, setAvatarTab] = useState<'color' | 'emoji' | 'image'>('color');
+  const [selectedColor, setSelectedColor] = useState('#7c5cfc');
+  const [selectedEmoji, setSelectedEmoji] = useState('👤');
+  const [imageUrl, setImageUrl] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
+
+  const colorWheelRef = useRef<HTMLCanvasElement>(null);
+
+  // Auto-fill access link in Step 2 when platform URL is filled
+  useEffect(() => {
+    if (platformUrl && !accessLink) {
+      setAccessLink(platformUrl);
+    }
+  }, [platformUrl]);
+
+  // Handle color wheel canvas drawing & mouse interactions
+  useEffect(() => {
+    if (avatarTab !== 'color' || !colorWheelRef.current) return;
+    const canvas = colorWheelRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const cx = width / 2;
+    const cy = height / 2;
+    const radius = width / 2;
+
+    const imgData = ctx.createImageData(width, height);
+    const data = imgData.data;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const dx = x - cx;
+        const dy = y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist <= radius) {
+          let angle = Math.atan2(dy, dx) + Math.PI; // 0 to 2*PI
+          const hue = (angle / (Math.PI * 2)) * 360;
+          const sat = dist / radius;
+          const val = 1.0;
+
+          const rgb = hsvToRgb(hue, sat, val);
+          const index = (y * width + x) * 4;
+          data[index] = rgb[0];
+          data[index + 1] = rgb[1];
+          data[index + 2] = rgb[2];
+          data[index + 3] = 255;
+        }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }, [avatarTab]);
+
+  const hsvToRgb = (h: number, s: number, v: number): [number, number, number] => {
+    const c = v * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = v - c;
+    let r = 0, g = 0, b = 0;
+
+    if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+    else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+    else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+    else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+    else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+    else if (h >= 300 && h < 360) { r = c; g = 0; b = x; }
+
+    return [
+      Math.round((r + m) * 255),
+      Math.round((g + m) * 255),
+      Math.round((b + m) * 255),
+    ];
+  };
+
+  const rgbToHex = (r: number, g: number, b: number) => {
+    return '#' + [r, g, b].map(x => {
+      const hex = x.toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+  };
+
+  const handleColorWheelClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = colorWheelRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Read pixel color from canvas
+    try {
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      if (pixel[3] > 0) { // check alpha
+        const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+        setSelectedColor(hex);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Image upload base64 parser
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        addToast('A imagem deve ter no máximo 5MB.', 'error');
+        return;
+      }
+      try {
+        const resized = await resizeImage(file);
+        setImageUrl(resized);
+      } catch (error) {
+        addToast('Erro ao processar imagem.', 'error');
+      }
+    }
+  };
+
+  const handlePlatformLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        addToast('A imagem deve ter no máximo 5MB.', 'error');
+        return;
+      }
+      try {
+        const resized = await resizeImage(file);
+        setLogoUploadBase64(resized);
+      } catch (error) {
+        addToast('Erro ao processar imagem.', 'error');
+      }
+    }
+  };
+
+  const handleSelectPreset = (preset: { name: string; domain?: string; url?: string; logoUrl?: string }) => {
+    if (preset.domain) {
+      setSelectedPresetDomain(preset.domain);
+      setPlatformName(preset.name);
+      setPlatformUrl(`https://${preset.domain}`);
+      setLogoMode('auto');
+    } else {
+      setSelectedPresetDomain('');
+      setPlatformName(preset.name);
+      setPlatformUrl(preset.url || '');
+      if (preset.logoUrl) {
+        if (preset.logoUrl.startsWith('data:')) {
+          setLogoUploadBase64(preset.logoUrl);
+          setLogoMode('upload');
+        } else {
+          setLogoUrlInput(preset.logoUrl);
+          setLogoMode('url');
+        }
+      } else {
+        setLogoMode('auto');
+      }
+    }
+  };
+
+  useEffect(() => {
+    setLogoPreviewErrorCount(0);
+  }, [platformName, platformUrl, logoMode, logoUrlInput, logoUploadBase64, selectedPresetDomain]);
+
+  const finalLogoUrlPreview = (() => {
+    if (logoMode === 'auto') {
+      if (!platformName.trim()) return '';
+      const domain = getDomainFromInput(platformName, platformUrl);
+      if (logoPreviewErrorCount === 0) {
+        return `https://logo.clearbit.com/${domain}`;
+      } else if (logoPreviewErrorCount === 1) {
+        return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
+      }
+      return '';
+    }
+    if (logoMode === 'presets') {
+      if (!selectedPresetDomain) return '';
+      if (logoPreviewErrorCount === 0) {
+        return `https://logo.clearbit.com/${selectedPresetDomain}`;
+      } else if (logoPreviewErrorCount === 1) {
+        return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${selectedPresetDomain}&size=256`;
+      }
+      return '';
+    }
+    if (logoMode === 'url') {
+      if (!logoUrlInput.trim()) return '';
+      const isDirectImage = (url: string) => {
+        const clean = url.trim().toLowerCase();
+        if (clean.startsWith('data:image/')) return true;
+        const noQuery = clean.split('?')[0].split('#')[0];
+        return (
+          noQuery.endsWith('.png') ||
+          noQuery.endsWith('.jpg') ||
+          noQuery.endsWith('.jpeg') ||
+          noQuery.endsWith('.gif') ||
+          noQuery.endsWith('.svg') ||
+          noQuery.endsWith('.webp') ||
+          noQuery.endsWith('.bmp') ||
+          noQuery.endsWith('.ico')
+        );
+      };
+
+      if (isDirectImage(logoUrlInput)) {
+        return logoUrlInput;
+      } else {
+        const domain = getDomainFromInput('', logoUrlInput);
+        if (logoPreviewErrorCount === 0) {
+          return `https://logo.clearbit.com/${domain}`;
+        } else if (logoPreviewErrorCount === 1) {
+          return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
+        }
+        return '';
+      }
+    }
+    if (logoMode === 'upload') {
+      return logoUploadBase64;
+    }
+    return '';
+  })();
+
+  const computedLogoUrl = finalLogoUrlPreview;
+
+  const handleNext = () => {
+    if (!platformName.trim()) return;
+    setStep(2);
+  };
+
+  const handlePrev = () => {
+    setStep(1);
+  };
+
+  const handleProfileNameChip = (name: string) => {
+    setIsCustomProfile(false);
+    setProfileName(name);
+  };
+
+  const handleCustomProfileToggle = () => {
+    setIsCustomProfile(true);
+    setProfileName('');
+  };
+
+  const handleCreate = () => {
+    const finalProfileName = isCustomProfile ? customProfileName : profileName;
+    if (!finalProfileName.trim()) return;
+
+    let avatarValue = '';
+    if (avatarTab === 'color') {
+      avatarValue = selectedColor;
+    } else if (avatarTab === 'emoji') {
+      avatarValue = selectedEmoji;
+    } else {
+      avatarValue = imageUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+    }
+
+    const firstProfile: Omit<Profile, 'id'> = {
+      name: finalProfileName,
+      username: username,
+      email: email,
+      password: password,
+      accessLink: accessLink,
+      description: description,
+      avatar: {
+        type: avatarTab,
+        value: avatarValue,
+      },
+    };
+
+    const finalLogoUrl = computedLogoUrl || '';
+
+    if (saveAsPreset) {
+      const newPreset: CustomPreset = {
+        name: platformName,
+        url: platformUrl,
+        logoUrl: finalLogoUrl,
+      };
+      setCustomPresets((prev) => {
+        const filtered = prev.filter(p => p.name.toLowerCase() !== platformName.toLowerCase());
+        const updated = [newPreset, ...filtered];
+        safeSetItem(getCustomPresetsKey(), JSON.stringify(updated));
+        return updated;
+      });
+    }
+
+    onSubmit({
+      name: platformName,
+      url: platformUrl,
+      logoUrl: finalLogoUrl,
+      categoryId: selectedCategory,
+      firstProfile,
+    });
+
+    // Reset states
+    setStep(1);
+    setPlatformName('');
+    setPlatformUrl('');
+    setSelectedCategory(categories[0]?.id || 'outros');
+    setLogoMode('auto');
+    setSelectedPresetDomain('');
+    setLogoUrlInput('');
+    setLogoUploadBase64('');
+    setSaveAsPreset(false);
+    setLogoPreviewErrorCount(0);
+    setProfileName('Pessoal');
+    setCustomProfileName('');
+    setIsCustomProfile(false);
+    setUsername('');
+    setEmail('');
+    setPassword('');
+    setAccessLink('');
+    setDescription('');
+    setAvatarTab('color');
+    setSelectedColor('#7c5cfc');
+    setSelectedEmoji('👤');
+    setImageUrl('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 backdrop-blur-sm select-none">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="w-full max-w-lg bg-white dark:bg-[#181922] rounded-2xl border border-neutral-200 dark:border-[#26283b] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-neutral-200 dark:border-[#26283b]/70 flex items-center justify-between bg-neutral-50 dark:bg-[#111219]/90">
+          <div>
+            <h2 className="font-sans font-bold text-base text-neutral-900 dark:text-white">
+              {step === 1 ? 'Nova plataforma' : `Primeiro perfil — ${platformName}`}
+            </h2>
+            <p className="text-neutral-500 text-[10px] font-medium mt-1">
+              Passo {step} de 2
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-all cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Content Panel */}
+        <div className="p-6 max-h-[75vh] overflow-y-auto">
+          {/* STEP 1 */}
+          {step === 1 && (
+            <div className="flex flex-col gap-5">
+              {/* Nome da plataforma */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  Nome da plataforma
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                    <Globe className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    value={platformName}
+                    onChange={(e) => setPlatformName(e.target.value)}
+                    placeholder="Ex: GitHub, Nubank, Netflix..."
+                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-500 flex items-center gap-1.5 mt-0.5">
+                  🔍 Digite um nome para ver a logo ser sugerida automaticamente abaixo.
+                </p>
+              </div>
+
+              {/* URL da plataforma */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  URL da plataforma (opcional)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                    <Link className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="url"
+                    value={platformUrl}
+                    onChange={(e) => setPlatformUrl(e.target.value)}
+                    placeholder="https://exemplo.com (preenche automaticamente)"
+                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                  />
+                </div>
+              </div>
+
+              {/* Logotipo da plataforma */}
+              <div className="flex flex-col gap-3 border-t border-neutral-200 dark:border-[#25283a]/60 pt-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                    Logotipo da plataforma
+                  </label>
+                  <span className="text-[10px] text-neutral-500">Selecione ou adicione uma imagem</span>
+                </div>
+
+                {/* Active Logo Preview & Tabs */}
+                <div className="flex gap-4 items-start">
+                  {/* Large Logo Preview */}
+                  <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative dark:bg-[#111219] dark:border-[#2a2d40]">
+                    {finalLogoUrlPreview ? (
+                       <img referrerPolicy="no-referrer"
+                         src={finalLogoUrlPreview}
+                         alt="Logo Preview"
+                         className="w-full h-full object-contain p-1.5"
+                         onError={() => {
+                           setLogoPreviewErrorCount(prev => prev + 1);
+                         }}
+                       />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center text-lg font-bold text-white uppercase select-none"
+                        style={{ backgroundColor: getPlatformColor(platformName || 'Plataforma') }}
+                      >
+                        {getInitials(platformName || 'P')}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Selection tabs */}
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200/80 text-[10px] sm:text-[11px] font-medium dark:bg-[#111219] dark:border-[#25283a]">
+                      <button
+                        type="button"
+                        onClick={() => setLogoMode('auto')}
+                        className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
+                          logoMode === 'auto'
+                            ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                            : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                        }`}
+                      >
+                        Automático
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLogoMode('presets')}
+                        className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
+                          logoMode === 'presets'
+                            ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                            : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                        }`}
+                      >
+                        Padrões
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLogoMode('url')}
+                        className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
+                          logoMode === 'url'
+                            ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                            : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                        }`}
+                      >
+                        Link URL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLogoMode('upload')}
+                        className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
+                          logoMode === 'upload'
+                            ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                            : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                        }`}
+                      >
+                        Upload
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                <div className="pt-1">
+                  {/* AUTO MODE */}
+                  {logoMode === 'auto' && (
+                    <div className="text-[11px] text-neutral-500 bg-neutral-50 p-2.5 rounded-lg border border-neutral-200 dark:bg-[#111219]/55 dark:border-[#2a2d40]/40">
+                      💡 O sistema busca a logo oficial baseado no nome (<strong>{platformName || 'Ex: Netflix'}</strong>). Digite o nome acima e o ícone se ajustará automaticamente.
+                    </div>
+                  )}
+
+                  {/* PRESETS MODE */}
+                  {logoMode === 'presets' && (
+                    <div className="flex flex-col gap-3">
+                      {/* My Presets Section */}
+                      {customPresets.length > 0 && (
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                            Meus Padrões Salvos
+                          </span>
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-h-[110px] overflow-y-auto p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-[#2a2d40]/70 dark:bg-[#111219]/50">
+                            {customPresets.map((preset) => {
+                              const isSelected = platformName === preset.name && platformUrl === preset.url;
+                              return (
+                                <div key={preset.name} className="relative group">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSelectPreset(preset)}
+                                    className={`w-full flex flex-col items-center justify-center p-1.5 rounded-lg border text-center transition-all cursor-pointer hover:border-indigo-500/50 ${
+                                      isSelected
+                                        ? 'border-indigo-500 bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 font-semibold'
+                                        : 'border-neutral-200 bg-white text-neutral-700 dark:border-[#2a2d40] dark:bg-[#13141c]/40 dark:text-neutral-400'
+                                    }`}
+                                  >
+                                    {preset.logoUrl ? (
+                                      <img referrerPolicy="no-referrer"
+                                        src={preset.logoUrl}
+                                        alt={preset.name}
+                                        className="w-5 h-5 object-contain rounded"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = '';
+                                        }}
+                                      />
+                                    ) : (
+                                      <div
+                                        className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold text-white uppercase"
+                                        style={{ backgroundColor: getPlatformColor(preset.name) }}
+                                      >
+                                        {getInitials(preset.name)}
+                                      </div>
+                                    )}
+                                    <span className="text-[8px] mt-1 font-medium truncate w-full">{preset.name}</span>
+                                  </button>
+                                  {/* Delete Custom Preset Button */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteCustomPreset(preset.name);
+                                    }}
+                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-600 cursor-pointer shadow-sm text-[10px] font-bold z-10"
+                                    title="Excluir padrão"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Popular Presets Section */}
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                          Padrões Populares
+                        </span>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-h-[135px] overflow-y-auto p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-[#2a2d40]/70 dark:bg-[#111219]/50">
+                          {POPULAR_PRESETS.map((preset) => {
+                            const presetLogoUrl = `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${preset.domain}&size=256`;
+                            const isSelected = selectedPresetDomain === preset.domain;
+                            return (
+                              <button
+                                key={preset.domain}
+                                type="button"
+                                onClick={() => handleSelectPreset(preset)}
+                                className={`flex flex-col items-center justify-center p-1.5 rounded-lg border text-center transition-all cursor-pointer hover:border-indigo-500/50 ${
+                                  isSelected
+                                    ? 'border-indigo-500 bg-indigo-600/10 text-white font-semibold'
+                                    : 'border-neutral-200 bg-white text-neutral-700 dark:border-[#2a2d40] dark:bg-[#13141c]/40 dark:text-neutral-400'
+                                }`}
+                              >
+                                <img referrerPolicy="no-referrer"
+                                  src={presetLogoUrl}
+                                  alt={preset.name}
+                                  className="w-5 h-5 object-contain rounded"
+                                />
+                                <span className="text-[8px] mt-1 font-medium truncate w-full">{preset.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* URL MODE */}
+                  {logoMode === 'url' && (
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        type="url"
+                        value={logoUrlInput}
+                        onChange={(e) => setLogoUrlInput(e.target.value)}
+                        placeholder="https://exemplo.com/logo-netflix.png"
+                        className="w-full h-10 px-3 rounded-lg text-xs bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                      />
+                      <p className="text-[10px] text-neutral-500">Cole qualquer link de imagem para usá-lo como logo da plataforma.</p>
+                    </div>
+                  )}
+
+                  {/* UPLOAD MODE */}
+                  {logoMode === 'upload' && (
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-3">
+                        <label className="flex-1 flex flex-col items-center justify-center h-16 border border-dashed border-neutral-200 hover:border-indigo-500/60 rounded-lg cursor-pointer bg-[#fcfcfd] transition-colors dark:border-[#2a2d40] dark:bg-[#111219]/40">
+                          <div className="flex flex-col items-center justify-center text-center px-3">
+                            <Upload className="w-4 h-4 text-neutral-500 mb-1" />
+                            <span className="text-[10px] text-neutral-400 font-medium">Escolher imagem local...</span>
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handlePlatformLogoUpload}
+                          />
+                        </label>
+                        {logoUploadBase64 && (
+                          <button
+                            type="button"
+                            onClick={() => setLogoUploadBase64('')}
+                            className="px-2.5 h-10 rounded-lg border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 text-[10px] font-semibold cursor-pointer transition-colors"
+                          >
+                            Remover Foto
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Categoria Selection pills */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                    Categoria
+                  </label>
+                  <div className="relative group max-w-[180px]">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500 transition-colors group-focus-within:text-indigo-500">
+                      <Search className="w-3 h-3" />
+                    </span>
+                    <input
+                      type="text"
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      placeholder="Filtrar categorias..."
+                      className="w-full h-7 pl-8 pr-2 rounded-md bg-neutral-100 border border-neutral-200 text-[10px] text-neutral-700 placeholder:text-neutral-500 focus:outline-none focus:border-indigo-500 transition-all duration-200 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-300"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {categories
+                    .filter(cat => cat.name.toLowerCase().includes(categorySearch.toLowerCase()))
+                    .map((cat) => {
+                      const isSel = selectedCategory === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all duration-150 cursor-pointer ${
+                            isSel
+                              ? 'bg-indigo-50 border-indigo-400 text-indigo-600 dark:bg-indigo-600/15 dark:border-indigo-500 dark:text-indigo-400'
+                              : 'bg-neutral-50 border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800'
+                          }`}
+                        >
+                          <span>{cat.icon}</span>
+                          <span>{cat.name}</span>
+                        </button>
+                      );
+                    })}
+                  {categories.filter(cat => cat.name.toLowerCase().includes(categorySearch.toLowerCase())).length === 0 && (
+                    <p className="text-[10px] text-neutral-500 italic py-1">Nenhuma categoria encontrada.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* SAVE AS PRESET CHECKBOX */}
+              <div className="flex items-center gap-2 mt-2 bg-neutral-50 dark:bg-[#111219]/50 border border-neutral-200/60 dark:border-[#2a2d40]/40 rounded-xl p-3">
+                <input
+                  type="checkbox"
+                  id="saveAsPreset"
+                  checked={saveAsPreset}
+                  onChange={(e) => setSaveAsPreset(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 border-neutral-300 rounded focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                />
+                <label htmlFor="saveAsPreset" className="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                  Salvar esta plataforma nos meus padrões (Salvar nome, link e logo para uso futuro)
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <div className="flex flex-col gap-4.5">
+              {/* Nome do perfil (Chips) */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center mb-0.5">
+                  <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                    Nome do perfil
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingNamesList(!isEditingNamesList)}
+                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    {isEditingNamesList ? '✓ Concluir' : '⚙️ Editar Lista'}
+                  </button>
+                </div>
+
+                {isEditingNamesList ? (
+                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[180px] overflow-y-auto">
+                    <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                      Editar nomes rápidos
+                    </span>
+                    {profileNames.map((name, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => {
+                            const updated = [...profileNames];
+                            updated[idx] = e.target.value;
+                            saveProfileNames(updated);
+                          }}
+                          className="flex-1 h-8 px-2.5 rounded-lg text-xs bg-white border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#13141c] dark:border-[#2a2d40] dark:text-neutral-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = profileNames.filter((_, i) => i !== idx);
+                            saveProfileNames(updated);
+                            if (profileName === name) {
+                              setProfileName(updated[0] || '');
+                            }
+                          }}
+                          className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer transition-colors"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newName = `Novo Perfil ${profileNames.length + 1}`;
+                        saveProfileNames([...profileNames, newName]);
+                      }}
+                      className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-semibold text-left mt-1 cursor-pointer"
+                    >
+                      + Adicionar novo nome rápido
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 pt-0.5">
+                    {profileNames.map((name) => {
+                      const isSel = profileName === name && !isCustomProfile;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => handleProfileNameChip(name)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                            isSel
+                              ? 'bg-indigo-600 text-white font-semibold'
+                              : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-600 dark:bg-[#111219] dark:text-neutral-400 dark:hover:bg-neutral-800/80'
+                          }`}
+                        >
+                          {name}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={handleCustomProfileToggle}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        isCustomProfile
+                          ? 'bg-indigo-600 text-white font-semibold'
+                          : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-600 dark:bg-[#111219] dark:text-neutral-400 dark:hover:bg-neutral-800/80'
+                      }`}
+                    >
+                      ✏️ Personalizado
+                    </button>
+                  </div>
+                )}
+
+                {isCustomProfile && (
+                  <div className="flex flex-col gap-2 mt-1.5">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        value={customProfileName}
+                        onChange={(e) => setCustomProfileName(e.target.value)}
+                        placeholder="Digite o nome do perfil..."
+                        className="flex-1 h-10 px-3 rounded-lg text-xs bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                      />
+                      {customProfileName.trim() && !profileNames.includes(customProfileName.trim()) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nameToSave = customProfileName.trim();
+                            saveProfileNames([...profileNames, nameToSave]);
+                            setProfileName(nameToSave);
+                            setIsCustomProfile(false);
+                          }}
+                          className="px-3 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 cursor-pointer shadow-sm transition-all whitespace-nowrap"
+                          title="Salvar como padrão"
+                        >
+                          💾 Salvar na Lista
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* E-mail Input */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  E-mail <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="exemplo@email.com"
+                  className="w-full h-11 px-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                />
+              </div>
+
+              {/* Usuário Input */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  Usuário <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Nome de usuário"
+                  className="w-full h-11 px-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                />
+              </div>
+
+              {/* Senha */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  Senha (opcional)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Salvar senha..."
+                    className="w-full h-11 pl-4 pr-11 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 cursor-pointer dark:text-neutral-500 dark:hover:text-neutral-300"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Link de acesso */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
+                  Link de acesso
+                  <span className="text-[10px] text-neutral-500">(opcional)</span>
+                </label>
+                <input
+                  type="url"
+                  value={accessLink}
+                  onChange={(e) => setAccessLink(e.target.value)}
+                  placeholder="https://exemplo.com/login"
+                  className="w-full h-11 px-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                />
+              </div>
+
+              {/* Rascunho / Descrição */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  Rascunho / Descrição
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Anotações, observações, informações extras... sem limite de caracteres."
+                  className="w-full h-20 p-3 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500 resize-none"
+                />
+              </div>
+
+              {/* Avatar do perfil (MÚLTIPLAS TABS) */}
+              <div className="flex flex-col gap-2 pt-1">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  Avatar do perfil
+                </label>
+                
+                {/* Tabs selection header */}
+                <div className="flex rounded-lg bg-neutral-100 p-1 border border-neutral-200/80 max-w-xs dark:bg-[#111219] dark:border-[#25283a]">
+                  <button
+                    type="button"
+                    onClick={() => setAvatarTab('color')}
+                    className={`flex-1 py-1 px-3 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${
+                      avatarTab === 'color'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                    }`}
+                  >
+                    <Palette className="w-3.5 h-3.5" />
+                    <span>Cor</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvatarTab('emoji')}
+                    className={`flex-1 py-1 px-3 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${
+                      avatarTab === 'emoji'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                    }`}
+                  >
+                    <Smile className="w-3.5 h-3.5" />
+                    <span>Emoji</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvatarTab('image')}
+                    className={`flex-1 py-1 px-3 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${
+                      avatarTab === 'image'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                    }`}
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Imagem</span>
+                  </button>
+                </div>
+
+                {/* Sub panels */}
+                <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/60 flex flex-col items-center dark:border-[#25283a] dark:bg-[#14151f]">
+                  
+                  {/* COLOR WHEEL AND COLORS */}
+                  {avatarTab === 'color' && (
+                    <div className="flex flex-col items-center gap-4 w-full">
+                      {/* Circle wheel + Preview */}
+                      <div className="relative w-36 h-36 flex items-center justify-center">
+                        <canvas
+                          ref={colorWheelRef}
+                          width={144}
+                          height={144}
+                          onClick={handleColorWheelClick}
+                          className="rounded-full cursor-crosshair border border-neutral-300 shadow-lg dark:border-neutral-700"
+                        />
+                        {/* Middle color preview dot */}
+                        <div
+                          className="absolute w-8 h-8 rounded-full border-2 border-white shadow-md pointer-events-none flex items-center justify-center text-[10px] font-bold text-white uppercase"
+                          style={{ backgroundColor: selectedColor }}
+                        >
+                          {profileName ? profileName.slice(0, 2).toUpperCase() : 'PE'}
+                        </div>
+                      </div>
+
+                      {/* Manual Hex code selector */}
+                      <div className="flex items-center gap-3 w-full max-w-xs mt-1">
+                        <div
+                          className="w-8 h-8 rounded-lg border border-neutral-300 shadow-inner flex items-center justify-center text-xs text-white dark:border-[#25283a]/80"
+                          style={{ backgroundColor: selectedColor }}
+                        />
+                        <input
+                          type="text"
+                          value={selectedColor}
+                          onChange={(e) => setSelectedColor(e.target.value)}
+                          placeholder="#000000"
+                          className="flex-1 h-9 px-3 rounded-lg text-xs bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 font-mono dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                        />
+                      </div>
+
+                      {/* Preset color bubbles */}
+                      <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                        {PRESET_COLORS.map((col) => (
+                          <button
+                            key={col}
+                            type="button"
+                            onClick={() => setSelectedColor(col)}
+                            className={`w-6 h-6 rounded-full border border-black/40 flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all cursor-pointer`}
+                            style={{ backgroundColor: col }}
+                          >
+                            {selectedColor.toLowerCase() === col.toLowerCase() && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* EMOJI SELECTOR */}
+                  {avatarTab === 'emoji' && (
+                    <div className="flex flex-col items-center gap-3 w-full">
+                      <div className="w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center text-2xl shadow-inner select-none mb-1 dark:bg-neutral-800">
+                        {selectedEmoji}
+                      </div>
+
+                      <div className="grid grid-cols-5 gap-2.5 max-w-xs justify-center">
+                        {PRESET_EMOJIS.map((em) => (
+                          <button
+                            key={em}
+                            type="button"
+                            onClick={() => setSelectedEmoji(em)}
+                            className={`w-8 h-8 text-lg rounded-lg flex items-center justify-center transition-all hover:bg-neutral-200 cursor-pointer dark:hover:bg-neutral-800 ${
+                              selectedEmoji === em
+                                ? 'bg-indigo-600/30 border border-indigo-500 scale-110'
+                                : 'bg-white border border-neutral-200 dark:bg-[#111219] dark:border-[#2a2d40]'
+                            }`}
+                          >
+                            {em}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CUSTOM IMAGE SELECTOR */}
+                  {avatarTab === 'image' && (
+                    <div className="flex flex-col items-center gap-3 w-full select-none">
+                      <div className="w-14 h-14 rounded-full border border-neutral-300 overflow-hidden flex items-center justify-center bg-neutral-200 mb-1 dark:border-neutral-700 dark:bg-neutral-800">
+                        {imageUrl ? (
+                          <img referrerPolicy="no-referrer" src={imageUrl} alt="Avatar preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-neutral-500" />
+                        )}
+                      </div>
+
+                      {/* File picker input */}
+                      <div className="flex flex-col items-center gap-2">
+                        <label className="cursor-pointer px-4 py-2 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 font-semibold text-xs transition-all border border-indigo-500/20">
+                          Escolher arquivo de imagem
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        <span className="text-[10px] text-neutral-500">
+                          Formato JPG, PNG ou GIF. Máximo 5MB.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-neutral-50 select-none dark:border-[#26283b]/70 dark:bg-[#111219]/90">
+          {step === 1 ? (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer dark:border-[#2c2e42] dark:hover:bg-neutral-800 dark:text-neutral-400"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={!platformName.trim()}
+                onClick={handleNext}
+                className="px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Próximo →
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                className="px-4 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer dark:border-[#2c2e42] dark:hover:bg-neutral-800 dark:text-neutral-400"
+              >
+                ← Voltar
+              </button>
+              <button
+                type="button"
+                disabled={isCustomProfile ? !customProfileName.trim() : !profileName}
+                onClick={handleCreate}
+                className="px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Adicionar plataforma
+              </button>
+            </>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
