@@ -8,6 +8,7 @@ import { Category, Platform } from '../types';
 import { LayoutGrid, Settings2, X, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from './Logo';
+import { CategoryIcon } from './CategoryIcon';
 
 interface SidebarProps {
   categories: Category[];
@@ -33,7 +34,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onBackToLogin,
 }) => {
   const [categorySearch, setCategorySearch] = useState('');
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
+
+  const getSidebarAvatarContent = () => {
+    if (!user) return null;
+
+    if (userProfile?.avatar) {
+      const { type, value, bgColor } = userProfile.avatar;
+      if (type === 'image' && value) {
+        return <img referrerPolicy="no-referrer" src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" />;
+      }
+      if (type === 'emoji') {
+        return (
+          <div className="w-full h-full rounded-full flex items-center justify-center text-sm shadow-sm" style={{ backgroundColor: bgColor || '#7c5cfc' }}>
+            {value}
+          </div>
+        );
+      }
+      if (type === 'color') {
+        return (
+          <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm" style={{ backgroundColor: bgColor || '#7c5cfc' }}>
+            {value || (userProfile.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+          </div>
+        );
+      }
+      if (type === 'google' && user.photoURL) {
+        return <img referrerPolicy="no-referrer" src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
+      }
+    }
+
+    if (user.photoURL) {
+      return <img referrerPolicy="no-referrer" src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
+    }
+
+    return (
+      <div className="w-full h-full rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+        {(userProfile?.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+      </div>
+    );
+  };
 
   // Calculate dynamic counts
   const getCategoryCount = (catId: string) => {
@@ -158,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-base select-none">{cat.icon}</span>
+                    <CategoryIcon icon={cat.icon} className="w-4 h-4" />
                     <span className="truncate">{cat.name}</span>
                   </div>
                   <span
@@ -204,23 +243,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-neutral-100/50 dark:bg-neutral-900/40 border border-neutral-200/40 dark:border-neutral-800/40 mt-1 select-none">
             {user ? (
               <>
-                {user.photoURL ? (
-                  <img referrerPolicy="no-referrer"
-                    src={user.photoURL}
-                    alt={user.displayName || 'User'}
-                    className="w-8 h-8 rounded-full border border-indigo-500/30"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                    {user.email?.[0].toUpperCase() || 'U'}
-                  </div>
-                )}
+                <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden relative">
+                  {getSidebarAvatarContent()}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate">
-                    {user.displayName || 'Usuário Logado'}
+                  <div className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate flex items-center gap-1.5">
+                    <span className="truncate">{userProfile?.displayName || user.displayName || 'Usuário Logado'}</span>
+                    {user.uid === 'guest' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" title="Visitante" />
+                    )}
                   </div>
                   <div className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate text-left">
-                    {user.email}
+                    {user.uid === 'guest' ? 'Sem backup ativo' : user.email}
                   </div>
                 </div>
               </>

@@ -8,6 +8,7 @@ import { Category } from '../types';
 import { X, Plus, Trash2, FolderPlus, Palette, Pencil, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
+import { CategoryIcon } from './CategoryIcon';
 
 interface ManageCategoriesModalProps {
   isOpen: boolean;
@@ -539,7 +540,7 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                     className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-[#2a2d40]/40 bg-neutral-50 dark:bg-[#111219]/60"
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="text-base">{cat.icon}</span>
+                      <CategoryIcon icon={cat.icon} className="w-4 h-4" />
                       <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                         {cat.name}
                       </span>

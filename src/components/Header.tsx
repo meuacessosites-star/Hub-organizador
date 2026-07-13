@@ -54,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
       if (type === 'color') {
         return (
           <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm" style={{ backgroundColor: bgColor || '#7c5cfc' }}>
-            {(userProfile.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+            {value || (userProfile.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
           </div>
         );
       }

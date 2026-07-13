@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getLogoUrl, getDomainFromInput, getInitials, getPlatformColor } from '../utils/logoHelper';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { CategoryIcon } from './CategoryIcon';
 import { safeParse, safeSetItem } from '../lib/utils';
 
 interface CustomPreset {
@@ -815,7 +816,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                               : 'bg-neutral-50 border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800'
                           }`}
                         >
-                          <span>{cat.icon}</span>
+                          <CategoryIcon icon={cat.icon} className="w-3.5 h-3.5" />
                           <span>{cat.name}</span>
                         </button>
                       );

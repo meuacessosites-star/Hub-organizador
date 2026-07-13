@@ -37,6 +37,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [selectedColor, setSelectedColor] = useState('#7c5cfc');
   const [selectedEmoji, setSelectedEmoji] = useState('👤');
   const [imageUrl, setImageUrl] = useState('');
+  const [customLetters, setCustomLetters] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -46,7 +47,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setDisplayName(userProfile?.displayName || user.displayName || '');
       if (userProfile?.avatar) {
         setAvatarTab(userProfile.avatar.type);
-        if (userProfile.avatar.type === 'color') setSelectedColor(userProfile.avatar.bgColor || '#7c5cfc');
+        if (userProfile.avatar.type === 'color') {
+          setSelectedColor(userProfile.avatar.bgColor || '#7c5cfc');
+          setCustomLetters(userProfile.avatar.value || '');
+        }
         if (userProfile.avatar.type === 'emoji') {
           setSelectedEmoji(userProfile.avatar.value);
           setSelectedColor(userProfile.avatar.bgColor || '#7c5cfc');
@@ -54,6 +58,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         if (userProfile.avatar.type === 'image') setImageUrl(userProfile.avatar.value);
       } else {
         setAvatarTab(user.photoURL ? 'google' : 'color');
+        setCustomLetters('');
       }
       setShowSuccess(false);
     }
@@ -86,7 +91,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         displayName,
         avatar: {
           type: avatarTab,
-          value: avatarTab === 'emoji' ? selectedEmoji : avatarTab === 'image' ? imageUrl : '',
+          value: avatarTab === 'emoji' ? selectedEmoji : avatarTab === 'image' ? imageUrl : avatarTab === 'color' ? customLetters : '',
           bgColor: (avatarTab === 'color' || avatarTab === 'emoji') ? selectedColor : undefined
         }
       };
@@ -129,7 +134,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     if (avatarTab === 'color') {
       return (
         <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white shadow-inner rounded-full" style={{ backgroundColor: selectedColor }}>
-          {(displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+          {customLetters || (displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
         </div>
       );
     }
@@ -268,6 +273,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
                   {(avatarTab === 'color' || avatarTab === 'emoji') && (
                     <div className="flex flex-col gap-4">
+                      {avatarTab === 'color' && (
+                        <div className="flex flex-col items-center gap-1.5 border-b border-neutral-200/50 dark:border-neutral-800/40 pb-3">
+                          <span className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                            Letras do avatar
+                          </span>
+                          <input
+                            type="text"
+                            value={customLetters}
+                            onChange={(e) => setCustomLetters(e.target.value.slice(0, 3).toUpperCase())}
+                            placeholder={(displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                            maxLength={3}
+                            className="w-28 h-9 px-3 text-center text-sm font-bold bg-neutral-100 dark:bg-[#1c1d28] border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-800 dark:text-neutral-200 uppercase focus:outline-none focus:border-indigo-500"
+                          />
+                        </div>
+                      )}
+
                       {avatarTab === 'emoji' && (
                         <div>
                           <div className="flex flex-wrap gap-2 justify-center">
@@ -287,7 +308,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         </div>
                       )}
 
-                      <div className="flex flex-wrap gap-2 justify-center">
+                      <div className="flex flex-wrap gap-2 justify-center items-center">
                         {PRESET_COLORS.map(color => (
                           <button
                             key={color}
@@ -299,6 +320,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                             style={{ backgroundColor: color }}
                           />
                         ))}
+                        
+                        {/* Roda das cores (Color Wheel Picker Button) */}
+                        <div 
+                          className={`relative w-8 h-8 rounded-full overflow-hidden border-2 transition-all cursor-pointer hover:scale-110 shadow-sm shrink-0 bg-[conic-gradient(from_0deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)] ${
+                            !PRESET_COLORS.includes(selectedColor) ? 'border-neutral-900 dark:border-white scale-110 shadow-md' : 'border-neutral-300 dark:border-neutral-700/60'
+                          }`}
+                          title="Roda das cores"
+                        >
+                          <input
+                            type="color"
+                            value={selectedColor}
+                            onChange={(e) => setSelectedColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150"
+                          />
+                          {!PRESET_COLORS.includes(selectedColor) && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/15">
+                              <Check className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

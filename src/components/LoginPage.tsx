@@ -5,12 +5,10 @@ import { motion } from 'motion/react';
 import { Logo } from './Logo';
 
 export const LoginPage: React.FC = () => {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, enterAsGuest, loading } = useAuth();
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const { signInWithGoogle, signInWithEmail, resetPassword, enterAsGuest, loading } = useAuth();
   const [isResetMode, setIsResetMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -23,16 +21,12 @@ export const LoginPage: React.FC = () => {
       if (isResetMode) {
         await resetPassword(email);
         setSuccessMessage('Email de redefinição enviado! Verifique sua caixa de entrada.');
-      } else if (isRegisterMode) {
-        await signUpWithEmail(email, password, username);
       } else {
         await signInWithEmail(email, password);
       }
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('Este email já está em uso.');
-      } else if (err.code === 'auth/invalid-credential') {
+      if (err.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
       } else if (err.code === 'auth/user-not-found') {
         setError('Usuário não encontrado.');
@@ -42,17 +36,12 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const toggleMode = (mode: 'login' | 'register' | 'reset') => {
+  const toggleMode = (mode: 'login' | 'reset') => {
     setError('');
     setSuccessMessage('');
     if (mode === 'login') {
-      setIsRegisterMode(false);
-      setIsResetMode(false);
-    } else if (mode === 'register') {
-      setIsRegisterMode(true);
       setIsResetMode(false);
     } else {
-      setIsRegisterMode(false);
       setIsResetMode(true);
     }
   };
@@ -105,18 +94,6 @@ export const LoginPage: React.FC = () => {
             
             {!isResetMode && (
               <>
-                {isRegisterMode && (
-                  <div className="space-y-1">
-                    <input
-                      type="text"
-                      placeholder="Seu nome de usuário"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4 outline-none transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
-                      required
-                    />
-                  </div>
-                )}
                 <div className="relative space-y-1">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -135,17 +112,15 @@ export const LoginPage: React.FC = () => {
                   </button>
                 </div>
                 
-                {!isRegisterMode && (
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => toggleMode('reset')}
-                      className="text-[10px] text-neutral-500 hover:text-indigo-500 transition-colors"
-                    >
-                      Esqueceu a senha?
-                    </button>
-                  </div>
-                )}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => toggleMode('reset')}
+                    className="text-[10px] text-neutral-500 hover:text-indigo-500 transition-colors"
+                  >
+                    Esqueceu a senha?
+                  </button>
+                </div>
               </>
             )}
             
@@ -168,18 +143,10 @@ export const LoginPage: React.FC = () => {
               disabled={loading}
               className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all active:scale-[0.98] shadow-md shadow-indigo-500/20 disabled:opacity-50"
             >
-              {loading ? 'Processando...' : (isResetMode ? 'Enviar link de redefinição' : (isRegisterMode ? 'Criar conta' : 'Entrar'))}
+              {loading ? 'Processando...' : (isResetMode ? 'Enviar link de redefinição' : 'Entrar')}
             </button>
 
             <div className="flex flex-col items-center gap-2">
-              <button
-                type="button"
-                onClick={() => toggleMode(isRegisterMode ? 'login' : 'register')}
-                className="text-xs text-neutral-500 hover:text-indigo-500 transition-colors"
-              >
-                {isRegisterMode ? 'Já tem uma conta? Entrar.' : 'Não tem conta? Cadastrar-se.'}
-              </button>
-              
               {isResetMode && (
                 <button
                   type="button"

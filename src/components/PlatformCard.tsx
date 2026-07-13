@@ -6,6 +6,7 @@ import { safeUrl } from "../lib/utils";
 
 import React, { useState } from 'react';
 import { Platform, Profile, Purchase, PurchaseStatus, Tag as TagType, Status } from '../types';
+import { CategoryIcon } from './CategoryIcon';
 import {
   ChevronDown,
   ChevronUp,
@@ -306,7 +307,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
           <div className="px-5 pb-5 pt-4 flex items-center justify-between border-t border-neutral-100 dark:border-[#232534]/50 mt-1.5 select-none">
             {/* Category badge */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200/50 dark:bg-[#13141c] dark:text-neutral-400 dark:border-neutral-800/40">
-              <span className="text-xs">{categoryIcon}</span>
+              <CategoryIcon icon={categoryIcon} className="w-3.5 h-3.5" />
               <span>{categoryName}</span>
             </div>
 
