@@ -264,20 +264,30 @@ export function useStorage() {
   const fbSet = async (collectionName: string, id: string, data: any) => {
     if (user && user.uid !== 'guest') {
       try {
+        console.log(`[Firestore Write Start] Sincronizando com Firestore: coleção='${collectionName}', docId='${id}'`, data);
         await setDoc(doc(db, 'users', user.uid, collectionName, id), data);
+        console.log(`[Firestore Write Success] Sucesso ao persistir no Firestore: coleção='${collectionName}', docId='${id}'`);
       } catch (err) {
+        console.error(`[Firestore Write Error] Falha ao persistir no Firestore: coleção='${collectionName}', docId='${id}'`, err);
         handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/${collectionName}/${id}`);
       }
+    } else {
+      console.log(`[Firestore Write Ignored] Ignorado (usuário visitante/não autenticado): coleção='${collectionName}', docId='${id}'`);
     }
   };
 
   const fbDelete = async (collectionName: string, id: string) => {
     if (user && user.uid !== 'guest') {
       try {
+        console.log(`[Firestore Delete Start] Deletando do Firestore: coleção='${collectionName}', docId='${id}'`);
         await deleteDoc(doc(db, 'users', user.uid, collectionName, id));
+        console.log(`[Firestore Delete Success] Sucesso ao deletar do Firestore: coleção='${collectionName}', docId='${id}'`);
       } catch (err) {
+        console.error(`[Firestore Delete Error] Falha ao deletar do Firestore: coleção='${collectionName}', docId='${id}'`, err);
         handleFirestoreError(err, OperationType.DELETE, `users/${user.uid}/${collectionName}/${id}`);
       }
+    } else {
+      console.log(`[Firestore Delete Ignored] Ignorado (usuário visitante/não autenticado): coleção='${collectionName}', docId='${id}'`);
     }
   };
 

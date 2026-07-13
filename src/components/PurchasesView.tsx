@@ -395,7 +395,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
     });
 
     return result;
-  }, [allPurchases, search, platformFilter, profileFilter, statusFilter, sortOrder]);
+  }, [allPurchases, search, platformFilter, profileFilter, statusFilter, tagFilter, tags, sortOrder]);
 
   // Dynamic Bento stats calculation
   const stats = useMemo(() => {

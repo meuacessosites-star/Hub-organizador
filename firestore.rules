@@ -32,13 +32,14 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(incoming());
       allow update: if isOwner(userId) && isValidUser(incoming()) 
-                      && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']);
+                      && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'avatar']);
 
       function isValidUser(data) {
-        return data.keys().hasAll(['email']) 
-          && data.email is string && data.email.size() <= 256
-          && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
-          && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512));
+        return (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+          && (!('avatar' in data) || (data.avatar is map 
+            && data.avatar.type is string && data.avatar.type.size() <= 32
+            && data.avatar.value is string && data.avatar.value.size() <= 1048576
+            && (!('bgColor' in data.avatar) || (data.avatar.bgColor is string && data.avatar.bgColor.size() <= 20))));
       }
 
       // Subcollections
@@ -48,9 +49,10 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
 
         function isValidTag(data) {
-          return data.keys().hasAll(['id', 'label', 'color'])
+          return data.keys().hasAll(['id', 'name', 'emoji', 'color'])
             && data.id == tagId
-            && data.label is string && data.label.size() <= 64
+            && data.name is string && data.name.size() <= 64
+            && data.emoji is string && data.emoji.size() <= 32
             && data.color is string && data.color.size() <= 20;
         }
       }
@@ -61,11 +63,12 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
 
         function isValidCategory(data) {
-          return data.keys().hasAll(['id', 'label', 'icon', 'color'])
+          return data.keys().hasAll(['id', 'name', 'icon', 'color'])
             && data.id == categoryId
-            && data.label is string && data.label.size() <= 64
+            && data.name is string && data.name.size() <= 64
             && data.icon is string && data.icon.size() <= 64
-            && data.color is string && data.color.size() <= 20;
+            && data.color is string && data.color.size() <= 20
+            && (!('isCustom' in data) || data.isCustom is bool);
         }
       }
 
@@ -79,7 +82,7 @@ service cloud.firestore {
             && data.id == platformId
             && data.name is string && data.name.size() <= 128
             && (!('url' in data) || (data.url is string && data.url.size() <= 512))
-            && (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 512))
+            && (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 1048576))
             && (!('categoryId' in data) || (data.categoryId is string && data.categoryId.size() <= 128))
             && (!('profiles' in data) || (data.profiles is list && data.profiles.size() <= 50))
             && (!('purchases' in data) || (data.purchases is list && data.purchases.size() <= 500));
@@ -95,7 +98,9 @@ service cloud.firestore {
           return data.keys().hasAll(['id', 'label', 'color'])
             && data.id == statusId
             && data.label is string && data.label.size() <= 64
-            && data.color is string && data.color.size() <= 20;
+            && data.color is string && data.color.size() <= 20
+            && (!('icon' in data) || (data.icon is string && data.icon.size() <= 64))
+            && (!('isCustom' in data) || data.isCustom is bool);
         }
       }
     }

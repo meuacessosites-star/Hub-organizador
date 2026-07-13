@@ -548,7 +548,16 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                     key={cat.id}
                     id={`manage-category-item-${cat.id}`}
                     data-testid={`manage-category-item-${cat.id}`}
-                    className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-[#2a2d40]/40 bg-neutral-50 dark:bg-[#111219]/60"
+                    onClick={() => {
+                      if (!isSystem) {
+                        handleStartEdit(cat);
+                      }
+                    }}
+                    className={`flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-[#2a2d40]/40 bg-neutral-50 dark:bg-[#111219]/60 select-none ${
+                      !isSystem
+                        ? 'cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-200 dark:hover:bg-[#151722] dark:hover:border-indigo-900/50 transition-all duration-150'
+                        : ''
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <CategoryIcon icon={cat.icon} className="w-4 h-4" />
@@ -565,11 +574,15 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                     {!isSystem && (
                       <div className="flex items-center gap-1.5">
                         {deletingCategoryId === cat.id ? (
-                          <div className="flex items-center gap-1 bg-rose-500/10 p-0.5 rounded border border-rose-500/20">
+                          <div
+                            className="flex items-center gap-1 bg-rose-500/10 p-0.5 rounded border border-rose-500/20"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <span className="text-[9px] font-bold text-rose-500 px-1">Excluir?</span>
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 if (editingCategoryId === cat.id) {
                                   handleCancelEdit();
                                 }
@@ -583,7 +596,10 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                             </button>
                             <button
                               type="button"
-                              onClick={() => setDeletingCategoryId(null)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingCategoryId(null);
+                              }}
                               className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 text-[9px] font-semibold hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
                             >
                               Não
@@ -593,7 +609,10 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                           <>
                             <button
                               type="button"
-                              onClick={() => handleStartEdit(cat)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartEdit(cat);
+                              }}
                               className={`p-1.5 rounded transition-colors cursor-pointer select-none ${
                                 editingCategoryId === cat.id
                                   ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
@@ -605,7 +624,10 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                             </button>
                             <button
                               type="button"
-                              onClick={() => setDeletingCategoryId(cat.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingCategoryId(cat.id);
+                              }}
                               className="p-1.5 rounded hover:bg-neutral-200 text-neutral-500 hover:text-rose-400 dark:hover:bg-neutral-800 transition-colors cursor-pointer select-none"
                               title="Remover categoria"
                             >
