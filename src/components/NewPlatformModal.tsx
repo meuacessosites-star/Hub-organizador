@@ -820,7 +820,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           type="button"
                           id={`modal-category-btn-${cat.id}`}
                           data-testid={`modal-category-btn-${cat.id}`}
-                          aria-label={`Selecionar categoria ${cat.name}`}
+                          aria-label={cat.name}
                           onClick={() => setSelectedCategory(cat.id)}
                           className={`px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all duration-150 cursor-pointer ${
                             isSel

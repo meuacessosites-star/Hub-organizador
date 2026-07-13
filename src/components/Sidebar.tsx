@@ -192,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={cat.id}
                   id={`category-btn-${cat.id}`}
                   data-testid={`category-btn-${cat.id}`}
-                  aria-label={`Filtrar por categoria ${cat.name}`}
+                  aria-label={cat.name}
                   onClick={() => {
                     setSelectedCategory(cat.id);
                     if (onCloseMobile) onCloseMobile();

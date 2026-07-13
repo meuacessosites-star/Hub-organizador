@@ -347,9 +347,14 @@ export function useStorage() {
   };
 
   const updatePlatform = (id: string, updated: Partial<Platform>) => {
-    setPlatforms((prev) => prev.map((plat) => (plat.id === id ? { ...plat, ...updated } : plat)));
-    const plat = platforms.find(p => p.id === id);
-    if (plat) fbSet('platforms', id, { ...plat, ...updated });
+    setPlatforms((prev) => prev.map((plat) => {
+      if (plat.id === id) {
+        const updatedPlat = { ...plat, ...updated };
+        fbSet('platforms', id, updatedPlat);
+        return updatedPlat;
+      }
+      return plat;
+    }));
   };
 
   const deletePlatform = (id: string) => {
@@ -361,29 +366,40 @@ export function useStorage() {
   const addProfile = (platformId: string, profile: Omit<Profile, 'id'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newProfile: Profile = { ...profile, id: `prof-${Date.now()}-${randomSuffix}` };
-    setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, profiles: [...plat.profiles, newProfile] } : plat));
-    const plat = platforms.find(p => p.id === platformId);
-    if (plat) fbSet('platforms', platformId, { ...plat, profiles: [...plat.profiles, newProfile] });
+    setPlatforms((prev) => prev.map((plat) => {
+      if (plat.id === platformId) {
+        const updatedPlat = { ...plat, profiles: [...(plat.profiles || []), newProfile] };
+        fbSet('platforms', platformId, updatedPlat);
+        return updatedPlat;
+      }
+      return plat;
+    }));
     return newProfile;
   };
 
   const updateProfile = (platformId: string, profileId: string, updated: Partial<Profile>) => {
-    setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, profiles: plat.profiles.map((prof) => prof.id === profileId ? { ...prof, ...updated } : prof) } : plat));
-    const plat = platforms.find(p => p.id === platformId);
-    if (plat) {
-      const newProfiles = plat.profiles.map((prof) => prof.id === profileId ? { ...prof, ...updated } : prof);
-      fbSet('platforms', platformId, { ...plat, profiles: newProfiles });
-    }
+    setPlatforms((prev) => prev.map((plat) => {
+      if (plat.id === platformId) {
+        const newProfiles = (plat.profiles || []).map((prof) => prof.id === profileId ? { ...prof, ...updated } : prof);
+        const updatedPlat = { ...plat, profiles: newProfiles };
+        fbSet('platforms', platformId, updatedPlat);
+        return updatedPlat;
+      }
+      return plat;
+    }));
   };
 
   const deleteProfile = (platformId: string, profileId: string) => {
-    setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, profiles: plat.profiles.filter((prof) => prof.id !== profileId), purchases: plat.purchases.filter((pur) => pur.profileId !== profileId) } : plat));
-    const plat = platforms.find(p => p.id === platformId);
-    if (plat) {
-      const newProfiles = plat.profiles.filter((prof) => prof.id !== profileId);
-      const newPurchases = plat.purchases.filter((pur) => pur.profileId !== profileId);
-      fbSet('platforms', platformId, { ...plat, profiles: newProfiles, purchases: newPurchases });
-    }
+    setPlatforms((prev) => prev.map((plat) => {
+      if (plat.id === platformId) {
+        const newProfiles = (plat.profiles || []).filter((prof) => prof.id !== profileId);
+        const newPurchases = (plat.purchases || []).filter((pur) => pur.profileId !== profileId);
+        const updatedPlat = { ...plat, profiles: newProfiles, purchases: newPurchases };
+        fbSet('platforms', platformId, updatedPlat);
+        return updatedPlat;
+      }
+      return plat;
+    }));
   };
 
   // Purchase CRUD
@@ -408,38 +424,47 @@ export function useStorage() {
 
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newPurchase: Purchase = { ...purchase, id: `pur-${Date.now()}-${randomSuffix}`, date: purchase.date || new Date().toISOString() };
-    setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, purchases: [...plat.purchases, newPurchase] } : plat));
-    const plat = platforms.find(p => p.id === platformId);
-    if (plat) fbSet('platforms', platformId, { ...plat, purchases: [...plat.purchases, newPurchase] });
+    
+    setPlatforms((prev) => prev.map((plat) => {
+      if (plat.id === platformId) {
+        const updatedPlat = { ...plat, purchases: [...(plat.purchases || []), newPurchase] };
+        fbSet('platforms', platformId, updatedPlat);
+        return updatedPlat;
+      }
+      return plat;
+    }));
     return newPurchase;
   };
 
   const updatePurchase = (platformId: string, purchaseId: string, updated: Partial<Purchase>) => {
-    const plat = platforms.find(p => p.id === platformId);
-    if (plat) {
-      const existingPur = plat.purchases.find(p => p.id === purchaseId);
-      if (existingPur) {
-        const mergedName = updated.productName !== undefined ? updated.productName : existingPur.productName;
-        const mergedOriginal = updated.originalPrice !== undefined ? updated.originalPrice : existingPur.originalPrice;
-        const mergedFinal = updated.finalPrice !== undefined ? updated.finalPrice : existingPur.finalPrice;
-        validatePurchaseData(mergedName, mergedOriginal, mergedFinal);
+    setPlatforms((prev) => prev.map((plat) => {
+      if (plat.id === platformId) {
+        const existingPur = plat.purchases.find(p => p.id === purchaseId);
+        if (existingPur) {
+          const mergedName = updated.productName !== undefined ? updated.productName : existingPur.productName;
+          const mergedOriginal = updated.originalPrice !== undefined ? updated.originalPrice : existingPur.originalPrice;
+          const mergedFinal = updated.finalPrice !== undefined ? updated.finalPrice : existingPur.finalPrice;
+          validatePurchaseData(mergedName, mergedOriginal, mergedFinal);
+        }
+        const newPurchases = (plat.purchases || []).map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
+        const updatedPlat = { ...plat, purchases: newPurchases };
+        fbSet('platforms', platformId, updatedPlat);
+        return updatedPlat;
       }
-    }
-
-    setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, purchases: plat.purchases.map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur) } : plat));
-    if (plat) {
-      const newPurchases = plat.purchases.map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
-      fbSet('platforms', platformId, { ...plat, purchases: newPurchases });
-    }
+      return plat;
+    }));
   };
 
   const deletePurchase = (platformId: string, purchaseId: string) => {
-    setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, purchases: plat.purchases.filter((pur) => pur.id !== purchaseId) } : plat));
-    const plat = platforms.find(p => p.id === platformId);
-    if (plat) {
-      const newPurchases = plat.purchases.filter((pur) => pur.id !== purchaseId);
-      fbSet('platforms', platformId, { ...plat, purchases: newPurchases });
-    }
+    setPlatforms((prev) => prev.map((plat) => {
+      if (plat.id === platformId) {
+        const newPurchases = (plat.purchases || []).filter((pur) => pur.id !== purchaseId);
+        const updatedPlat = { ...plat, purchases: newPurchases };
+        fbSet('platforms', platformId, updatedPlat);
+        return updatedPlat;
+      }
+      return plat;
+    }));
   };
 
   // Status CRUD

@@ -267,7 +267,11 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-[#0a0a0c] border border-neutral-200 dark:border-white/[0.05] rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_12px_30px_rgba(0,0,0,0.4)] hover:shadow-md dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-neutral-300 dark:hover:border-white/[0.1] group">
+    <div
+      id={`platform-card-${platform.id}`}
+      data-testid={`platform-card-${platform.id}`}
+      className="bg-white dark:bg-[#0a0a0c] border border-neutral-200 dark:border-white/[0.05] rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_12px_30px_rgba(0,0,0,0.4)] hover:shadow-md dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-neutral-300 dark:hover:border-white/[0.1] group"
+    >
       {/* Card Header (always visible) */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
@@ -375,6 +379,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
             {/* TAB SELECTOR */}
             <div className="flex border-b border-neutral-200 bg-neutral-50 px-5 select-none dark:border-[#232534] dark:bg-[#13141c]">
               <button
+                id={`platform-contas-tab-${platform.id}`}
+                data-testid={`platform-contas-tab-${platform.id}`}
+                aria-label={`Contas ${(platform.profiles || []).length}`}
                 onClick={() => setActiveTab('contas')}
                 className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all relative cursor-pointer ${
                   activeTab === 'contas'
@@ -382,9 +389,12 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                     : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300'
                 }`}
               >
-                Contas ({platform.profiles.length})
+                Contas ({(platform.profiles || []).length})
               </button>
               <button
+                id={`platform-compras-tab-${platform.id}`}
+                data-testid={`platform-compras-tab-${platform.id}`}
+                aria-label={`Compras ${(platform.purchases || []).length}`}
                 onClick={() => setActiveTab('compras')}
                 className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all relative cursor-pointer ${
                   activeTab === 'compras'
@@ -392,7 +402,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                     : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300'
                 }`}
               >
-                Compras ({platform.purchases.length})
+                Compras ({(platform.purchases || []).length})
               </button>
             </div>
 
@@ -722,6 +732,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 {/* Account card bottom footer actions */}
                 <div className="flex items-center justify-between border-t border-neutral-200 dark:border-[#232534] pt-3 select-none">
                   <button
+                    id={`add-profile-btn-${platform.id}`}
+                    data-testid={`add-profile-btn-${platform.id}`}
+                    aria-label={`Adicionar conta na plataforma ${platform.name}`}
                     onClick={() => onAddProfile(platform.id)}
                     className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 text-[11px] font-semibold transition-colors cursor-pointer"
                   >
@@ -754,6 +767,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                     </div>
                   ) : (
                     <button
+                      id={`delete-platform-btn-${platform.id}`}
+                      data-testid={`delete-platform-btn-${platform.id}`}
+                      aria-label={`Remover plataforma ${platform.name}`}
                       onClick={() => setShowDeleteConfirm(true)}
                       className="flex items-center gap-1.5 text-rose-500 hover:text-rose-400 dark:text-rose-500 dark:hover:text-rose-400 text-[11px] font-semibold transition-colors cursor-pointer"
                     >

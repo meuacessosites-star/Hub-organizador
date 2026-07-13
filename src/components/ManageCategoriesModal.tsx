@@ -410,6 +410,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                   <button
                     key={col}
                     type="button"
+                    id={`preset-color-btn-${col.replace('#', '')}`}
+                    data-testid={`preset-color-btn-${col.replace('#', '')}`}
+                    aria-label={`Cor ${col}`}
                     onClick={() => updateSelectedColor(col)}
                     className="w-6 h-6 rounded-full border border-black/40 flex items-center justify-center shadow-inner hover:scale-110 transition-all cursor-pointer shrink-0"
                     style={{ backgroundColor: col }}
@@ -609,6 +612,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                           <>
                             <button
                               type="button"
+                              id={`edit-category-btn-${cat.id}`}
+                              data-testid={`edit-category-btn-${cat.id}`}
+                              aria-label={`Editar categoria ${cat.name}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleStartEdit(cat);
@@ -624,6 +630,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                             </button>
                             <button
                               type="button"
+                              id={`delete-category-btn-${cat.id}`}
+                              data-testid={`delete-category-btn-${cat.id}`}
+                              aria-label={`Remover categoria ${cat.name}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setDeletingCategoryId(cat.id);

@@ -660,6 +660,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <button
                 onClick={handleSave}
                 disabled={isSaving}
+                id="save-profile-btn"
+                data-testid="save-profile-btn"
+                aria-label="Salvar Perfil"
                 className={`w-full h-11 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   showSuccess
                     ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/25'
