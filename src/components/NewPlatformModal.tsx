@@ -818,6 +818,9 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                         <button
                           key={cat.id}
                           type="button"
+                          id={`modal-category-btn-${cat.id}`}
+                          data-testid={`modal-category-btn-${cat.id}`}
+                          aria-label={`Selecionar categoria ${cat.name}`}
                           onClick={() => setSelectedCategory(cat.id)}
                           className={`px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all duration-150 cursor-pointer ${
                             isSel
@@ -826,7 +829,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           }`}
                         >
                           <CategoryIcon icon={cat.icon} className="w-3.5 h-3.5" />
-                          <span>{cat.name}</span>
+                          <span data-testid={`modal-category-name-${cat.id}`}>{cat.name}</span>
                         </button>
                       );
                     })}

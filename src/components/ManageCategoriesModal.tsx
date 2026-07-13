@@ -546,15 +546,17 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                 return (
                   <div
                     key={cat.id}
+                    id={`manage-category-item-${cat.id}`}
+                    data-testid={`manage-category-item-${cat.id}`}
                     className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-[#2a2d40]/40 bg-neutral-50 dark:bg-[#111219]/60"
                   >
                     <div className="flex items-center gap-2.5">
                       <CategoryIcon icon={cat.icon} className="w-4 h-4" />
-                      <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                      <span data-testid={`manage-category-name-${cat.id}`} className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                         {cat.name}
                       </span>
                       {isSystem && (
-                        <span className="text-[8px] font-bold font-sans uppercase px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-400 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700">
+                        <span data-testid={`manage-category-system-badge-${cat.id}`} className="text-[8px] font-bold font-sans uppercase px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-400 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700">
                           Sistema
                         </span>
                       )}
