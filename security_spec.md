@@ -1,4 +1,4 @@
-# Security Specification - Hub Organizado
+# Security Specification - Hub Organizador
 
 ## 1. Data Invariants
 - All data (tags, categories, platforms, statuses) MUST be nested under a `users/{userId}` document.

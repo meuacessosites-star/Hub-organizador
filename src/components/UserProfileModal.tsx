@@ -1,7 +1,7 @@
 import { resizeImage } from "../utils/imageHelper";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2 } from 'lucide-react';
+import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette } from 'lucide-react';
 import { User, updateProfile as firebaseUpdateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -25,6 +25,62 @@ const PRESET_COLORS = [
   '#ef4444', '#06b6d4', '#f43f5e', '#84cc16', '#a855f7'
 ];
 
+// Helper to convert HEX to HSV for exact indicator position
+const hexToHsv = (hex: string): { h: number; s: number; v: number } => {
+  let r = 0, g = 0, b = 0;
+  let cleanHex = hex.replace('#', '');
+  if (cleanHex.length === 3) {
+    r = parseInt(cleanHex[0] + cleanHex[0], 16);
+    g = parseInt(cleanHex[1] + cleanHex[1], 16);
+    b = parseInt(cleanHex[2] + cleanHex[2], 16);
+  } else if (cleanHex.length === 6) {
+    r = parseInt(cleanHex.substring(0, 2), 16);
+    g = parseInt(cleanHex.substring(2, 4), 16);
+    b = parseInt(cleanHex.substring(4, 6), 16);
+  } else {
+    return { h: 0, s: 0, v: 1 };
+  }
+
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  
+  let h = 0;
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+
+  if (max !== min) {
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return { h: h * 360, s, v };
+};
+
+const getIndicatorCoords = (color: string, radius: number = 64) => {
+  const { h, s } = hexToHsv(color);
+  const angle = (h / 360) * (Math.PI * 2) - Math.PI;
+  const dist = s * radius;
+  return {
+    x: radius + Math.cos(angle) * dist,
+    y: radius + Math.sin(angle) * dist,
+  };
+};
+
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   isOpen,
   onClose,
@@ -41,6 +97,162 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showColorWheel, setShowColorWheel] = useState(false);
+
+  const colorWheelRef = useRef<HTMLCanvasElement>(null);
+  const colorWheelContainerRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShowColorWheel(false);
+    }
+  }, [isOpen]);
+
+  // Reset color wheel state when switching tabs
+  useEffect(() => {
+    setShowColorWheel(false);
+  }, [avatarTab]);
+
+  // Auto-scroll color wheel into view when shown
+  useEffect(() => {
+    if (showColorWheel) {
+      const timer = setTimeout(() => {
+        colorWheelContainerRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [showColorWheel]);
+
+  const hsvToRgb = (h: number, s: number, v: number): [number, number, number] => {
+    const c = v * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = v - c;
+    let r = 0, g = 0, b = 0;
+
+    if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+    else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+    else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+    else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+    else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+    else if (h >= 300 && h < 360) { r = c; g = 0; b = x; }
+
+    return [
+      Math.round((r + m) * 255),
+      Math.round((g + m) * 255),
+      Math.round((b + m) * 255),
+    ];
+  };
+
+  const drawColorWheel = () => {
+    const canvas = colorWheelRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const cx = width / 2;
+    const cy = height / 2;
+    const radius = width / 2;
+
+    const imgData = ctx.createImageData(width, height);
+    const data = imgData.data;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const dx = x - cx;
+        const dy = y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist <= radius) {
+          let angle = Math.atan2(dy, dx) + Math.PI;
+          const hue = (angle / (Math.PI * 2)) * 360;
+          const sat = dist / radius;
+          const val = 1.0;
+
+          const rgb = hsvToRgb(hue, sat, val);
+          const index = (y * width + x) * 4;
+          data[index] = rgb[0];
+          data[index + 1] = rgb[1];
+          data[index + 2] = rgb[2];
+          data[index + 3] = 255;
+        }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  };
+
+  useEffect(() => {
+    if (isOpen && showColorWheel && (avatarTab === 'color' || avatarTab === 'emoji')) {
+      const timer = setTimeout(() => {
+        drawColorWheel();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, showColorWheel, avatarTab]);
+
+  const handleColorSelection = (clientX: number, clientY: number) => {
+    const canvas = colorWheelRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    try {
+      const clampedX = Math.max(0, Math.min(canvas.width - 1, x * (canvas.width / rect.width)));
+      const clampedY = Math.max(0, Math.min(canvas.height - 1, y * (canvas.height / rect.height)));
+      
+      const pixel = ctx.getImageData(clampedX, clampedY, 1, 1).data;
+      if (pixel[3] > 0) {
+        const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(val => {
+          const hexStr = val.toString(16);
+          return hexStr.length === 1 ? '0' + hexStr : hexStr;
+        }).join('');
+        setSelectedColor(hex);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    isDraggingRef.current = true;
+    handleColorSelection(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isDraggingRef.current) {
+      handleColorSelection(e.clientX, e.clientY);
+    }
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isDraggingRef.current = false;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    isDraggingRef.current = true;
+    if (e.touches[0]) {
+      handleColorSelection(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (isDraggingRef.current && e.touches[0]) {
+      handleColorSelection(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    isDraggingRef.current = false;
+  };
 
   useEffect(() => {
     if (isOpen && user) {
@@ -308,39 +520,116 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         </div>
                       )}
 
-                      <div className="flex flex-wrap gap-2 justify-center items-center">
-                        {PRESET_COLORS.map(color => (
-                          <button
-                            key={color}
-                            type="button"
-                            onClick={() => setSelectedColor(color)}
-                            className={`w-8 h-8 rounded-full border-2 transition-all cursor-pointer hover:scale-110 ${
-                              selectedColor === color ? 'border-neutral-900 dark:border-white scale-110 shadow-md' : 'border-transparent'
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                        
-                        {/* Roda das cores (Color Wheel Picker Button) */}
-                        <div 
-                          className={`relative w-8 h-8 rounded-full overflow-hidden border-2 transition-all cursor-pointer hover:scale-110 shadow-sm shrink-0 bg-[conic-gradient(from_0deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)] ${
-                            !PRESET_COLORS.includes(selectedColor) ? 'border-neutral-900 dark:border-white scale-110 shadow-md' : 'border-neutral-300 dark:border-neutral-700/60'
-                          }`}
-                          title="Roda das cores"
+                      {/* Unified Color Input */}
+                      <div className="flex items-center gap-3 w-full max-w-xs justify-center mx-auto">
+                        <button
+                          type="button"
+                          onClick={() => setShowColorWheel(!showColorWheel)}
+                          className="w-10 h-10 rounded-xl border border-neutral-300 shadow-md flex items-center justify-center text-xs text-white dark:border-[#25283a]/80 shrink-0 hover:scale-105 active:scale-95 transition-all cursor-pointer relative group"
+                          style={{ backgroundColor: selectedColor }}
+                          title="Abrir/Fechar roda de cores"
                         >
-                          <input
-                            type="color"
-                            value={selectedColor}
-                            onChange={(e) => setSelectedColor(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150"
-                          />
-                          {!PRESET_COLORS.includes(selectedColor) && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/15">
-                              <Check className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
-                            </div>
-                          )}
-                        </div>
+                          <Palette className="w-4.5 h-4.5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] opacity-80 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                        <input
+                          type="text"
+                          value={selectedColor}
+                          onChange={(e) => setSelectedColor(e.target.value)}
+                          placeholder="#000000"
+                          className="flex-1 h-10 px-3 rounded-xl text-xs bg-neutral-100 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 font-mono dark:bg-[#1a1b26] dark:border-[#2a2d40] dark:text-neutral-200"
+                        />
                       </div>
+
+                      {/* Preset Colors */}
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        {PRESET_COLORS.map((col) => (
+                          <button
+                            key={col}
+                            type="button"
+                            onClick={() => setSelectedColor(col)}
+                            className="w-6 h-6 rounded-full border border-black/20 flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                            style={{ backgroundColor: col }}
+                          >
+                            {selectedColor.toLowerCase() === col.toLowerCase() && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Color Wheel (Toggled & Animated) */}
+                      <AnimatePresence>
+                        {showColorWheel && (
+                          <motion.div
+                            ref={colorWheelContainerRef}
+                            initial={{ opacity: 0, scale: 0.9, height: 0, marginTop: 0 }}
+                            animate={{ opacity: 1, scale: 1, height: 'auto', marginTop: 8 }}
+                            exit={{ opacity: 0, scale: 0.9, height: 0, marginTop: 0 }}
+                            transition={{ type: 'spring', damping: 22, stiffness: 180 }}
+                            className="overflow-hidden flex flex-col items-center gap-4 w-full"
+                          >
+                            <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider self-center select-none flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                              Arraste na roda para escolher a cor
+                            </span>
+                            <div className="relative w-32 h-32 flex items-center justify-center select-none touch-none">
+                              {/* Pulsing attention halo ripple */}
+                              <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
+                              <canvas
+                                ref={colorWheelRef}
+                                width={128}
+                                height={128}
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUpOrLeave}
+                                onMouseLeave={handleMouseUpOrLeave}
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                                className="rounded-full cursor-crosshair border border-neutral-300 shadow-md dark:border-neutral-700 touch-none z-10"
+                              />
+                              <div
+                                className="absolute w-8 h-8 rounded-full border-2 border-white shadow-md pointer-events-none flex items-center justify-center font-bold text-white uppercase"
+                                style={{ backgroundColor: selectedColor }}
+                              >
+                                {avatarTab === 'color' ? (
+                                  <span className="text-[10px]">{customLetters.slice(0, 2).toUpperCase() || (displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}</span>
+                                ) : (
+                                  <span className="text-base">{selectedEmoji || '👤'}</span>
+                                )}
+                              </div>
+
+                              {/* Dynamic line indicator (pauzinho) and handle circle */}
+                              {(() => {
+                                const coords = getIndicatorCoords(selectedColor, 64);
+                                return (
+                                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
+                                    <line
+                                      x1={64}
+                                      y1={64}
+                                      x2={coords.x}
+                                      y2={coords.y}
+                                      stroke="white"
+                                      strokeWidth="2.5"
+                                      strokeLinecap="round"
+                                      className="shadow-sm drop-shadow-[0_1.5px_2.5px_rgba(0,0,0,0.6)]"
+                                    />
+                                    <circle
+                                      cx={coords.x}
+                                      cy={coords.y}
+                                      r="5"
+                                      fill={selectedColor}
+                                      stroke="white"
+                                      strokeWidth="2"
+                                      className="shadow-md"
+                                    />
+                                  </svg>
+                                );
+                              })()}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
 

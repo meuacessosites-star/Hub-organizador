@@ -688,11 +688,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 pt-0.5">
-                    {profileNames.map((name) => {
+                    {profileNames.map((name, idx) => {
                       const isSel = profileName === name && !isCustomProfile;
                       return (
                         <button
-                          key={name}
+                          key={`${name}-${idx}`}
                           type="button"
                           onClick={() => {
                             setIsCustomProfile(false);

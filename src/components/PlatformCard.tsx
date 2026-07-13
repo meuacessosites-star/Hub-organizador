@@ -847,7 +847,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   {purchase.bundleItems.slice(0, 3).map((item, idx) => {
                                     const itemStatus = item.status || 'pedido_feito';
                                     return (
-                                      <span key={item.id} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
+                                      <span key={item.id || `bi-${idx}`} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
                                         <button
                                           type="button"
                                           onClick={(e) => cycleBundleItemStatus(e, purchase, idx)}
@@ -902,12 +902,12 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               {/* Tags pill list */}
                               {purchase.tags && purchase.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-1.5">
-                                  {purchase.tags.map((tId) => {
+                                  {purchase.tags.map((tId, idx) => {
                                     const tag = tags.find(t => t.id === tId);
                                     if (!tag) return null;
                                     return (
                                       <span 
-                                        key={tId} 
+                                        key={`${tId}-${idx}`} 
                                         className="text-[8px] px-1.5 py-0.5 rounded border font-medium leading-none flex items-center gap-0.5"
                                         style={{ backgroundColor: `${tag.color}15`, borderColor: `${tag.color}30`, color: tag.color }}
                                       >

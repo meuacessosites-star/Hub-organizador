@@ -140,9 +140,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
   };
 
   // Color wheel generator
-  useEffect(() => {
-    if (!isOpen || !showColorWheel || !colorWheelRef.current) return;
+  const drawColorWheel = () => {
     const canvas = colorWheelRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -177,6 +177,15 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
       }
     }
     ctx.putImageData(imgData, 0, 0);
+  };
+
+  useEffect(() => {
+    if (isOpen && showColorWheel) {
+      const timer = setTimeout(() => {
+        drawColorWheel();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [isOpen, showColorWheel]);
 
   const isDraggingRef = useRef(false);

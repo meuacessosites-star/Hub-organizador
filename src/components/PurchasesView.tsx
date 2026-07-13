@@ -642,12 +642,12 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                     </span>
                     <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide max-w-[70%]">
                       {purchase.tags && purchase.tags.length > 0 ? (
-                        purchase.tags.map((tId) => {
+                        purchase.tags.map((tId, idx) => {
                           const tag = tags.find((tg) => tg.id === tId);
                           if (!tag) return null;
                           return (
                             <span 
-                              key={tId}
+                              key={`${tId}-${idx}`}
                               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tight shadow-sm shrink-0 border"
                               style={{ backgroundColor: `${tag.color}15`, borderColor: `${tag.color}30`, color: tag.color }}
                             >
@@ -780,7 +780,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                             const itemStatus = item.status || 'pedido_feito';
                             const hasPrice = item.price !== undefined && item.price !== null && item.price > 0;
                             return (
-                              <div key={item.id} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
+                              <div key={item.id || `bi-${idx}`} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
                                 <div className="flex items-center gap-2 max-w-[200px]">
                                   <button
                                     type="button"

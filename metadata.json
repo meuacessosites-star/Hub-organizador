@@ -1,5 +1,5 @@
 {
-  "name": "Hub Organizado",
+  "name": "Hub Organizador",
   "description": "Gerenciador premium de plataformas e contas com estrutura base para desenvolvimento e publicação em Android Nativo (Jetpack Compose).",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

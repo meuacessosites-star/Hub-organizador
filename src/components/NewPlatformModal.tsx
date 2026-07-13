@@ -172,9 +172,9 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   }, [platformUrl]);
 
   // Handle color wheel canvas drawing & mouse interactions
-  useEffect(() => {
-    if (avatarTab !== 'color' || !colorWheelRef.current) return;
+  const drawColorWheel = () => {
     const canvas = colorWheelRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -209,7 +209,16 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
       }
     }
     ctx.putImageData(imgData, 0, 0);
-  }, [avatarTab]);
+  };
+
+  useEffect(() => {
+    if (isOpen && avatarTab === 'color') {
+      const timer = setTimeout(() => {
+        drawColorWheel();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, avatarTab]);
 
   const hsvToRgb = (h: number, s: number, v: number): [number, number, number] => {
     const c = v * s;
@@ -907,11 +916,11 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 pt-0.5">
-                    {profileNames.map((name) => {
+                    {profileNames.map((name, idx) => {
                       const isSel = profileName === name && !isCustomProfile;
                       return (
                         <button
-                          key={name}
+                          key={`${name}-${idx}`}
                           type="button"
                           onClick={() => handleProfileNameChip(name)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${

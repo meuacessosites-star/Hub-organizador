@@ -1,6 +1,6 @@
-# Hub Organizado - Gerenciador Premium (Android Nativo)
+# Hub Organizador - Gerenciador Premium (Android Nativo)
 
-Este projeto foi transformado de um PWA para um aplicativo **Android Nativo** usando **Jetpack Compose**, mantendo toda a lógica e estilo do Hub Organizado original.
+Este projeto foi transformado de um PWA para um aplicativo **Android Nativo** usando **Jetpack Compose**, mantendo toda a lógica e estilo do Hub Organizador original.
 
 ## 📂 Estrutura do Projeto
 - `/src`: Contém o código React original (Lógica e Estilo).

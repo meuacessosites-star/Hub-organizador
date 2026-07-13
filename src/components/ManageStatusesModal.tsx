@@ -133,9 +133,9 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
     ];
   };
 
-  useEffect(() => {
-    if (!isOpen || !showColorWheel || !colorWheelRef.current) return;
+  const drawColorWheel = () => {
     const canvas = colorWheelRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -170,6 +170,15 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
       }
     }
     ctx.putImageData(imgData, 0, 0);
+  };
+
+  useEffect(() => {
+    if (isOpen && showColorWheel) {
+      const timer = setTimeout(() => {
+        drawColorWheel();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [isOpen, showColorWheel]);
 
   const isDraggingRef = useRef(false);

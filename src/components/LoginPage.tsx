@@ -5,8 +5,9 @@ import { motion } from 'motion/react';
 import { Logo } from './Logo';
 
 export const LoginPage: React.FC = () => {
-  const { signInWithGoogle, signInWithEmail, resetPassword, enterAsGuest, loading } = useAuth();
-  const [isResetMode, setIsResetMode] = useState(false);
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, enterAsGuest, loading } = useAuth();
+  const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login');
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -18,9 +19,16 @@ export const LoginPage: React.FC = () => {
     setError('');
     setSuccessMessage('');
     try {
-      if (isResetMode) {
+      if (mode === 'reset') {
         await resetPassword(email);
         setSuccessMessage('Email de redefinição enviado! Verifique sua caixa de entrada.');
+      } else if (mode === 'register') {
+        if (!displayName.trim()) {
+          setError('Por favor, insira seu nome completo.');
+          return;
+        }
+        await signUpWithEmail(email, password, displayName);
+        setSuccessMessage('Conta criada com sucesso!');
       } else {
         await signInWithEmail(email, password);
       }
@@ -30,20 +38,20 @@ export const LoginPage: React.FC = () => {
         setError('Email ou senha inválidos.');
       } else if (err.code === 'auth/user-not-found') {
         setError('Usuário não encontrado.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('Este email já está em uso por outra conta.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('A senha deve ter pelo menos 6 caracteres.');
       } else {
         setError(err.message);
       }
     }
   };
 
-  const toggleMode = (mode: 'login' | 'reset') => {
+  const toggleMode = (newMode: 'login' | 'register' | 'reset') => {
     setError('');
     setSuccessMessage('');
-    if (mode === 'login') {
-      setIsResetMode(false);
-    } else {
-      setIsResetMode(true);
-    }
+    setMode(newMode);
   };
 
   return (
@@ -62,37 +70,55 @@ export const LoginPage: React.FC = () => {
         className="relative w-full max-w-xl bg-white dark:bg-[#0b0c10] border border-neutral-200 dark:border-[#1e2030] rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-10"
       >
         {/* App Logo / Icon */}
-        <div className="flex flex-col items-center text-center mb-8">
+        <div className="flex flex-col items-center text-center mb-6">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 300, delay: 0.1 }}
-            className="w-16 h-16 rounded-3xl bg-white dark:bg-neutral-800 flex items-center justify-center mb-6 shadow-2xl border border-neutral-100 dark:border-neutral-700/50 overflow-hidden"
+            className="w-16 h-16 rounded-3xl bg-white dark:bg-neutral-800 flex items-center justify-center mb-4 shadow-2xl border border-neutral-100 dark:border-neutral-700/50 overflow-hidden"
           >
             <Logo className="w-10 h-10" />
           </motion.div>
           <h1 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
-            Hub Organizado
+            Hub Organizador
           </h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
-            Acesso inteligente para sua vida digital.
+            {mode === 'register' 
+              ? 'Crie sua conta para começar a organizar sua vida digital.' 
+              : mode === 'reset' 
+                ? 'Recupere o acesso à sua conta.' 
+                : 'Acesso inteligente para sua vida digital.'}
           </p>
         </div>
 
         <div className="space-y-6">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            
+            {mode === 'register' && (
+              <div className="space-y-1">
+                <input
+                  type="text"
+                  placeholder="Nome completo"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4 outline-none transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-neutral-950 dark:text-white"
+                  required
+                />
+              </div>
+            )}
+
             <div className="space-y-1">
               <input
                 type="email"
                 placeholder="Seu email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4 outline-none transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
+                className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4 outline-none transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-neutral-950 dark:text-white"
                 required
               />
             </div>
             
-            {!isResetMode && (
+            {mode !== 'reset' && (
               <>
                 <div className="relative space-y-1">
                   <input
@@ -100,7 +126,7 @@ export const LoginPage: React.FC = () => {
                     placeholder="Sua senha"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4 pr-12 outline-none transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm"
+                    className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4 pr-12 outline-none transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-neutral-950 dark:text-white"
                     required
                   />
                   <button
@@ -112,15 +138,17 @@ export const LoginPage: React.FC = () => {
                   </button>
                 </div>
                 
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => toggleMode('reset')}
-                    className="text-[10px] text-neutral-500 hover:text-indigo-500 transition-colors"
-                  >
-                    Esqueceu a senha?
-                  </button>
-                </div>
+                {mode === 'login' && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => toggleMode('reset')}
+                      className="text-[10px] text-neutral-500 hover:text-indigo-500 transition-colors"
+                    >
+                      Esqueceu a senha?
+                    </button>
+                  </div>
+                )}
               </>
             )}
             
@@ -143,11 +171,11 @@ export const LoginPage: React.FC = () => {
               disabled={loading}
               className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all active:scale-[0.98] shadow-md shadow-indigo-500/20 disabled:opacity-50"
             >
-              {loading ? 'Processando...' : (isResetMode ? 'Enviar link de redefinição' : 'Entrar')}
+              {loading ? 'Processando...' : (mode === 'reset' ? 'Enviar link de redefinição' : mode === 'register' ? 'Criar Conta' : 'Entrar')}
             </button>
 
             <div className="flex flex-col items-center gap-2">
-              {isResetMode && (
+              {mode === 'reset' ? (
                 <button
                   type="button"
                   onClick={() => toggleMode('login')}
@@ -155,6 +183,28 @@ export const LoginPage: React.FC = () => {
                 >
                   Voltar para o login
                 </button>
+              ) : mode === 'login' ? (
+                <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Não tem conta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => toggleMode('register')}
+                    className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                  >
+                    Cadastrar-se.
+                  </button>
+                </div>
+              ) : (
+                <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Já tem conta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => toggleMode('login')}
+                    className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                  >
+                    Entrar.
+                  </button>
+                </div>
               )}
             </div>
 
@@ -188,7 +238,7 @@ export const LoginPage: React.FC = () => {
         <div className="text-center mt-8 pt-4 border-t border-neutral-100 dark:border-neutral-900">
           <p className="text-[10px] text-neutral-400 flex items-center justify-center gap-1">
             <CheckCircle className="w-3 h-3 text-indigo-500" />
-            Seu Hub Organizado seguro e privado.
+            Seu Hub Organizador seguro e privado.
           </p>
         </div>
       </motion.div>

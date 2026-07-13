@@ -1,4 +1,4 @@
-# Manual de Publicação - Hub Organizado (Android)
+# Manual de Publicação - Hub Organizador (Android)
 
 Este projeto está configurado para publicação na Google Play Store.
 

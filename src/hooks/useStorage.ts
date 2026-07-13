@@ -264,7 +264,8 @@ export function useStorage() {
 
   // Tag CRUD (Optimistic local updates + async Firestore backup)
   const addTag = (tag: Omit<Tag, 'id'>) => {
-    const newTag: Tag = { ...tag, id: `tag-${Date.now()}` };
+    const randomSuffix = Math.random().toString(36).substring(2, 9);
+    const newTag: Tag = { ...tag, id: `tag-${Date.now()}-${randomSuffix}` };
     setTags((prev) => [...prev, newTag]);
     fbSet('tags', newTag.id, newTag);
     return newTag;
@@ -283,7 +284,8 @@ export function useStorage() {
 
   // Category CRUD
   const addCategory = (category: Omit<Category, 'id' | 'isCustom'>) => {
-    const newCat: Category = { ...category, id: `cat-${Date.now()}`, isCustom: true };
+    const randomSuffix = Math.random().toString(36).substring(2, 9);
+    const newCat: Category = { ...category, id: `cat-${Date.now()}-${randomSuffix}`, isCustom: true };
     setCategories((prev) => [...prev, newCat]);
     fbSet('categories', newCat.id, newCat);
     return newCat;
@@ -302,7 +304,8 @@ export function useStorage() {
 
   // Platform CRUD
   const addPlatform = (platform: Omit<Platform, 'id' | 'profiles' | 'purchases'>) => {
-    const newPlat: Platform = { ...platform, id: `plat-${Date.now()}`, profiles: [], purchases: [] };
+    const randomSuffix = Math.random().toString(36).substring(2, 9);
+    const newPlat: Platform = { ...platform, id: `plat-${Date.now()}-${randomSuffix}`, profiles: [], purchases: [] };
     setPlatforms((prev) => [...prev, newPlat]);
     fbSet('platforms', newPlat.id, newPlat);
     return newPlat;
@@ -321,7 +324,8 @@ export function useStorage() {
 
   // Profile CRUD within platform
   const addProfile = (platformId: string, profile: Omit<Profile, 'id'>) => {
-    const newProfile: Profile = { ...profile, id: `prof-${Date.now()}` };
+    const randomSuffix = Math.random().toString(36).substring(2, 9);
+    const newProfile: Profile = { ...profile, id: `prof-${Date.now()}-${randomSuffix}` };
     setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, profiles: [...plat.profiles, newProfile] } : plat));
     const plat = platforms.find(p => p.id === platformId);
     if (plat) fbSet('platforms', platformId, { ...plat, profiles: [...plat.profiles, newProfile] });
@@ -349,7 +353,8 @@ export function useStorage() {
 
   // Purchase CRUD
   const addPurchase = (platformId: string, purchase: Omit<Purchase, 'id'> & { date?: string }) => {
-    const newPurchase: Purchase = { ...purchase, id: `pur-${Date.now()}`, date: purchase.date || new Date().toISOString() };
+    const randomSuffix = Math.random().toString(36).substring(2, 9);
+    const newPurchase: Purchase = { ...purchase, id: `pur-${Date.now()}-${randomSuffix}`, date: purchase.date || new Date().toISOString() };
     setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, purchases: [...plat.purchases, newPurchase] } : plat));
     const plat = platforms.find(p => p.id === platformId);
     if (plat) fbSet('platforms', platformId, { ...plat, purchases: [...plat.purchases, newPurchase] });
@@ -376,7 +381,8 @@ export function useStorage() {
 
   // Status CRUD
   const addStatus = (status: Omit<Status, 'id' | 'isCustom'>) => {
-    const newStatus: Status = { ...status, id: `status-${Date.now()}`, isCustom: true };
+    const randomSuffix = Math.random().toString(36).substring(2, 9);
+    const newStatus: Status = { ...status, id: `status-${Date.now()}-${randomSuffix}`, isCustom: true };
     setStatuses((prev) => [...prev, newStatus]);
     fbSet('statuses', newStatus.id, newStatus);
     return newStatus;

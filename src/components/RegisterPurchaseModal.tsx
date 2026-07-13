@@ -165,9 +165,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   const isDraggingRef = useRef(false);
 
   // Color wheel generator
-  useEffect(() => {
-    if (!isOpen || !showColorWheel || !colorWheelRef.current) return;
+  const drawColorWheel = () => {
     const canvas = colorWheelRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -202,6 +202,15 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       }
     }
     ctx.putImageData(imgData, 0, 0);
+  };
+
+  useEffect(() => {
+    if (isOpen && showColorWheel) {
+      const timer = setTimeout(() => {
+        drawColorWheel();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [isOpen, showColorWheel]);
 
   const handleColorSelection = (clientX: number, clientY: number) => {
@@ -888,7 +897,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   </h4>
                   <button
                     type="button"
-                    onClick={() => setBundleItems([...bundleItems, { id: Date.now().toString(), name: '', link: '', image: '' }])}
+                    onClick={() => setBundleItems([...bundleItems, { id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, name: '', link: '', image: '' }])}
                     className="h-7 px-3 text-[10px] font-bold bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors cursor-pointer"
                   >
                     + Adicionar Item
@@ -899,7 +908,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   <div className="flex flex-col gap-2 mt-1">
                     {bundleItems.map((item, index) => {
                       return (
-                        <div key={item.id} className="flex flex-col gap-2 bg-white dark:bg-[#0a0a0c] p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 relative group">
+                        <div key={item.id || `bi-${index}`} className="flex flex-col gap-2 bg-white dark:bg-[#0a0a0c] p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 relative group">
                           <button
                             type="button"
                             onClick={() => {
