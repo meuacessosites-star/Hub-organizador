@@ -50,6 +50,7 @@ interface PlatformCardProps {
   onGoToPurchaseInPanel?: (purchase: Purchase) => void;
   searchQuery?: string;
   activeMatchProfileId?: string;
+  currentUserUid?: string;
 }
 
 const highlightText = (text: string, highlight?: string) => {
@@ -87,7 +88,21 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
   onGoToPurchaseInPanel,
   searchQuery = '',
   activeMatchProfileId = '',
+  currentUserUid,
 }) => {
+  // SECURE RESOURCE AUTHORIZATION CHECK: Return 403 Permissão Negada with NO sensitive fields if ownership is breached
+  if (platform.ownerId && currentUserUid && platform.ownerId !== currentUserUid) {
+    return (
+      <div className="bg-red-50 dark:bg-red-950/10 border border-red-200/60 dark:border-red-900/30 p-6 rounded-2xl flex flex-col items-center justify-center text-center gap-3">
+        <Lock className="w-8 h-8 text-red-500" />
+        <h3 className="font-bold text-red-700 dark:text-red-400 text-sm">403 - Permissão Negada</h3>
+        <p className="text-xs text-red-650 dark:text-red-400/80 max-w-xs">
+          Você não possui autorização para visualizar os detalhes desta plataforma. Os dados sensíveis foram protegidos.
+        </p>
+      </div>
+    );
+  }
+
   const [isExpanded, setIsExpanded] = useState(false);
 
   const cycleStatus = (e: React.MouseEvent, purchase: Purchase) => {

@@ -89,4 +89,5 @@ export interface Platform {
   categoryId: string; // References Category ID
   profiles: Profile[];
   purchases: Purchase[];
+  ownerId?: string; // Owner UID for strict server/client authorization
 }

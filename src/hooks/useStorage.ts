@@ -68,9 +68,22 @@ export function useStorage() {
     }
   });
 
-  // Sync from Firebase
+  // Sync from Firebase & Cleanup on logout
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading) return;
+
+    if (!user) {
+      console.log('useStorage: Logged out, resetting states to avoid data leakage');
+      setTags(DEFAULT_TAGS);
+      setCategories(DEFAULT_CATEGORIES);
+      setPlatforms([]);
+      setStatuses(DEFAULT_STATUSES);
+      lastTagsRef.current = null;
+      lastCategoriesRef.current = null;
+      lastPlatformsRef.current = null;
+      lastStatusesRef.current = null;
+      return;
+    }
 
     console.log('useStorage: Logged in mode');
     // 2. LOGGED IN MODE
@@ -82,7 +95,10 @@ export function useStorage() {
 
     const tagsToLoad = safeParse(savedTags, DEFAULT_TAGS);
     const catsToLoad = safeParse(savedCats, DEFAULT_CATEGORIES);
-    const platsToLoad = safeParse(savedPlats, DEFAULT_PLATFORMS);
+    const platsToLoad = safeParse(savedPlats, DEFAULT_PLATFORMS).map((p: Platform) => ({
+      ...p,
+      ownerId: user.uid
+    }));
     const statusesToLoad = safeParse(savedStatuses, DEFAULT_STATUSES);
 
     setTags(tagsToLoad);
@@ -140,7 +156,10 @@ export function useStorage() {
       const platRef = collection(db, 'users', user.uid, 'platforms');
       unsubs.push(onSnapshot(platRef, (snap) => {
         if (!snap.empty) {
-          const cloudPlats = snap.docs.map(d => d.data() as Platform);
+          const cloudPlats = snap.docs.map(d => {
+            const data = d.data() as Platform;
+            return { ...data, ownerId: user.uid };
+          });
           setPlatforms(cloudPlats);
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
         } else {
@@ -183,9 +202,9 @@ export function useStorage() {
   // Sync to local storage for offline / instant render when state updates
   const lastTagsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
     const handler = setTimeout(() => {
-      const key = user ? `hub_user_${user.uid}_tags` : 'hub_tags';
+      const key = user.uid === 'guest' ? 'hub_tags' : `hub_user_${user.uid}_tags`;
       const value = JSON.stringify(tags);
       if (lastTagsRef.current !== value) {
         if (safeSetItem(key, value)) {
@@ -198,9 +217,9 @@ export function useStorage() {
 
   const lastCategoriesRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
     const handler = setTimeout(() => {
-      const key = user ? `hub_user_${user.uid}_categories` : 'hub_categories';
+      const key = user.uid === 'guest' ? 'hub_categories' : `hub_user_${user.uid}_categories`;
       const value = JSON.stringify(categories);
       if (lastCategoriesRef.current !== value) {
         if (safeSetItem(key, value)) {
@@ -213,9 +232,9 @@ export function useStorage() {
 
   const lastPlatformsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
     const handler = setTimeout(() => {
-      const key = user ? `hub_user_${user.uid}_platforms` : 'hub_platforms';
+      const key = user.uid === 'guest' ? 'hub_platforms' : `hub_user_${user.uid}_platforms`;
       const value = JSON.stringify(platforms);
       if (lastPlatformsRef.current !== value) {
         if (safeSetItem(key, value)) {
@@ -228,9 +247,9 @@ export function useStorage() {
 
   const lastStatusesRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
     const handler = setTimeout(() => {
-      const key = user ? `hub_user_${user.uid}_statuses` : 'hub_statuses';
+      const key = user.uid === 'guest' ? 'hub_statuses' : `hub_user_${user.uid}_statuses`;
       const value = JSON.stringify(statuses);
       if (lastStatusesRef.current !== value) {
         if (safeSetItem(key, value)) {
@@ -305,7 +324,13 @@ export function useStorage() {
   // Platform CRUD
   const addPlatform = (platform: Omit<Platform, 'id' | 'profiles' | 'purchases'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
-    const newPlat: Platform = { ...platform, id: `plat-${Date.now()}-${randomSuffix}`, profiles: [], purchases: [] };
+    const newPlat: Platform = { 
+      ...platform, 
+      id: `plat-${Date.now()}-${randomSuffix}`, 
+      profiles: [], 
+      purchases: [],
+      ownerId: user?.uid || 'guest'
+    };
     setPlatforms((prev) => [...prev, newPlat]);
     fbSet('platforms', newPlat.id, newPlat);
     return newPlat;
@@ -352,7 +377,25 @@ export function useStorage() {
   };
 
   // Purchase CRUD
+  const validatePurchaseData = (productName: string, originalPrice: number, finalPrice: number) => {
+    const trimmedName = (productName || '').trim();
+    if (!trimmedName) {
+      throw new Error('O nome do produto/serviço não pode ser vazio.');
+    }
+    if (trimmedName.length < 3) {
+      throw new Error('O nome do produto deve conter pelo menos 3 caracteres.');
+    }
+    if (originalPrice <= 0) {
+      throw new Error('O preço original deve ser maior que zero (positivo).');
+    }
+    if (finalPrice <= 0) {
+      throw new Error('O preço final deve ser maior que zero (positivo).');
+    }
+  };
+
   const addPurchase = (platformId: string, purchase: Omit<Purchase, 'id'> & { date?: string }) => {
+    validatePurchaseData(purchase.productName, purchase.originalPrice, purchase.finalPrice);
+
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newPurchase: Purchase = { ...purchase, id: `pur-${Date.now()}-${randomSuffix}`, date: purchase.date || new Date().toISOString() };
     setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, purchases: [...plat.purchases, newPurchase] } : plat));
@@ -362,8 +405,18 @@ export function useStorage() {
   };
 
   const updatePurchase = (platformId: string, purchaseId: string, updated: Partial<Purchase>) => {
-    setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, purchases: plat.purchases.map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur) } : plat));
     const plat = platforms.find(p => p.id === platformId);
+    if (plat) {
+      const existingPur = plat.purchases.find(p => p.id === purchaseId);
+      if (existingPur) {
+        const mergedName = updated.productName !== undefined ? updated.productName : existingPur.productName;
+        const mergedOriginal = updated.originalPrice !== undefined ? updated.originalPrice : existingPur.originalPrice;
+        const mergedFinal = updated.finalPrice !== undefined ? updated.finalPrice : existingPur.finalPrice;
+        validatePurchaseData(mergedName, mergedOriginal, mergedFinal);
+      }
+    }
+
+    setPlatforms((prev) => prev.map((plat) => plat.id === platformId ? { ...plat, purchases: plat.purchases.map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur) } : plat));
     if (plat) {
       const newPurchases = plat.purchases.map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
       fbSet('platforms', platformId, { ...plat, purchases: newPurchases });

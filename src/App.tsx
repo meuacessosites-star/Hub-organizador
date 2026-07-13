@@ -96,6 +96,11 @@ export default function App() {
 
   // Find dynamic counts
   const filteredPlatforms = platforms.filter((plat) => {
+    // SECURE OWNER VERIFICATION: Do not render other users' data under any state
+    if (plat.ownerId && user && plat.ownerId !== user.uid) {
+      return false;
+    }
+
     // 1. Category Filter
     if (selectedCategory !== 'todas' && plat.categoryId !== selectedCategory) {
       return false;
@@ -444,6 +449,7 @@ export default function App() {
                             onGoToPurchaseInPanel={handleGoToPurchase}
                             searchQuery={searchQuery}
                             activeMatchProfileId={activeMatch?.profileId}
+                            currentUserUid={user?.uid}
                           />
                         );
                       })}

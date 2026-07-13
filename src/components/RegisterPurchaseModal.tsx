@@ -134,6 +134,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   const [productImages, setProductImages] = useState<string[]>([]);
   const [isPulling, setIsPulling] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{ productName?: string; originalPrice?: string; finalPrice?: string }>({});
 
   // New dates & payment fields
   const [purchaseDate, setPurchaseDate] = useState('');
@@ -277,6 +278,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     setShowDeleteConfirm(false);
     setIsManagingTags(false);
     setEditingTagId(null);
+    setValidationErrors({});
     if (platform && platform.profiles.length > 0) {
       if (isEditMode && purchase) {
         setSelectedProfileId(purchase.profileId);
@@ -342,6 +344,26 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       setDeliveryDate(new Date().toISOString().substring(0, 10));
     }
   }, [status]);
+
+  // Clear field errors as user typing corrects them
+  useEffect(() => {
+    if (validationErrors.productName && productName.trim().length >= 3) {
+      setValidationErrors(prev => ({ ...prev, productName: undefined }));
+    }
+  }, [productName, validationErrors.productName]);
+
+  useEffect(() => {
+    if (validationErrors.originalPrice && originalPrice > 0) {
+      setValidationErrors(prev => ({ ...prev, originalPrice: undefined }));
+    }
+  }, [originalPrice, validationErrors.originalPrice]);
+
+  useEffect(() => {
+    const calculatedFinalPrice = Math.max(0, originalPrice - discount);
+    if (validationErrors.finalPrice && calculatedFinalPrice > 0) {
+      setValidationErrors(prev => ({ ...prev, finalPrice: undefined }));
+    }
+  }, [originalPrice, discount, validationErrors.finalPrice]);
 
   const handlePriceChange = (valStr: string, setter: (val: number) => void) => {
     const numeric = parseFloat(valStr.replace(/[^\d.]/g, ''));
@@ -556,7 +578,37 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   };
 
   const handleCreateOrSave = () => {
-    if (!productName.trim() || !selectedProfileId) return;
+    // Validate fields
+    const validation: { productName?: string; originalPrice?: string; finalPrice?: string } = {};
+
+    const trimmedName = productName.trim();
+    if (!trimmedName) {
+      validation.productName = 'O nome do produto/serviço não pode ser vazio.';
+    } else if (trimmedName.length < 3) {
+      validation.productName = 'O nome do produto deve conter pelo menos 3 caracteres.';
+    }
+
+    if (originalPrice <= 0) {
+      validation.originalPrice = 'O preço original deve ser maior que zero (positivo).';
+    }
+
+    const calculatedFinalPrice = isEditMode ? finalPrice : Math.max(0, originalPrice - discount);
+    if (calculatedFinalPrice <= 0) {
+      validation.finalPrice = 'O preço final deve ser maior que zero (positivo).';
+    }
+
+    if (Object.keys(validation).length > 0) {
+      setValidationErrors(validation);
+      addToast('Erro de validação: Verifique os campos em vermelho!', 'error');
+      return;
+    }
+
+    if (!selectedProfileId) {
+      addToast('Cadastre um perfil nesta plataforma antes de registrar uma compra!', 'error');
+      return;
+    }
+
+    setValidationErrors({});
 
     // Convert date YYYY-MM-DD to ISO String format
     const dateToSave = purchaseDate ? new Date(purchaseDate).toISOString() : new Date().toISOString();
@@ -753,7 +805,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 Nome do produto / serviço
               </label>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-indigo-500 transition-colors">
+                <span className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${validationErrors.productName ? 'text-rose-500' : 'text-neutral-400 group-focus-within:text-indigo-500'}`}>
                   <ShoppingBag className="w-4 h-4" />
                 </span>
                 <input
@@ -762,9 +814,18 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
                   placeholder="Ex: Teclado Mecânico RGB"
-                  className="w-full h-12 pl-11 pr-4 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 transition-all"
+                  className={`w-full h-12 pl-11 pr-4 rounded-xl text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 dark:bg-[#111219] dark:text-neutral-200 transition-all ${
+                    validationErrors.productName
+                      ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 dark:border-rose-500/80'
+                      : 'border-neutral-200 dark:border-[#2a2d40] focus:ring-indigo-500/20 focus:border-indigo-500'
+                  }`}
                 />
               </div>
+              {validationErrors.productName && (
+                <span className="text-[11px] font-bold text-rose-500 mt-0.5 flex items-center gap-1">
+                  ⚠️ {validationErrors.productName}
+                </span>
+              )}
             </div>
 
             {/* Fotos do produto */}
@@ -1082,65 +1143,83 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
             )}
 
             {/* Numerical rows (original, discount, final price) */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                  {/* Preço original */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest truncate">
-                      Preço original
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-neutral-400">
-                        R$
-                      </span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={originalPrice || ''}
-                        onChange={(e) => setOriginalPrice(parseFloat(e.target.value) || 0)}
-                        className="w-full h-11 pl-8 pr-3 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 transition-all font-mono font-medium"
-                      />
-                    </div>
-                  </div>
-                  {/* Desconto */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest truncate">
-                      Desconto
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-neutral-400">
-                        R$
-                      </span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={discount || ''}
-                        onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                        className="w-full h-11 pl-8 pr-3 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 transition-all font-mono font-medium text-emerald-600 dark:text-emerald-400"
-                      />
-                    </div>
-                  </div>
-                  {/* Preço final */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate">
-                      Preço final
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-indigo-400 dark:text-indigo-500">
-                        R$
-                      </span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={finalPrice || ''}
-                        onChange={(e) => setFinalPrice(parseFloat(e.target.value) || 0)}
-                        className="w-full h-11 pl-8 pr-3 rounded-xl text-lg bg-indigo-50/50 border border-indigo-200 text-indigo-700 placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 dark:bg-indigo-900/20 dark:border-indigo-500/30 dark:text-indigo-300 transition-all font-mono font-black shadow-sm"
-                      />
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              {/* Preço original */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest truncate">
+                  Preço original
+                </label>
+                <div className="relative">
+                  <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold ${validationErrors.originalPrice ? 'text-rose-500' : 'text-neutral-400'}`}>
+                    R$
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={originalPrice || ''}
+                    onChange={(e) => setOriginalPrice(parseFloat(e.target.value) || 0)}
+                    className={`w-full h-11 pl-8 pr-3 rounded-xl text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 dark:bg-[#111219] dark:text-neutral-200 transition-all font-mono font-medium ${
+                      validationErrors.originalPrice
+                        ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 dark:border-rose-500/80'
+                        : 'border-neutral-200 dark:border-[#2a2d40] focus:ring-indigo-500/20 focus:border-indigo-500'
+                    }`}
+                  />
                 </div>
+                {validationErrors.originalPrice && (
+                  <span className="text-[10px] font-bold text-rose-500 mt-1 block leading-tight">
+                    ⚠️ {validationErrors.originalPrice}
+                  </span>
+                )}
+              </div>
+              {/* Desconto */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest truncate">
+                  Desconto
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-neutral-400">
+                    R$
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={discount || ''}
+                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    className="w-full h-11 pl-8 pr-3 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 transition-all font-mono font-medium text-emerald-600 dark:text-emerald-400"
+                  />
+                </div>
+              </div>
+              {/* Preço final */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate">
+                  Preço final
+                </label>
+                <div className="relative">
+                  <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold ${validationErrors.finalPrice ? 'text-rose-500' : 'text-indigo-400 dark:text-indigo-500'}`}>
+                    R$
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={finalPrice || ''}
+                    onChange={(e) => setFinalPrice(parseFloat(e.target.value) || 0)}
+                    className={`w-full h-11 pl-8 pr-3 rounded-xl text-lg bg-indigo-50/50 border text-indigo-700 placeholder-indigo-300 focus:outline-none focus:ring-2 transition-all font-mono font-black shadow-sm dark:bg-indigo-900/20 dark:text-indigo-300 ${
+                      validationErrors.finalPrice
+                        ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 dark:border-rose-500/40'
+                        : 'border-indigo-200 dark:border-indigo-500/30 focus:ring-indigo-500/30 focus:border-indigo-500'
+                    }`}
+                  />
+                </div>
+                {validationErrors.finalPrice && (
+                  <span className="text-[10px] font-bold text-rose-500 mt-1 block leading-tight">
+                    ⚠️ {validationErrors.finalPrice}
+                  </span>
+                )}
+              </div>
+            </div>
 
 
 
@@ -1646,7 +1725,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
             </button>
             <button
               type="button"
-              disabled={!productName.trim() || !selectedProfileId}
+              disabled={!selectedProfileId || platform.profiles.length === 0}
               onClick={handleCreateOrSave}
               className="flex-1 sm:flex-none px-8 h-11 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-indigo-600/20 active:scale-95"
             >
