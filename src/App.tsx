@@ -373,6 +373,9 @@ export default function App() {
             {/* View Selector Tabs */}
             <div className="flex bg-neutral-200/50 dark:bg-black/40 p-1 rounded-xl self-start select-none border border-neutral-200 dark:border-neutral-800/50">
               <button
+                id="view-selector-platforms"
+                data-testid="view-selector-platforms"
+                aria-label="Ver Plataformas"
                 onClick={() => setCurrentView('platforms')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                   currentView === 'platforms'
@@ -384,6 +387,9 @@ export default function App() {
                 <span>Plataformas</span>
               </button>
               <button
+                id="view-selector-purchases"
+                data-testid="view-selector-purchases"
+                aria-label="Ver Painel de Compras"
                 onClick={() => setCurrentView('purchases')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                   currentView === 'purchases'

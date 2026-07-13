@@ -192,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={cat.id}
                   id={`category-btn-${cat.id}`}
                   data-testid={`category-btn-${cat.id}`}
-                  aria-label={cat.name}
+                  aria-label={`${cat.name} ${getCategoryCount(cat.id)}`}
                   onClick={() => {
                     setSelectedCategory(cat.id);
                     if (onCloseMobile) onCloseMobile();

@@ -453,6 +453,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   </button>
                   <button
                     type="button"
+                    id="emoji-tab-btn"
+                    data-testid="emoji-tab-btn"
+                    aria-label="Emoji"
                     onClick={() => setAvatarTab('emoji')}
                     className={`flex-1 min-w-[80px] h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       avatarTab === 'emoji'

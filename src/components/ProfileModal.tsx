@@ -874,6 +874,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </button>
                   <button
                     type="button"
+                    id="profile-emoji-tab-btn"
+                    data-testid="profile-emoji-tab-btn"
+                    aria-label="Emoji"
                     onClick={() => setAvatarTab('emoji')}
                     className={`flex-1 py-1 px-3 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${
                       avatarTab === 'emoji'
@@ -1032,6 +1035,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           <button
                             key={em}
                             type="button"
+                            id={`profile-preset-emoji-${em}`}
+                            data-testid={`profile-preset-emoji-${em}`}
                             onClick={() => setSelectedEmoji(em)}
                             className={`w-8 h-8 text-lg rounded-lg flex items-center justify-center transition-all hover:bg-neutral-200 cursor-pointer dark:hover:bg-neutral-800 ${
                               selectedEmoji === em

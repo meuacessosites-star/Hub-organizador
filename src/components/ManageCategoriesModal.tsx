@@ -373,6 +373,8 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                     <button
                       key={em}
                       type="button"
+                      id={`manage-category-preset-emoji-${em}`}
+                      data-testid={`manage-category-preset-emoji-${em}`}
                       onClick={() => setSelectedIcon(em)}
                       className={`w-6.5 h-6.5 text-sm rounded flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all cursor-pointer ${
                         selectedIcon === em ? 'bg-indigo-600/30 border border-indigo-500 scale-110 font-bold' : ''
@@ -546,11 +548,12 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
             <div className="flex flex-col gap-1.5 select-text">
               {categories.map((cat) => {
                 const isSystem = !cat.isCustom;
+                const slugName = cat.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
                 return (
                   <div
                     key={cat.id}
-                    id={`manage-category-item-${cat.id}`}
-                    data-testid={`manage-category-item-${cat.id}`}
+                    id={`gerenciar-linha-de-categoria-${cat.id}`}
+                    data-testid={`gerenciar-linha-de-categoria-${slugName}`}
                     onClick={() => {
                       if (!isSystem) {
                         handleStartEdit(cat);

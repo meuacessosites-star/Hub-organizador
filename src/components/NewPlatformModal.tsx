@@ -1082,6 +1082,9 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                   </button>
                   <button
                     type="button"
+                    id="new-platform-emoji-tab-btn"
+                    data-testid="new-platform-emoji-tab-btn"
+                    aria-label="Emoji"
                     onClick={() => setAvatarTab('emoji')}
                     className={`flex-1 py-1 px-3 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${
                       avatarTab === 'emoji'
@@ -1255,6 +1258,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
               </button>
               <button
                 type="button"
+                id="add-platform-confirm-btn"
+                data-testid="add-platform-confirm-btn"
                 disabled={isCustomProfile ? !customProfileName.trim() : !profileName}
                 onClick={handleCreate}
                 className="px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
