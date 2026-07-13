@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { Logo } from './Logo';
 
 export const LoginPage: React.FC = () => {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, loading } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, enterAsGuest, loading } = useAuth();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
   const [email, setEmail] = useState('');
@@ -205,6 +205,14 @@ export const LoginPage: React.FC = () => {
             >
               <img src="https://authjs.dev/img/providers/google.svg" className="w-5 h-5" alt="Google" />
               <span>Google</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={enterAsGuest}
+              className="w-full h-12 rounded-xl border border-dashed border-indigo-200 dark:border-indigo-900/60 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/10 text-indigo-600 dark:text-indigo-400 font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            >
+              <span>Entrar sem login (Modo Visitante)</span>
             </button>
           </form>
         </div>

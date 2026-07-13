@@ -18,6 +18,8 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfileData | null;
   loading: boolean;
+  isGuest: boolean;
+  enterAsGuest: () => void;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
@@ -29,6 +31,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   userProfile: null,
   loading: true,
+  isGuest: false,
+  enterAsGuest: () => {},
   signInWithGoogle: async () => {},
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
@@ -40,14 +44,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(() => {
+    return localStorage.getItem('hub_guest_mode') === 'true';
+  });
 
   useEffect(() => {
     let unsubscribeProfile: (() => void) | undefined;
 
+    if (isGuest) {
+      setUser({
+        uid: 'guest',
+        displayName: 'Visitante',
+        email: 'visitante@huborganizado.local',
+        photoURL: null,
+        emailVerified: true,
+        isAnonymous: true,
+      } as unknown as User);
+
+      const savedProfile = localStorage.getItem('hub_guest_profile');
+      if (savedProfile) {
+        try {
+          setUserProfile(JSON.parse(savedProfile));
+        } catch {
+          setUserProfile({ displayName: 'Visitante' });
+        }
+      } else {
+        setUserProfile({ displayName: 'Visitante' });
+      }
+      setLoading(false);
+      return;
+    }
+
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      
       if (u) {
+        localStorage.removeItem('hub_guest_mode');
+        setIsGuest(false);
+        setUser(u);
+        
         // Listen for profile changes
         unsubscribeProfile = onSnapshot(doc(db, 'users', u.uid), (docSnap) => {
           if (docSnap.exists()) {
@@ -71,7 +104,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
     };
-  }, []);
+  }, [isGuest]);
+
+  const enterAsGuest = () => {
+    localStorage.setItem('hub_guest_mode', 'true');
+    setIsGuest(true);
+  };
 
   const signInWithGoogle = async () => {
     try {
@@ -100,6 +138,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    localStorage.removeItem('hub_guest_mode');
+    localStorage.removeItem('hub_guest_profile');
+    setIsGuest(false);
+    setUser(null);
+    setUserProfile(null);
+
     // Security: Clear all user-specific data from localStorage to prevent data leakage on shared devices
     Object.keys(localStorage).forEach(key => {
       if (
@@ -122,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, signOut }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, isGuest, enterAsGuest, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );

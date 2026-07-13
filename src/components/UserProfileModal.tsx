@@ -82,10 +82,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      if (displayName !== user.displayName) {
-        await firebaseUpdateProfile(user, { displayName });
-      }
-
       const newProfile: UserProfileData = {
         displayName,
         avatar: {
@@ -95,12 +91,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         }
       };
 
-      await setDoc(doc(db, 'users', user.uid), newProfile, { merge: true });
+      if (user.uid !== 'guest') {
+        if (displayName !== user.displayName) {
+          await firebaseUpdateProfile(user, { displayName });
+        }
+        await setDoc(doc(db, 'users', user.uid), newProfile, { merge: true });
+      } else {
+        localStorage.setItem('hub_guest_profile', JSON.stringify(newProfile));
+      }
       
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
         onClose();
+        if (user.uid === 'guest') {
+          window.location.reload();
+        }
       }, 1500);
     } catch (err) {
       console.error("Error saving profile:", err);

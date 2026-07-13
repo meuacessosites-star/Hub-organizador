@@ -92,6 +92,7 @@ export function useStorage() {
 
     const unsubs: (() => void)[] = [];
 
+    if (user.uid !== 'guest') {
       // Sync tags with Firestore
       const tagsRef = collection(db, 'users', user.uid, 'tags');
       unsubs.push(onSnapshot(tagsRef, (snap) => {
@@ -174,8 +175,9 @@ export function useStorage() {
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/statuses`);
       }));
+    }
 
-      return () => unsubs.forEach(unsub => unsub());
+    return () => unsubs.forEach(unsub => unsub());
   }, [user, authLoading]);
 
   // Sync to local storage for offline / instant render when state updates
@@ -241,7 +243,7 @@ export function useStorage() {
 
   // Firestore DB Helpers
   const fbSet = async (collectionName: string, id: string, data: any) => {
-    if (user) {
+    if (user && user.uid !== 'guest') {
       try {
         await setDoc(doc(db, 'users', user.uid, collectionName, id), data);
       } catch (err) {
@@ -251,7 +253,7 @@ export function useStorage() {
   };
 
   const fbDelete = async (collectionName: string, id: string) => {
-    if (user) {
+    if (user && user.uid !== 'guest') {
       try {
         await deleteDoc(doc(db, 'users', user.uid, collectionName, id));
       } catch (err) {
