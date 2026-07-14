@@ -569,7 +569,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 backdrop-blur-sm select-none">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm select-none">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -595,7 +595,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
         </div>
 
         {/* Content Panel */}
-        <div className="p-6 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(85vh - 140px)' }}>
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(85vh - 140px)' }}>
           {/* STEP 1 */}
           {step === 1 && (
             <div className="flex flex-col gap-5">

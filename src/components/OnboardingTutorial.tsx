@@ -197,14 +197,25 @@ export const OnboardingTutorial: React.FC = () => {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -10 }}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ 
+            opacity: 1, 
+            scale: 1, 
+            y: 0,
+            x: (tooltipPos as any).x || 0,
+            top: tooltipPos.top,
+            left: tooltipPos.left,
+          }}
+          exit={{ opacity: 0, scale: 0.95, y: -20 }}
           className="absolute z-[101] pointer-events-auto w-[calc(100vw-32px)] sm:w-[320px] max-w-[320px]"
-          style={tooltipPos}
+          style={{ 
+            top: tooltipPos.top, 
+            left: tooltipPos.left,
+            transform: tooltipPos.transform ? undefined : 'translate(-50%, -50%)'
+          }}
         >
-          <div className="bg-white dark:bg-[#16171d] rounded-2xl p-5 sm:p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800 relative">
-            {step.position !== 'center' && targetRect && (
+          <div className="bg-white dark:bg-[#16171d] rounded-2xl p-5 sm:p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800 relative max-h-[85vh] overflow-y-auto">
+            {step.position !== 'center' && targetRect && window.innerWidth > 640 && (
               <div className={getArrowClass(step.position)} />
             )}
 
@@ -259,54 +270,67 @@ export const OnboardingTutorial: React.FC = () => {
 };
 
 function calculateTooltipPosition(rect: DOMRect | null, position: string): React.CSSProperties {
-  if (!rect || position === 'center') {
+  const isMobile = window.innerWidth < 640;
+  
+  if (!rect || position === 'center' || (isMobile && position !== 'bottom')) {
     return {
       top: '50%',
       left: '50%',
-      transform: 'translate(-50%, -50%)',
-    };
+      // We'll let motion handle the translate(-50%, -50%) via x/y if possible
+      // or just use this for initial calc
+      transform: 'translate(-50%, -50%)'
+    } as any;
   }
 
-  const tooltipWidth = Math.min(window.innerWidth - 32, 320);
   const padding = 20;
   let top = 0;
   let left = 0;
-  let transform = '';
+  let x = '-50%';
+  let y = '0';
 
-  switch (position) {
-    case 'top':
-      top = rect.top - padding;
-      left = rect.left + rect.width / 2;
-      transform = 'translate(-50%, -100%)';
-      break;
-    case 'bottom':
-      top = rect.bottom + padding;
-      left = rect.left + rect.width / 2;
-      transform = 'translateX(-50%)';
-      break;
-    case 'left':
-      top = rect.top + rect.height / 2;
-      left = rect.left - padding;
-      transform = 'translate(-100%, -50%)';
-      break;
-    case 'right':
-      top = rect.top + rect.height / 2;
-      left = rect.right + padding;
-      transform = 'translateY(-50%)';
-      break;
+  if (isMobile && position === 'bottom') {
+    top = rect.bottom + padding;
+    left = window.innerWidth / 2;
+    x = '-50%';
+    y = '0';
+  } else {
+    switch (position) {
+      case 'top':
+        top = rect.top - padding;
+        left = rect.left + rect.width / 2;
+        y = '-100%';
+        break;
+      case 'bottom':
+        top = rect.bottom + padding;
+        left = rect.left + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + rect.height / 2;
+        left = rect.left - padding;
+        x = '-100%';
+        y = '-50%';
+        break;
+      case 'right':
+        top = rect.top + rect.height / 2;
+        left = rect.right + padding;
+        x = '0';
+        y = '-50%';
+        break;
+    }
   }
 
-  // Viewport constraints
+  // Final viewport safety check
   const viewportPadding = 16;
-  
-  // Adjust horizontal
-  if (left - tooltipWidth / 2 < viewportPadding) {
-    left = tooltipWidth / 2 + viewportPadding;
-  } else if (left + tooltipWidth / 2 > window.innerWidth - viewportPadding) {
-    left = window.innerWidth - tooltipWidth / 2 - viewportPadding;
-  }
+  const tooltipWidth = Math.min(window.innerWidth - 32, 320);
+  const tooltipHeight = 200; // Estimated
 
-  return { top, left, transform };
+  if (left < viewportPadding + tooltipWidth / 2) left = viewportPadding + tooltipWidth / 2;
+  if (left > window.innerWidth - viewportPadding - tooltipWidth / 2) left = window.innerWidth - viewportPadding - tooltipWidth / 2;
+  
+  if (top < viewportPadding) top = viewportPadding;
+  if (top > window.innerHeight - viewportPadding - tooltipHeight) top = window.innerHeight - viewportPadding - tooltipHeight;
+
+  return { top, left, x, y } as any;
 }
 
 function getArrowClass(position: string): string {

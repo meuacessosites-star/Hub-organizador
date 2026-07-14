@@ -411,7 +411,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   if (!isOpen || !platform) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 backdrop-blur-sm select-none">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm select-none">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -440,7 +440,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 max-h-[80vh] sm:max-h-[75vh] overflow-y-auto">
           {isEditMode && !isEditingInView ? (
             /* VIEW DETAILS MODE */
             <div className="flex flex-col gap-5 select-text">

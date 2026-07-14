@@ -703,7 +703,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   if (!isOpen || !platform) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 backdrop-blur-sm select-none">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm select-none">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -736,7 +736,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-5 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 sm:p-5 max-h-[80vh] sm:max-h-[70vh] overflow-y-auto">
           <div className="flex flex-col gap-5">
             {/* Perfil que comprou (buyer select) */}
             <div className="flex flex-col gap-2">
