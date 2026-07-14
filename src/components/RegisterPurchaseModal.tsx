@@ -98,6 +98,7 @@ interface RegisterPurchaseModalProps {
   onSave: (purchaseData: Omit<Purchase, 'id'>) => void;
   onEdit: (purchaseId: string, purchaseData: Partial<Purchase>) => void;
   onDelete?: (purchaseId: string) => void;
+  onAddProfile?: (platformId: string) => void; // New prop to create profile from here
   availableTags: Tag[];
   availableStatuses: Status[];
   onAddTag: (tag: Omit<Tag, 'id'>) => void;
@@ -113,6 +114,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   onSave,
   onEdit,
   onDelete,
+  onAddProfile,
   availableTags,
   availableStatuses,
   onAddTag,
@@ -584,17 +586,19 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     const trimmedName = productName.trim();
     if (!trimmedName) {
       validation.productName = 'O nome do produto/serviço não pode ser vazio.';
-    } else if (trimmedName.length < 3) {
-      validation.productName = 'O nome do produto deve conter pelo menos 3 caracteres.';
+    } else if (trimmedName.length < 2) {
+      validation.productName = 'O nome do produto deve conter pelo menos 2 caracteres.';
+    } else if (/^[^a-zA-Z0-9]+$/.test(trimmedName)) {
+      validation.productName = 'O nome do produto não pode conter apenas caracteres especiais.';
     }
 
     if (originalPrice <= 0) {
-      validation.originalPrice = 'O preço original deve ser maior que zero (positivo).';
+      validation.originalPrice = 'O preço original deve ser um valor positivo maior que zero.';
     }
 
     const calculatedFinalPrice = isEditMode ? finalPrice : Math.max(0, originalPrice - discount);
     if (calculatedFinalPrice <= 0) {
-      validation.finalPrice = 'O preço final deve ser maior que zero (positivo).';
+      validation.finalPrice = 'O preço final (após descontos) deve ser maior que zero.';
     }
 
     if (Object.keys(validation).length > 0) {
@@ -712,9 +716,24 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 Perfil que comprou
               </label>
               {platform.profiles.length === 0 ? (
-                <p className="text-xs text-rose-500 font-semibold select-text bg-rose-500/5 p-2 rounded-lg border border-rose-500/10">
-                  ⚠️ Cadastre um perfil nesta plataforma antes de registrar uma compra!
-                </p>
+                <div className="flex flex-col gap-3 p-4 rounded-xl border border-rose-500/20 bg-rose-500/5 dark:bg-rose-500/10">
+                  <p className="text-xs text-rose-500 font-semibold select-text leading-relaxed">
+                    ⚠️ Esta plataforma não possui nenhum perfil cadastrado. Você precisa criar um perfil antes de registrar uma compra.
+                  </p>
+                  {onAddProfile && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onAddProfile(platform.id);
+                        onClose(); // Close this modal to open the profile one
+                      }}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-lg transition-all shadow-md shadow-rose-500/20 cursor-pointer active:scale-95"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Criar Primeiro Perfil Agora</span>
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {platform.profiles.map((prof) => {

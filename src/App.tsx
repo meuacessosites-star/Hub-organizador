@@ -94,13 +94,16 @@ export default function App() {
   const currentCategoryObj = categories.find((c) => c.id === selectedCategory);
   const categoryTitle = currentCategoryObj ? currentCategoryObj.name : 'Todas';
 
-  // Find dynamic counts
-  const filteredPlatforms = platforms.filter((plat) => {
-    // SECURE OWNER VERIFICATION: Do not render other users' data under any state
+  // Filter platforms by ownership first (SECURITY)
+  const userPlatforms = platforms.filter((plat) => {
     if (plat.ownerId && user && plat.ownerId !== user.uid) {
       return false;
     }
+    return true;
+  });
 
+  // Find dynamic counts
+  const filteredPlatforms = userPlatforms.filter((plat) => {
     // 1. Category Filter
     if (selectedCategory !== 'todas' && plat.categoryId !== selectedCategory) {
       return false;
@@ -300,8 +303,8 @@ export default function App() {
     }
   };
 
-  const currentPlatformForProfile = platforms.find((p) => p.id === profileModal.platformId) || null;
-  const currentPlatformForPurchase = platforms.find((p) => p.id === purchaseModal.platformId) || null;
+  const currentPlatformForProfile = userPlatforms.find((p) => p.id === profileModal.platformId) || null;
+  const currentPlatformForPurchase = userPlatforms.find((p) => p.id === purchaseModal.platformId) || null;
 
   if (authLoading) {
     return (
@@ -469,7 +472,7 @@ export default function App() {
               </>
             ) : (
               <PurchasesView
-                platforms={platforms}
+                platforms={userPlatforms}
                 categories={categories}
                 statuses={statuses}
                 tags={tags}
@@ -543,6 +546,7 @@ export default function App() {
               onSave={handleSavePurchase}
               onEdit={handleEditPurchase}
               onDelete={handleDeletePurchase}
+              onAddProfile={handleOpenAddProfile}
               availableTags={tags}
               availableStatuses={statuses}
               onAddTag={addTag}

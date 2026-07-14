@@ -691,7 +691,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                               target.style.display = 'none';
                               if (target.parentElement) {
                                 target.parentElement.style.backgroundColor = getPlatformColor(purchase.platformName);
-                                target.parentElement.innerHTML = `<span class="text-white font-extrabold text-[9px] tracking-tight">${getInitials(purchase.platformName)}</span>`;
+                                const span = document.createElement('span');
+                                span.className = "text-white font-extrabold text-[9px] tracking-tight";
+                                span.textContent = getInitials(purchase.platformName);
+                                target.parentElement.appendChild(span);
                               }
                             }}
                           />

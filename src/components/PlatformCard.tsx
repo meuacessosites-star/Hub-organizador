@@ -289,7 +289,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 target.style.display = 'none';
                 if (target.parentElement) {
                   target.parentElement.style.backgroundColor = getPlatformColor(platform.name);
-                  target.parentElement.innerHTML = `<span class="text-white font-extrabold text-[10px] tracking-tight">${getInitials(platform.name)}</span>`;
+                  const span = document.createElement('span');
+                  span.className = "text-white font-extrabold text-[10px] tracking-tight";
+                  span.textContent = getInitials(platform.name);
+                  target.parentElement.appendChild(span);
                 }
               }}
             />
@@ -487,10 +490,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   data-testid={`edit-profile-btn-${profile.id}`}
                                   onClick={() => onEditProfile(platform.id, profile, true)}
                                   className="px-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-white flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer shadow-md shadow-amber-500/10 w-16"
-                                  title="Editar conta"
+                                  title={`Editar conta ${profile.name}`}
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-extrabold uppercase tracking-wider">Editar</span>
+                                  <span className="text-[9px] font-extrabold uppercase tracking-wider">Editar Conta</span>
                                 </button>
 
                                 <button
@@ -498,10 +501,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   data-testid={`delete-profile-trigger-${profile.id}`}
                                   onClick={() => setDeletingProfileId(profile.id)}
                                   className="px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer shadow-md shadow-rose-600/10 w-16"
-                                  title="Excluir conta"
+                                  title={`Excluir conta ${profile.name}`}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-extrabold uppercase tracking-wider">Excluir</span>
+                                  <span className="text-[9px] font-extrabold uppercase tracking-wider">Excluir Conta</span>
                                 </button>
                               </>
                             )}
@@ -747,7 +750,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                     className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 text-[11px] font-semibold transition-colors cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
-                    <span>Adicionar conta</span>
+                    <span>Adicionar conta na plataforma</span>
                   </button>
 
                   {showDeleteConfirm ? (
@@ -782,7 +785,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                       className="flex items-center gap-1.5 text-rose-500 hover:text-rose-400 dark:text-rose-500 dark:hover:text-rose-400 text-[11px] font-semibold transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>Remover plataforma</span>
+                      <span>Remover plataforma inteira</span>
                     </button>
                   )}
                 </div>
