@@ -487,6 +487,8 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                     <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
                     <canvas
                       ref={colorWheelRef}
+                      id="color-wheel-canvas"
+                      data-testid="color-wheel-canvas"
                       width={128}
                       height={128}
                       onMouseDown={handleMouseDown}
@@ -552,11 +554,11 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                 return (
                   <div
                     key={cat.id}
-                    id={`gerenciar-linha-de-categoria-${cat.id}`}
-                    data-testid={`gerenciar-linha-de-categoria-${slugName}`}
+                    id={`manage-category-row-${cat.id}`}
+                    data-testid={`manage-category-row-${slugName}`}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Selecionar categoria ${cat.name}`}
+                    aria-label={`Gerenciar categoria ${cat.name}`}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
@@ -576,11 +578,11 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                   >
                     <div className="flex items-center gap-2.5">
                       <CategoryIcon icon={cat.icon} className="w-4 h-4" />
-                      <span data-testid={`manage-category-name-${cat.id}`} className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                      <span data-testid={`manage-category-item-name-${cat.id}`} className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                         {cat.name}
                       </span>
                       {isSystem && (
-                        <span data-testid={`manage-category-system-badge-${cat.id}`} className="text-[8px] font-bold font-sans uppercase px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-400 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700">
+                        <span data-testid={`manage-category-badge-system-${cat.id}`} className="text-[8px] font-bold font-sans uppercase px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-400 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700">
                           Sistema
                         </span>
                       )}

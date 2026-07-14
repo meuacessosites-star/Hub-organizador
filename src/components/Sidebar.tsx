@@ -191,9 +191,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               return (
                 <button
                   key={cat.id}
-                  id={`category-btn-${cat.id}`}
-                  data-testid={`category-btn-${slugName}`}
-                  aria-label={`${cat.name} ${getCategoryCount(cat.id)}`}
+                  id={`sidebar-category-btn-${cat.id}`}
+                  data-testid={`sidebar-category-btn-${slugName}`}
+                  aria-label={`Filtrar por ${cat.name}, ${getCategoryCount(cat.id)} itens`}
                   onClick={() => {
                     setSelectedCategory(cat.id);
                     if (onCloseMobile) onCloseMobile();
@@ -206,10 +206,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="flex items-center gap-3">
                     <CategoryIcon icon={cat.icon} className="w-4 h-4" />
-                    <span data-testid={`category-name-${cat.id}`} className="truncate">{cat.name}</span>
+                    <span data-testid={`sidebar-category-name-${cat.id}`} className="truncate">{cat.name}</span>
                   </div>
                   <span
-                    data-testid={`category-count-${cat.id}`}
+                    data-testid={`sidebar-category-count-${cat.id}`}
                     className={`text-xs px-2 py-0.5 rounded-full font-mono font-semibold ${
                       isSelected
                         ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300'

@@ -91,7 +91,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
   currentUserUid,
 }) => {
   // SECURE RESOURCE AUTHORIZATION CHECK: Return 403 Permissão Negada with NO sensitive fields if ownership is breached
-  if (platform.ownerId && currentUserUid && platform.ownerId !== currentUserUid) {
+  if (!currentUserUid || (platform.ownerId && platform.ownerId !== currentUserUid)) {
     return (
       <div className="bg-red-50 dark:bg-red-950/10 border border-red-200/60 dark:border-red-900/30 p-6 rounded-2xl flex flex-col items-center justify-center text-center gap-3">
         <Lock className="w-8 h-8 text-red-500" />
@@ -1067,6 +1067,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 {/* Purchase tab bottom action */}
                 <div className="flex items-center border-t border-neutral-200 dark:border-[#232534] pt-3 select-none">
                   <button
+                    id={`platform-register-purchase-btn-${platform.id}`}
+                    data-testid={`platform-register-purchase-btn-${platform.id}`}
                     onClick={() => onAddPurchase(platform.id)}
                     className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 text-[11px] font-semibold transition-colors cursor-pointer"
                   >

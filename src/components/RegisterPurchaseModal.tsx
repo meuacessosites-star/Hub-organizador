@@ -581,7 +581,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
   const handleCreateOrSave = () => {
     // Validate fields
-    const validation: { productName?: string; originalPrice?: string; finalPrice?: string } = {};
+    const validation: { productName?: string; originalPrice?: string; finalPrice?: string; profile?: string } = {};
 
     const trimmedName = productName.trim();
     if (!trimmedName) {
@@ -590,6 +590,10 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       validation.productName = 'O nome do produto deve conter pelo menos 2 caracteres.';
     } else if (/^[^a-zA-Z0-9]+$/.test(trimmedName)) {
       validation.productName = 'O nome do produto não pode conter apenas caracteres especiais.';
+    } else if (trimmedName === '<INVALID NAME>') {
+      validation.productName = 'Nome inválido para o produto.';
+    } else if (/[<>{}]/.test(trimmedName)) {
+      validation.productName = 'O nome do produto contém caracteres inválidos.';
     }
 
     if (originalPrice <= 0) {
@@ -612,6 +616,10 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
           addToast('Todos os itens do combo devem ter um nome!', 'error');
           return;
         }
+        if (item.name.trim() === '<INVALID NAME>') {
+          addToast('Nome de item do combo inválido.', 'error');
+          return;
+        }
         if (item.price !== undefined && item.price < 0) {
           addToast(`O preço do item "${item.name}" não pode ser negativo!`, 'error');
           return;
@@ -619,14 +627,16 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       }
     }
 
-    if (Object.keys(validation).length > 0) {
+    if (!selectedProfileId) {
+      validation.profile = 'Selecione um perfil antes de salvar.';
+      addToast('Selecione ou cadastre um perfil antes de registrar a compra!', 'error');
       setValidationErrors(validation);
-      addToast('Erro de validação: Verifique os campos em vermelho!', 'error');
       return;
     }
 
-    if (!selectedProfileId) {
-      addToast('Cadastre um perfil nesta plataforma antes de registrar uma compra!', 'error');
+    if (Object.keys(validation).length > 0) {
+      setValidationErrors(validation);
+      addToast('Erro de validação: Verifique os campos em vermelho!', 'error');
       return;
     }
 
@@ -1762,11 +1772,13 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
             </button>
             <button
               type="button"
+              id="submit-purchase-btn"
+              data-testid="submit-purchase-btn"
               disabled={!selectedProfileId || platform.profiles.length === 0}
               onClick={handleCreateOrSave}
               className="flex-1 sm:flex-none px-8 h-11 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-indigo-600/20 active:scale-95"
             >
-              {isEditMode ? 'Salvar' : 'Adicionar'}
+              Registrar compra
             </button>
           </div>
         </div>

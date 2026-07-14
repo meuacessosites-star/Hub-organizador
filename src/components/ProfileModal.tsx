@@ -956,6 +956,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                               <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
                               <canvas
                                 ref={colorWheelRef}
+                                id="profile-color-wheel-canvas"
+                                data-testid="profile-color-wheel-canvas"
                                 width={128}
                                 height={128}
                                 onMouseDown={handleMouseDown}

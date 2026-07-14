@@ -87,7 +87,9 @@ export function useStorage() {
     if (user.uid !== 'guest') {
       // Sync tags with Firestore
       const tagsRef = collection(db, 'users', user.uid, 'tags');
-      unsubs.push(onSnapshot(tagsRef, (snap) => {
+      unsubs.push(onSnapshot(tagsRef, { includeMetadataChanges: true }, (snap) => {
+        if (snap.metadata.hasPendingWrites) return;
+        
         console.log('useStorage: tags snapshot received', snap.size);
         if (!snap.empty) {
           const cloudTags = snap.docs.map(d => d.data() as Tag);
@@ -110,7 +112,9 @@ export function useStorage() {
 
       // Sync categories with Firestore
       const catRef = collection(db, 'users', user.uid, 'categories');
-      unsubs.push(onSnapshot(catRef, (snap) => {
+      unsubs.push(onSnapshot(catRef, { includeMetadataChanges: true }, (snap) => {
+        if (snap.metadata.hasPendingWrites) return;
+        
         if (!snap.empty) {
           const cloudCats = snap.docs.map(d => d.data() as Category);
           setCategories(cloudCats);
@@ -130,7 +134,9 @@ export function useStorage() {
 
       // Sync platforms with Firestore
       const platRef = collection(db, 'users', user.uid, 'platforms');
-      unsubs.push(onSnapshot(platRef, (snap) => {
+      unsubs.push(onSnapshot(platRef, { includeMetadataChanges: true }, (snap) => {
+        if (snap.metadata.hasPendingWrites) return; // Ignore updates while we have pending local writes to this collection
+        
         if (!snap.empty) {
           const cloudPlats = snap.docs.map(d => {
             const data = d.data() as Platform;
@@ -153,7 +159,9 @@ export function useStorage() {
 
       // Sync statuses with Firestore
       const statusRef = collection(db, 'users', user.uid, 'statuses');
-      unsubs.push(onSnapshot(statusRef, (snap) => {
+      unsubs.push(onSnapshot(statusRef, { includeMetadataChanges: true }, (snap) => {
+        if (snap.metadata.hasPendingWrites) return;
+        
         if (!snap.empty) {
           const cloudStatuses = snap.docs.map(d => d.data() as Status);
           setStatuses(cloudStatuses);
