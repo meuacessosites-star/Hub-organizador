@@ -125,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Categories List */}
-          <div className="px-3 mb-2">
+          <div id="sidebar-search-category" className="px-3 mb-2">
             <div className="relative group">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 transition-colors group-focus-within:text-indigo-500">
                 <Search className="w-3.5 h-3.5" />
@@ -227,6 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Bottom Part */}
         <div className="flex flex-col border-t border-neutral-200 dark:border-[#1e202c] p-4 gap-4">
           <button
+            id="sidebar-manage-status-btn"
             onClick={() => {
               onManageStatuses();
               if (onCloseMobile) onCloseMobile();
@@ -238,6 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           <button
+            id="sidebar-manage-categories-btn"
             onClick={() => {
               onManageCategories();
               if (onCloseMobile) onCloseMobile();
@@ -285,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          <div className="px-3 py-1 font-mono text-[11px] leading-relaxed text-neutral-500 border-t border-neutral-200 dark:border-[#1e202c] pt-3">
+          <div id="sidebar-stats-container" className="px-3 py-1 font-mono text-[11px] leading-relaxed text-neutral-500 border-t border-neutral-200 dark:border-[#1e202c] pt-3">
             <div className="font-semibold">{totalPlatforms} plataformas</div>
             <div className="text-[10px]">
               {totalProfiles} {totalProfiles === 1 ? 'conta cadastrada' : 'contas cadastradas'}

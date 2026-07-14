@@ -44,6 +44,9 @@ export function useStorage() {
   
   const [statuses, setStatuses] = useState<Status[]>(DEFAULT_STATUSES);
 
+  // Flag to prevent re-upload during bulk deletion
+  const isClearingRef = useRef(false);
+
   // Refs to track the latest state for async persistence without stale closures
   const tagsRef = useRef<Tag[]>(DEFAULT_TAGS);
   const categoriesRef = useRef<Category[]>(DEFAULT_CATEGORIES);
@@ -106,7 +109,7 @@ export function useStorage() {
           const cloudTags = snap.docs.map(d => ({ ...d.data() as Tag, id: d.id }));
           setTags(cloudTags);
           safeSetItem(`hub_user_${user.uid}_tags`, JSON.stringify(cloudTags));
-        } else {
+        } else if (!isClearingRef.current) {
           // Empty cloud: backup/upload our current state (which might be migrated guest data) to Firestore!
           tagsToLoad.forEach(async (t: Tag) => {
             try {
@@ -130,7 +133,7 @@ export function useStorage() {
           const cloudCats = snap.docs.map(d => ({ ...d.data() as Category, id: d.id }));
           setCategories(cloudCats);
           safeSetItem(`hub_user_${user.uid}_categories`, JSON.stringify(cloudCats));
-        } else {
+        } else if (!isClearingRef.current) {
           catsToLoad.forEach(async (c: Category) => {
             try {
               await setDoc(doc(db, 'users', user.uid, 'categories', c.id), c);
@@ -155,7 +158,7 @@ export function useStorage() {
           });
           setPlatforms(cloudPlats);
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
-        } else {
+        } else if (!isClearingRef.current) {
           platsToLoad.forEach(async (p: Platform) => {
             try {
               await setDoc(doc(db, 'users', user.uid, 'platforms', p.id), p);
@@ -177,7 +180,7 @@ export function useStorage() {
           const cloudStatuses = snap.docs.map(d => ({ ...d.data() as Status, id: d.id }));
           setStatuses(cloudStatuses);
           safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(cloudStatuses));
-        } else {
+        } else if (!isClearingRef.current) {
           statusesToLoad.forEach(async (s: Status) => {
             try {
               await setDoc(doc(db, 'users', user.uid, 'statuses', s.id), s);
@@ -500,45 +503,46 @@ export function useStorage() {
   const clearAllData = async () => {
     if (!user) return;
 
-    // 1. Delete everything from Firestore
-    if (user.uid !== 'guest') {
-      // Tags
-      for (const t of tags) {
-        await fbDelete('tags', t.id);
+    isClearingRef.current = true;
+    try {
+      // 1. Delete everything from Firestore
+      if (user.uid !== 'guest') {
+        // Use Promise.all for faster deletion and wait for all to finish
+        const deletePromises: Promise<void>[] = [];
+        
+        tags.forEach(t => deletePromises.push(fbDelete('tags', t.id)));
+        categories.filter(c => c.isCustom).forEach(c => deletePromises.push(fbDelete('categories', c.id)));
+        platforms.forEach(p => deletePromises.push(fbDelete('platforms', p.id)));
+        statuses.filter(s => s.isCustom).forEach(s => deletePromises.push(fbDelete('statuses', s.id)));
+        
+        await Promise.all(deletePromises);
       }
-      // Categories (only custom ones)
-      for (const c of categories) {
-        if (c.isCustom) await fbDelete('categories', c.id);
-      }
-      // Platforms
-      for (const p of platforms) {
-        await fbDelete('platforms', p.id);
-      }
-      // Statuses (only custom ones)
-      for (const s of statuses) {
-        if (s.isCustom) await fbDelete('statuses', s.id);
-      }
+
+      // 2. Reset local states
+      setTags(DEFAULT_TAGS);
+      setCategories(DEFAULT_CATEGORIES);
+      setPlatforms([]);
+      setStatuses(DEFAULT_STATUSES);
+
+      // 3. Clear localStorage
+      const keys = [
+        'hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses',
+        `hub_user_${user.uid}_tags`, `hub_user_${user.uid}_categories`,
+        `hub_user_${user.uid}_platforms`, `hub_user_${user.uid}_statuses`
+      ];
+      keys.forEach(k => localStorage.removeItem(k));
+      
+      // Clear refs to avoid immediate re-save
+      lastTagsRef.current = null;
+      lastCategoriesRef.current = null;
+      lastPlatformsRef.current = null;
+      lastStatusesRef.current = null;
+    } finally {
+      // Reset the flag after a short delay to allow snapshots to settle
+      setTimeout(() => {
+        isClearingRef.current = false;
+      }, 2000);
     }
-
-    // 2. Reset local states
-    setTags(DEFAULT_TAGS);
-    setCategories(DEFAULT_CATEGORIES);
-    setPlatforms([]);
-    setStatuses(DEFAULT_STATUSES);
-
-    // 3. Clear localStorage
-    const keys = [
-      'hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses',
-      `hub_user_${user.uid}_tags`, `hub_user_${user.uid}_categories`,
-      `hub_user_${user.uid}_platforms`, `hub_user_${user.uid}_statuses`
-    ];
-    keys.forEach(k => localStorage.removeItem(k));
-    
-    // Clear refs to avoid immediate re-save
-    lastTagsRef.current = null;
-    lastCategoriesRef.current = null;
-    lastPlatformsRef.current = null;
-    lastStatusesRef.current = null;
   };
 
   return {

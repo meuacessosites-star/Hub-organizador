@@ -23,6 +23,7 @@ import { useAuth } from './context/AuthContext';
 import { LoginPage } from './components/LoginPage';
 import { UserProfileModal } from './components/UserProfileModal';
 import { ScrollButtons } from './components/ScrollButtons';
+import { OnboardingTutorial } from './components/OnboardingTutorial';
 
 export default function App() {
   const { addToast } = useToast();
@@ -569,6 +570,7 @@ export default function App() {
         </AnimatePresence>
 
         <ScrollButtons />
+        <OnboardingTutorial />
       </div>
   );
 }

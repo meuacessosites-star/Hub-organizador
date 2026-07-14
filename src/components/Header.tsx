@@ -108,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Search Input Container */}
-        <div className={`relative w-full transition-all duration-300 ease-in-out ${
+        <div id="search-input-container" className={`relative w-full transition-all duration-300 ease-in-out ${
           isSearchActive ? 'max-sm:max-w-full max-sm:flex-1' : 'max-sm:max-w-[140px]'
         } min-w-[100px] sm:max-w-xs md:max-w-md lg:w-96`}>
           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
@@ -190,6 +190,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Auth Toggle */}
         {user ? (
           <button
+            id="user-profile-btn"
             onClick={onAuthAction}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
             aria-label="Abrir perfil"
@@ -217,6 +218,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Theme Toggle */}
         <button
+          id="theme-toggle-btn"
           onClick={toggleTheme}
           className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-500 transition-all duration-300 dark:border-neutral-800 dark:bg-black dark:hover:bg-neutral-900 dark:text-neutral-400 cursor-pointer"
           aria-label="Alternar tema"
