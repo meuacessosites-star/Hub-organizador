@@ -32,9 +32,9 @@ Para garantir testes estáveis baseados na interface visual, utilize os seguinte
 * **Modal de Gerenciamento de Categorias**: `#manage-categories-modal`
 * **Botão Fechar (Comum aos Modais)**: `button[title="Fechar"]` ou `.btn-close-modal`
 
-### 1.4. Roda de Cores Avançada (`Color Wheel Canvas`)
-* **Canvas de Seleção (Categorias)**: `#color-wheel-canvas` (data-testid: `color-wheel-canvas`)
-* **Canvas de Seleção (Perfis)**: `#profile-color-wheel-canvas` (data-testid: `profile-color-wheel-canvas`)
+### 1.4. Roda de Cores Avançada (`Color Wheel Selector`)
+* **Seletor de Cores (Categorias)**: `[data-testid="color-wheel-selector"]` ou `#color-wheel-selector`
+* **Seletor de Cores (Perfis)**: `#profile-color-wheel-canvas` (data-testid: `profile-color-wheel-canvas`)
 * **Botão de Toggle da Roda**: `button[title="Abrir/Fechar roda de cores"]` ou `.btn-toggle-color-wheel`
 * **Input de Texto de Cor Hexadecimal**: `input[placeholder="#000000"]` ou `.color-hex-input`
 
@@ -53,13 +53,13 @@ Para garantir testes estáveis baseados na interface visual, utilize os seguinte
 5. **Ação**: Salvar.
 6. **Expectativa**: O card da nova plataforma deve aparecer no grid principal com `#plat-{id}`.
 
-### 2.2. Teste da Roda de Cores (Color Wheel Calculation)
-* **Objetivo**: Testar se o cálculo trigonométrico converte cliques no canvas em HEX válidos.
+### 2.2. Teste da Roda de Cores (Coordinate-to-Color Calculation)
+* **Objetivo**: Testar se o cálculo trigonométrico converte coordenadas de clique na `div` (com gradiente CSS) em valores HEX válidos.
 * **Automação**:
-  1. Localizar o `canvas` da Roda de Cores.
-  2. Executar um evento de `mousedown` / `touchstart` nas coordenadas `(x, y)` relativas ao canvas (ex.: `cx + 30`, `cy + 30`).
-  3. Verificar se o valor de `selectedColor` (visto no input de texto de cor) foi atualizado para um hexadecimal válido correspondente à área clicada (ex: tons de verde/azul).
-  4. Mover o cursor (`mousemove` / `touchmove`) e verificar se a cor do input muda de forma contínua.
+  1. Localizar o elemento da Roda de Cores.
+  2. Executar um evento de `mousedown` / `touchstart` nas coordenadas `(x, y)` relativas ao centro do elemento.
+  3. Verificar se o valor de `selectedColor` foi atualizado para um hexadecimal correspondente ao ângulo e distância calculados (ex: 0 graus = Vermelho, 120 graus = Verde).
+  4. Mover o cursor (`mousemove` / `touchmove`) e verificar se a cor do input acompanha o movimento circular.
 
 ### 2.3. Gestão de Bundles (Pacotes de Itens)
 * **Objetivo**: Garantir que as compras múltiplas funcionem e permitam alternar status rapidamente.
@@ -102,7 +102,7 @@ As seguintes regras de proteção e segurança estão implementadas e devem ser 
 * **Vetor**: Usuário `User_A` tenta ler ou modificar recursos do `User_B` utilizando APIs do Firestore diretamente a partir do client-side do navegador.
 * **Expectativa de Segurança**: As regras de segurança do Firestore (`firestore.rules`) barram qualquer operação em caminhos que não contenham o UID do próprio usuário logado.
 * **Redundância UI-Level**: O componente `PlatformCard.tsx` realiza uma verificação secundária de `currentUserUid === platform.ownerId`. Se a propriedade `ownerId` existir e não bater com o usuário logado, o card exibe um estado de "Permissão Negada", bloqueando a renderização de campos sensíveis (email, nome de usuário, etc).
-* **Consistência de Snapshot**: O hook `useStorage.ts` ignora snapshots do Firestore que possuam `hasPendingWrites: true`. Isso garante que o estado da interface não sofra regressões ou vazamentos de dados de sessões anteriores durante atualizações otimistas.
+* **Consistência de Snapshot**: O hook `useStorage.ts` ignora snapshots do Firestore que possuam `hasPendingWrites: true`. Isso garante que o estado da interface não sofra regressões ou vazamentos de dados de sessões anteriores durante atualizações otimistas. Além disso, o hook garante que a propriedade `id` de cada objeto seja explicitamente populada a partir do `doc.id` do Firestore, evitando falhas de referência no estado local.
 
 ### 4.3. Regras de Segurança do Firestore (Invariants)
 A ferramenta de teste deve verificar as seguintes regras de segurança aplicadas sobre o banco de dados de produção (Fase 4: Fortress Rules):
@@ -145,6 +145,7 @@ service cloud.firestore {
 ### 4.4. Prevenção de Injeção de Dados e Colisões de ID
 * **Problema**: Geradores de ID baseados apenas em `Date.now()` podem colidir sob concorrência rápida ou automações intensas de lote.
 * **Proteção**: Todos os IDs gerados dinamicamente no app contêm um sufixo aleatório adicional (ex.: `Date.now() + '-' + Math.random().toString(36).substring(2, 9)`), mitigando colisões de identificadores.
+* **Estabilidade de Chaves React**: Listas dinâmicas (como Presets e Categorias) devem utilizar chaves (`key`) compostas por prefixos semânticos e identificadores únicos (ou índices estáveis quando IDs não estiverem disponíveis) para evitar erros de renderização e perda de estado de componentes.
 
 ---
 

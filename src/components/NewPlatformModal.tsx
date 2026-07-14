@@ -1272,6 +1272,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       <div className="relative w-36 h-36 flex items-center justify-center touch-none">
                         <div
                           ref={colorWheelRef}
+                          id="color-wheel-selector"
+                          data-testid="color-wheel-selector"
                           onMouseDown={handleMouseDown}
                           onTouchStart={handleTouchStart}
                           className="w-full h-full rounded-full cursor-crosshair border border-neutral-300 shadow-lg dark:border-neutral-700 z-10 overflow-hidden"

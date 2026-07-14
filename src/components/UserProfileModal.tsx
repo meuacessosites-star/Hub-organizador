@@ -556,6 +556,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                               <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
                               <div
                                 ref={colorWheelRef}
+                                id="user-profile-color-wheel"
+                                data-testid="user-profile-color-wheel"
                                 onMouseDown={handleMouseDown}
                                 onMouseMove={handleMouseMove}
                                 onMouseUp={handleMouseUpOrLeave}
