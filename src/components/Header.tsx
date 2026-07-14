@@ -227,6 +227,8 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* New Account Button */}
         <button
+          id="add-platform-btn"
+          data-testid="add-platform-btn"
           onClick={onNewPlatform}
           className="h-10 px-3 sm:px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-[0_4px_12px_rgba(79,70,229,0.3)] active:scale-95 transition-all duration-200 cursor-pointer border border-indigo-400/20"
           title="Cadastrar Nova Conta"

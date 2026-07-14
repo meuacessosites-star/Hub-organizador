@@ -512,7 +512,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
         </div>
 
         {/* Content Panel */}
-        <div className="p-6 max-h-[75vh] overflow-y-auto">
+        <div className="p-6 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(85vh - 140px)' }}>
           {/* STEP 1 */}
           {step === 1 && (
             <div className="flex flex-col gap-5">
@@ -595,6 +595,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     <div className="grid grid-cols-2 gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200/80 text-[10px] sm:text-[11px] font-medium dark:bg-[#111219] dark:border-[#25283a]">
                       <button
                         type="button"
+                        id="new-platform-logo-auto-btn"
+                        data-testid="new-platform-logo-auto-btn"
                         onClick={() => setLogoMode('auto')}
                         className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
                           logoMode === 'auto'
@@ -606,6 +608,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       </button>
                       <button
                         type="button"
+                        id="new-platform-logo-presets-btn"
+                        data-testid="new-platform-logo-presets-btn"
                         onClick={() => setLogoMode('presets')}
                         className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
                           logoMode === 'presets'
@@ -617,6 +621,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       </button>
                       <button
                         type="button"
+                        id="new-platform-logo-url-btn"
+                        data-testid="new-platform-logo-url-btn"
                         onClick={() => setLogoMode('url')}
                         className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
                           logoMode === 'url'
@@ -628,6 +634,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       </button>
                       <button
                         type="button"
+                        id="new-platform-logo-upload-btn"
+                        data-testid="new-platform-logo-upload-btn"
                         onClick={() => setLogoMode('upload')}
                         className={`py-1.5 rounded-md transition-all cursor-pointer text-center ${
                           logoMode === 'upload'
@@ -814,12 +822,13 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     .filter(cat => cat.name.toLowerCase().includes(categorySearch.toLowerCase()))
                     .map((cat) => {
                       const isSel = selectedCategory === cat.id;
+                      const slugName = cat.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
                       return (
                         <button
                           key={cat.id}
                           type="button"
                           id={`modal-category-btn-${cat.id}`}
-                          data-testid={`modal-category-btn-${cat.id}`}
+                          data-testid={`modal-category-btn-${slugName}`}
                           aria-label={cat.name}
                           onClick={() => setSelectedCategory(cat.id)}
                           className={`px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all duration-150 cursor-pointer ${

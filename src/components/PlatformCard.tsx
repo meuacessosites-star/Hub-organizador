@@ -381,6 +381,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
               <button
                 id={`platform-contas-tab-${platform.id}`}
                 data-testid={`platform-contas-tab-${platform.id}`}
+                role="tab"
+                aria-selected={activeTab === 'contas'}
                 aria-label={`Contas ${(platform.profiles || []).length}`}
                 onClick={() => setActiveTab('contas')}
                 className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all relative cursor-pointer ${
@@ -394,6 +396,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
               <button
                 id={`platform-compras-tab-${platform.id}`}
                 data-testid={`platform-compras-tab-${platform.id}`}
+                role="tab"
+                aria-selected={activeTab === 'compras'}
                 aria-label={`Compras ${(platform.purchases || []).length}`}
                 onClick={() => setActiveTab('compras')}
                 className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all relative cursor-pointer ${
@@ -479,6 +483,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             ) : (
                               <>
                                 <button
+                                  id={`edit-profile-btn-${profile.id}`}
+                                  data-testid={`edit-profile-btn-${profile.id}`}
                                   onClick={() => onEditProfile(platform.id, profile, true)}
                                   className="px-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-white flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer shadow-md shadow-amber-500/10 w-16"
                                   title="Editar conta"
@@ -488,6 +494,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                 </button>
 
                                 <button
+                                  id={`delete-profile-trigger-${profile.id}`}
+                                  data-testid={`delete-profile-trigger-${profile.id}`}
                                   onClick={() => setDeletingProfileId(profile.id)}
                                   className="px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer shadow-md shadow-rose-600/10 w-16"
                                   title="Excluir conta"

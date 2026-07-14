@@ -1,12 +1,13 @@
 import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette } from 'lucide-react';
+import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle } from 'lucide-react';
 import { User, updateProfile as firebaseUpdateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth, UserProfileData } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useStorage } from '../hooks/useStorage';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -88,6 +89,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onSignOut,
 }) => {
   const { userProfile } = useAuth();
+  const { clearAllData } = useStorage();
+  const { addToast } = useToast();
+
   const [displayName, setDisplayName] = useState('');
   const [avatarTab, setAvatarTab] = useState<'google' | 'color' | 'emoji' | 'image'>('google');
   const [selectedColor, setSelectedColor] = useState('#7c5cfc');
@@ -98,6 +102,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showColorWheel, setShowColorWheel] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const colorWheelRef = useRef<HTMLCanvasElement>(null);
   const colorWheelContainerRef = useRef<HTMLDivElement>(null);
@@ -106,6 +112,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setShowColorWheel(false);
+      setShowDeleteConfirm(false);
     }
   }, [isOpen]);
 
@@ -278,8 +285,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   if (!user) return null;
 
-  const { addToast } = useToast();
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -329,6 +334,21 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       console.error("Error saving profile:", err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAllData = async () => {
+    setIsDeletingAll(true);
+    try {
+      await clearAllData();
+      addToast('Todos os dados foram excluídos com sucesso.', 'success');
+      setShowDeleteConfirm(false);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      addToast('Erro ao excluir dados.', 'error');
+    } finally {
+      setIsDeletingAll(false);
     }
   };
 
@@ -652,6 +672,61 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                           Formato JPG, PNG ou GIF. Máximo 5MB.
                         </span>
                       </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="w-4 h-4 text-rose-500" />
+                  <h3 className="text-sm font-bold text-rose-600 dark:text-rose-500 uppercase tracking-wider">
+                    Zona de Perigo
+                  </h3>
+                </div>
+
+                <div className="bg-rose-50 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-500/10 rounded-xl p-4">
+                  <p className="text-xs text-rose-700 dark:text-rose-400 mb-4 leading-relaxed">
+                    Excluir todos os dados removerá permanentemente suas plataformas, compras, categorias personalizadas e configurações. Esta ação não pode ser desfeita.
+                  </p>
+
+                  {!showDeleteConfirm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Excluir todos os meus dados
+                    </button>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-[10px] font-bold text-rose-800 dark:text-rose-300 uppercase">
+                        Tem certeza absoluta?
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={isDeletingAll}
+                          onClick={handleDeleteAllData}
+                          className="flex-1 h-9 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {isDeletingAll ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            'Sim, excluir tudo'
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isDeletingAll}
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="flex-1 h-9 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs font-bold hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

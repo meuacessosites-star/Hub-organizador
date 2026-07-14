@@ -487,6 +487,50 @@ export function useStorage() {
     fbDelete('statuses', id);
   };
 
+  const clearAllData = async () => {
+    if (!user) return;
+
+    // 1. Delete everything from Firestore
+    if (user.uid !== 'guest') {
+      // Tags
+      for (const t of tags) {
+        await fbDelete('tags', t.id);
+      }
+      // Categories (only custom ones)
+      for (const c of categories) {
+        if (c.isCustom) await fbDelete('categories', c.id);
+      }
+      // Platforms
+      for (const p of platforms) {
+        await fbDelete('platforms', p.id);
+      }
+      // Statuses (only custom ones)
+      for (const s of statuses) {
+        if (s.isCustom) await fbDelete('statuses', s.id);
+      }
+    }
+
+    // 2. Reset local states
+    setTags(DEFAULT_TAGS);
+    setCategories(DEFAULT_CATEGORIES);
+    setPlatforms([]);
+    setStatuses(DEFAULT_STATUSES);
+
+    // 3. Clear localStorage
+    const keys = [
+      'hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses',
+      `hub_user_${user.uid}_tags`, `hub_user_${user.uid}_categories`,
+      `hub_user_${user.uid}_platforms`, `hub_user_${user.uid}_statuses`
+    ];
+    keys.forEach(k => localStorage.removeItem(k));
+    
+    // Clear refs to avoid immediate re-save
+    lastTagsRef.current = null;
+    lastCategoriesRef.current = null;
+    lastPlatformsRef.current = null;
+    lastStatusesRef.current = null;
+  };
+
   return {
     tags, addTag, updateTag, deleteTag,
     categories, addCategory, updateCategory, deleteCategory,
@@ -494,5 +538,6 @@ export function useStorage() {
     addProfile, updateProfile, deleteProfile,
     addPurchase, updatePurchase, deletePurchase,
     statuses, addStatus, updateStatus, deleteStatus,
+    clearAllData,
   };
 }

@@ -554,6 +554,15 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                     key={cat.id}
                     id={`gerenciar-linha-de-categoria-${cat.id}`}
                     data-testid={`gerenciar-linha-de-categoria-${slugName}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Selecionar categoria ${cat.name}`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (!isSystem) handleStartEdit(cat);
+                      }
+                    }}
                     onClick={() => {
                       if (!isSystem) {
                         handleStartEdit(cat);
@@ -561,7 +570,7 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                     }}
                     className={`flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-[#2a2d40]/40 bg-neutral-50 dark:bg-[#111219]/60 select-none ${
                       !isSystem
-                        ? 'cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-200 dark:hover:bg-[#151722] dark:hover:border-indigo-900/50 transition-all duration-150'
+                        ? 'cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-200 dark:hover:bg-[#151722] dark:hover:border-indigo-900/50 transition-all duration-150 focus:ring-2 focus:ring-indigo-500/50 outline-none'
                         : ''
                     }`}
                   >

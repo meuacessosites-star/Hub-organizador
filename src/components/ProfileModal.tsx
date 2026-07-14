@@ -1170,6 +1170,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  id="save-profile-btn"
+                  data-testid="save-profile-btn"
                   disabled={isCustomProfile ? !customProfileName.trim() : !profileName}
                   onClick={handleSaveOrEdit}
                   className="flex-1 sm:flex-none px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer whitespace-nowrap"
