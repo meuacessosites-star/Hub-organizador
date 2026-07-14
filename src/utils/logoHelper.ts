@@ -69,11 +69,68 @@ export function getDomainFromInput(name: string, url?: string): string {
 }
 
 /**
+ * Extracts a readable platform name from a domain or URL
+ */
+export function getPlatformNameFromUrl(url: string): string {
+  if (!url) return '';
+  try {
+    const domain = getDomainFromInput('', url);
+    if (!domain) return '';
+    
+    // Manual overrides for domains that don't match the first part of the hostname
+    const domainOverrides: { [key: string]: string } = {
+      'steampowered.com': 'Steam',
+      'disneyplus.com': 'Disney+',
+      'primevideo.com': 'Prime Video',
+      'mercadolivre.com.br': 'Mercado Livre',
+      'bancointer.com.br': 'Banco Inter',
+      'google.com': 'Google',
+      'max.com': 'HBO Max',
+    };
+
+    if (domainOverrides[domain]) return domainOverrides[domain];
+
+    // Common mappings for prettier names
+    const prettyNames: { [key: string]: string } = {
+      github: 'GitHub',
+      netflix: 'Netflix',
+      spotify: 'Spotify',
+      youtube: 'YouTube',
+      nubank: 'Nubank',
+      amazon: 'Amazon',
+      facebook: 'Facebook',
+      instagram: 'Instagram',
+      twitter: 'Twitter',
+      linkedin: 'LinkedIn',
+      disneyplus: 'Disney+',
+      primevideo: 'Prime Video',
+      gmail: 'Gmail',
+      outlook: 'Outlook',
+      hotmail: 'Hotmail',
+      yahoo: 'Yahoo',
+    };
+
+    const namePart = domain.split('.')[0].toLowerCase();
+    if (prettyNames[namePart]) {
+      return prettyNames[namePart];
+    }
+
+    // Capitalize first letter of the name part
+    return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Gets a clean, high-quality logo URL or falls back to clearbit / devicons
  */
-export function getLogoUrl(name: string, url?: string): string {
+export function getLogoUrl(name: string, url?: string, attempt: number = 0): string {
   const domain = getDomainFromInput(name, url);
-  return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=404&url=https://${domain}&size=256`;
+  if (attempt === 0) {
+    return `https://logo.clearbit.com/${domain}`;
+  }
+  return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
 }
 
 /**

@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Category, ProfileAvatar, Platform, Profile } from '../types';
 import { X, Globe, Link, Eye, EyeOff, Shield, Image as ImageIcon, Smile, Palette, Upload, Check, Trash2, Search, User, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getLogoUrl, getDomainFromInput, getInitials, getPlatformColor } from '../utils/logoHelper';
+import { getLogoUrl, getDomainFromInput, getInitials, getPlatformColor, getPlatformNameFromUrl } from '../utils/logoHelper';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { CategoryIcon } from './CategoryIcon';
@@ -398,25 +398,19 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
     setLogoPreviewErrorCount(0);
   }, [platformName, platformUrl, logoMode, logoUrlInput, logoUploadBase64, selectedPresetDomain]);
 
+  // Reset logo error count when input changes to try better services again
+  useEffect(() => {
+    setLogoPreviewErrorCount(0);
+  }, [platformName, platformUrl, logoUrlInput, logoMode, selectedPresetDomain]);
+
   const finalLogoUrlPreview = (() => {
     if (logoMode === 'auto') {
-      if (!platformName.trim()) return '';
-      const domain = getDomainFromInput(platformName, platformUrl);
-      if (logoPreviewErrorCount === 0) {
-        return `https://logo.clearbit.com/${domain}`;
-      } else if (logoPreviewErrorCount === 1) {
-        return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
-      }
-      return '';
+      if (!platformName.trim() && !platformUrl.trim()) return '';
+      return getLogoUrl(platformName, platformUrl, logoPreviewErrorCount);
     }
     if (logoMode === 'presets') {
       if (!selectedPresetDomain) return '';
-      if (logoPreviewErrorCount === 0) {
-        return `https://logo.clearbit.com/${selectedPresetDomain}`;
-      } else if (logoPreviewErrorCount === 1) {
-        return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${selectedPresetDomain}&size=256`;
-      }
-      return '';
+      return getLogoUrl('', selectedPresetDomain, logoPreviewErrorCount);
     }
     if (logoMode === 'url') {
       if (!logoUrlInput.trim()) return '';
@@ -439,13 +433,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
       if (isDirectImage(logoUrlInput)) {
         return logoUrlInput;
       } else {
-        const domain = getDomainFromInput('', logoUrlInput);
-        if (logoPreviewErrorCount === 0) {
-          return `https://logo.clearbit.com/${domain}`;
-        } else if (logoPreviewErrorCount === 1) {
-          return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
-        }
-        return '';
+        return getLogoUrl('', logoUrlInput, logoPreviewErrorCount);
       }
     }
     if (logoMode === 'upload') {
@@ -647,8 +635,15 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     type="url"
                     value={platformUrl}
                     onChange={(e) => {
-                      setPlatformUrl(e.target.value);
+                      const val = e.target.value;
+                      setPlatformUrl(val);
                       if (urlError) setUrlError('');
+                      
+                      // Auto-fill platform name if empty OR if it matches a generic name
+                      if ((!platformName.trim() || platformName === 'Plataforma') && val.includes('.')) {
+                        const inferredName = getPlatformNameFromUrl(val);
+                        if (inferredName) setPlatformName(inferredName);
+                      }
                     }}
                     placeholder="https://exemplo.com (preenche automaticamente)"
                     className={`w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:text-neutral-200 dark:placeholder-neutral-500 ${
@@ -676,7 +671,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                 <div className="flex gap-4 items-start">
                   {/* Large Logo Preview */}
                   <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative dark:bg-[#111219] dark:border-[#2a2d40]">
-                    {finalLogoUrlPreview && logoPreviewErrorCount === 0 ? (
+                    {finalLogoUrlPreview && logoPreviewErrorCount < 2 ? (
                        <img referrerPolicy="no-referrer"
                          src={finalLogoUrlPreview}
                          alt="Logo Preview"

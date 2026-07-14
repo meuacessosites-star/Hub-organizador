@@ -77,16 +77,17 @@ service cloud.firestore {
         allow create, update: if isOwner(userId) && isValidId(platformId) && isValidPlatform(incoming());
         allow delete: if isOwner(userId);
 
-        function isValidPlatform(data) {
-          return data.keys().hasAll(['id', 'name'])
-            && data.id == platformId
-            && data.name is string && data.name.size() <= 128
-            && (!('url' in data) || (data.url is string && data.url.size() <= 512))
-            && (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 1048576))
-            && (!('categoryId' in data) || (data.categoryId is string && data.categoryId.size() <= 128))
-            && (!('profiles' in data) || (data.profiles is list && data.profiles.size() <= 50))
-            && (!('purchases' in data) || (data.purchases is list && data.purchases.size() <= 500));
-        }
+      function isValidPlatform(data) {
+        return data.keys().hasAll(['id', 'name'])
+          && data.id == platformId
+          && data.name is string && data.name.size() <= 128
+          && (!('url' in data) || (data.url is string && data.url.size() <= 512))
+          && (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 1048576))
+          && (!('categoryId' in data) || (data.categoryId is string && data.categoryId.size() <= 128))
+          && (!('profiles' in data) || (data.profiles is list && data.profiles.size() <= 100))
+          && (!('purchases' in data) || (data.purchases is list && data.purchases.size() <= 1000))
+          && (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128));
+      }
       }
 
       match /statuses/{statusId} {

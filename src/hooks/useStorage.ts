@@ -44,6 +44,17 @@ export function useStorage() {
   
   const [statuses, setStatuses] = useState<Status[]>(DEFAULT_STATUSES);
 
+  // Refs to track the latest state for async persistence without stale closures
+  const tagsRef = useRef<Tag[]>(DEFAULT_TAGS);
+  const categoriesRef = useRef<Category[]>(DEFAULT_CATEGORIES);
+  const platformsRef = useRef<Platform[]>([]);
+  const statusesRef = useRef<Status[]>(DEFAULT_STATUSES);
+
+  useEffect(() => { tagsRef.current = tags; }, [tags]);
+  useEffect(() => { categoriesRef.current = categories; }, [categories]);
+  useEffect(() => { platformsRef.current = platforms; }, [platforms]);
+  useEffect(() => { statusesRef.current = statuses; }, [statuses]);
+
   // Sync from Firebase & Cleanup on logout
   useEffect(() => {
     if (authLoading) return;
@@ -285,9 +296,13 @@ export function useStorage() {
   };
 
   const updateTag = (id: string, updated: Partial<Tag>) => {
-    setTags((prev) => prev.map((tag) => (tag.id === id ? { ...tag, ...updated } : tag)));
-    const tag = tags.find(t => t.id === id);
-    if (tag) fbSet('tags', id, { ...tag, ...updated });
+    const currentTags = tagsRef.current;
+    const tag = currentTags.find(t => t.id === id);
+    if (!tag) return;
+    
+    const newTag = { ...tag, ...updated };
+    setTags((prev) => prev.map((t) => (t.id === id ? newTag : t)));
+    fbSet('tags', id, newTag);
   };
 
   const deleteTag = (id: string) => {
@@ -305,9 +320,13 @@ export function useStorage() {
   };
 
   const updateCategory = (id: string, updated: Partial<Category>) => {
-    setCategories((prev) => prev.map((cat) => (cat.id === id ? { ...cat, ...updated } : cat)));
-    const cat = categories.find(c => c.id === id);
-    if (cat) fbSet('categories', id, { ...cat, ...updated });
+    const currentCats = categoriesRef.current;
+    const cat = currentCats.find(c => c.id === id);
+    if (!cat) return;
+
+    const newCat = { ...cat, ...updated };
+    setCategories((prev) => prev.map((c) => (c.id === id ? newCat : c)));
+    fbSet('categories', id, newCat);
   };
 
   const deleteCategory = (id: string) => {
@@ -331,17 +350,13 @@ export function useStorage() {
   };
 
   const updatePlatform = (id: string, updated: Partial<Platform>) => {
-    let platToSync: Platform | undefined;
-    setPlatforms((prev) => prev.map((plat) => {
-      if (plat.id === id) {
-        platToSync = { ...plat, ...updated };
-        return platToSync;
-      }
-      return plat;
-    }));
-    if (platToSync) {
-      fbSet('platforms', id, platToSync);
-    }
+    const currentPlatforms = platformsRef.current;
+    const plat = currentPlatforms.find(p => p.id === id);
+    if (!plat) return;
+
+    const newPlat = { ...plat, ...updated };
+    setPlatforms((prev) => prev.map((p) => (p.id === id ? newPlat : p)));
+    fbSet('platforms', id, newPlat);
   };
 
   const deletePlatform = (id: string) => {
@@ -353,53 +368,43 @@ export function useStorage() {
   const addProfile = (platformId: string, profile: Omit<Profile, 'id'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newProfile: Profile = { ...profile, id: `prof-${Date.now()}-${randomSuffix}` };
-    let platToSync: Platform | undefined;
     
-    setPlatforms((prev) => prev.map((plat) => {
-      if (plat.id === platformId) {
-        platToSync = { ...plat, profiles: [...(plat.profiles || []), newProfile] };
-        return platToSync;
-      }
-      return plat;
-    }));
+    const currentPlatforms = platformsRef.current;
+    const plat = currentPlatforms.find(p => p.id === platformId);
+    if (!plat) return newProfile;
+
+    const newPlat = { ...plat, profiles: [...(plat.profiles || []), newProfile] };
+    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    fbSet('platforms', platformId, newPlat);
     
-    if (platToSync) {
-      fbSet('platforms', platformId, platToSync);
-    }
     return newProfile;
   };
 
   const updateProfile = (platformId: string, profileId: string, updated: Partial<Profile>) => {
-    let platToSync: Platform | undefined;
-    setPlatforms((prev) => prev.map((plat) => {
-      if (plat.id === platformId) {
-        const newProfiles = (plat.profiles || []).map((prof) => prof.id === profileId ? { ...prof, ...updated } : prof);
-        platToSync = { ...plat, profiles: newProfiles };
-        return platToSync;
-      }
-      return plat;
-    }));
+    const currentPlatforms = platformsRef.current;
+    const plat = currentPlatforms.find(p => p.id === platformId);
+    if (!plat) return;
+
+    const newProfiles = (plat.profiles || []).map((prof) => 
+      prof.id === profileId ? { ...prof, ...updated } : prof
+    );
+    const newPlat = { ...plat, profiles: newProfiles };
     
-    if (platToSync) {
-      fbSet('platforms', platformId, platToSync);
-    }
+    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    fbSet('platforms', platformId, newPlat);
   };
 
   const deleteProfile = (platformId: string, profileId: string) => {
-    let platToSync: Platform | undefined;
-    setPlatforms((prev) => prev.map((plat) => {
-      if (plat.id === platformId) {
-        const newProfiles = (plat.profiles || []).filter((prof) => prof.id !== profileId);
-        const newPurchases = (plat.purchases || []).filter((pur) => pur.profileId !== profileId);
-        platToSync = { ...plat, profiles: newProfiles, purchases: newPurchases };
-        return platToSync;
-      }
-      return plat;
-    }));
-    
-    if (platToSync) {
-      fbSet('platforms', platformId, platToSync);
-    }
+    const currentPlatforms = platformsRef.current;
+    const plat = currentPlatforms.find(p => p.id === platformId);
+    if (!plat) return;
+
+    const newProfiles = (plat.profiles || []).filter((prof) => prof.id !== profileId);
+    const newPurchases = (plat.purchases || []).filter((pur) => pur.profileId !== profileId);
+    const newPlat = { ...plat, profiles: newProfiles, purchases: newPurchases };
+
+    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    fbSet('platforms', platformId, newPlat);
   };
 
   // Purchase CRUD
@@ -425,58 +430,47 @@ export function useStorage() {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newPurchase: Purchase = { ...purchase, id: `pur-${Date.now()}-${randomSuffix}`, date: purchase.date || new Date().toISOString() };
     
-    let platToSync: Platform | undefined;
-    setPlatforms((prev) => prev.map((plat) => {
-      if (plat.id === platformId) {
-        platToSync = { ...plat, purchases: [...(plat.purchases || []), newPurchase] };
-        return platToSync;
-      }
-      return plat;
-    }));
+    const currentPlatforms = platformsRef.current;
+    const plat = currentPlatforms.find(p => p.id === platformId);
+    if (!plat) return newPurchase;
+
+    const newPlat = { ...plat, purchases: [...(plat.purchases || []), newPurchase] };
+    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    fbSet('platforms', platformId, newPlat);
     
-    if (platToSync) {
-      fbSet('platforms', platformId, platToSync);
-    }
     return newPurchase;
   };
 
   const updatePurchase = (platformId: string, purchaseId: string, updated: Partial<Purchase>) => {
-    let platToSync: Platform | undefined;
-    setPlatforms((prev) => prev.map((plat) => {
-      if (plat.id === platformId) {
-        const existingPur = plat.purchases.find(p => p.id === purchaseId);
-        if (existingPur) {
-          const mergedName = updated.productName !== undefined ? updated.productName : existingPur.productName;
-          const mergedOriginal = updated.originalPrice !== undefined ? updated.originalPrice : existingPur.originalPrice;
-          const mergedFinal = updated.finalPrice !== undefined ? updated.finalPrice : existingPur.finalPrice;
-          validatePurchaseData(mergedName, mergedOriginal, mergedFinal);
-        }
-        const newPurchases = (plat.purchases || []).map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
-        platToSync = { ...plat, purchases: newPurchases };
-        return platToSync;
-      }
-      return plat;
-    }));
-    
-    if (platToSync) {
-      fbSet('platforms', platformId, platToSync);
+    const currentPlatforms = platformsRef.current;
+    const plat = currentPlatforms.find(p => p.id === platformId);
+    if (!plat) return;
+
+    const existingPur = plat.purchases.find(p => p.id === purchaseId);
+    if (existingPur) {
+      const mergedName = updated.productName !== undefined ? updated.productName : existingPur.productName;
+      const mergedOriginal = updated.originalPrice !== undefined ? updated.originalPrice : existingPur.originalPrice;
+      const mergedFinal = updated.finalPrice !== undefined ? updated.finalPrice : existingPur.finalPrice;
+      validatePurchaseData(mergedName, mergedOriginal, mergedFinal);
     }
+    
+    const newPurchases = (plat.purchases || []).map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
+    const newPlat = { ...plat, purchases: newPurchases };
+
+    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    fbSet('platforms', platformId, newPlat);
   };
 
   const deletePurchase = (platformId: string, purchaseId: string) => {
-    let platToSync: Platform | undefined;
-    setPlatforms((prev) => prev.map((plat) => {
-      if (plat.id === platformId) {
-        const newPurchases = (plat.purchases || []).filter((pur) => pur.id !== purchaseId);
-        platToSync = { ...plat, purchases: newPurchases };
-        return platToSync;
-      }
-      return plat;
-    }));
-    
-    if (platToSync) {
-      fbSet('platforms', platformId, platToSync);
-    }
+    const currentPlatforms = platformsRef.current;
+    const plat = currentPlatforms.find(p => p.id === platformId);
+    if (!plat) return;
+
+    const newPurchases = (plat.purchases || []).filter((pur) => pur.id !== purchaseId);
+    const newPlat = { ...plat, purchases: newPurchases };
+
+    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    fbSet('platforms', platformId, newPlat);
   };
 
   // Status CRUD
@@ -489,9 +483,13 @@ export function useStorage() {
   };
 
   const updateStatus = (id: string, updated: Partial<Status>) => {
-    setStatuses((prev) => prev.map((s) => (s.id === id ? { ...s, ...updated } : s)));
-    const status = statuses.find(s => s.id === id);
-    if (status) fbSet('statuses', id, { ...status, ...updated });
+    const currentStatuses = statusesRef.current;
+    const status = currentStatuses.find(s => s.id === id);
+    if (!status) return;
+
+    const newStatus = { ...status, ...updated };
+    setStatuses((prev) => prev.map((s) => (s.id === id ? newStatus : s)));
+    fbSet('statuses', id, newStatus);
   };
 
   const deleteStatus = (id: string) => {

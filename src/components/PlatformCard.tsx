@@ -230,18 +230,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     }
   }, [activeMatchProfileId, platform.profiles]);
 
-  const domain = getDomainFromInput(platform.name, platform.url);
-  
-  const getCleanLogoUrl = () => {
-    if (platform.logoUrl && !platform.logoUrl.includes('clearbit.com')) {
-      return platform.logoUrl;
-    }
-    return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
-  };
-
-  const currentLogoUrl = useGoogleFallback
-    ? `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`
-    : getCleanLogoUrl();
+  const currentLogoUrl = platform.logoUrl || getLogoUrl(platform.name, platform.url, useGoogleFallback ? 1 : 0);
 
   const handleLogoError = () => {
     if (!useGoogleFallback && !currentLogoUrl.startsWith('data:')) {
@@ -281,21 +270,19 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
           {/* Logo container - Standardized App Icon Style */}
           <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#0a0a0c] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[0_8px_16px_-4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
             <img referrerPolicy="no-referrer"
-              src={getLogoUrl(platform.name, platform.url)}
+              src={currentLogoUrl}
               alt={platform.name}
               className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                if (target.parentElement) {
-                  target.parentElement.style.backgroundColor = getPlatformColor(platform.name);
-                  const span = document.createElement('span');
-                  span.className = "text-white font-extrabold text-[10px] tracking-tight";
-                  span.textContent = getInitials(platform.name);
-                  target.parentElement.appendChild(span);
-                }
-              }}
+              onError={handleLogoError}
             />
+            {imageError && (
+              <div
+                className="w-full h-full flex items-center justify-center text-white font-extrabold text-[10px] tracking-tight"
+                style={{ backgroundColor: getPlatformColor(platform.name) }}
+              >
+                {getInitials(platform.name)}
+              </div>
+            )}
           </div>
 
           <div>
