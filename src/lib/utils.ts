@@ -21,23 +21,32 @@ export const safeSetItem = (key: string, value: string): boolean => {
 };
 
 /**
- * Sanitizes URLs to prevent XSS (e.g. javascript: URIs)
+ * Sanitizes and normalizes URLs to prevent XSS and ensure external links are absolute.
  */
 export const safeUrl = (url: string | undefined): string | undefined => {
   if (!url) return undefined;
-  try {
-    const parsed = new URL(url, window.location.origin);
-    // Only allow http, https, and mailto
-    if (['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
-      return parsed.href;
-    }
-    return undefined; // Block unsafe protocols
-  } catch (e) {
-    // If it's a relative URL or malformed but doesn't start with javascript/vbscript/data
-    const lowercaseUrl = url.toLowerCase().trim();
-    if (lowercaseUrl.startsWith('javascript:') || lowercaseUrl.startsWith('vbscript:') || lowercaseUrl.startsWith('data:')) {
-      return undefined;
-    }
-    return url;
+  const trimmedUrl = url.trim();
+  const lowercaseUrl = trimmedUrl.toLowerCase();
+  
+  // Block dangerous protocols
+  if (lowercaseUrl.startsWith('javascript:') || lowercaseUrl.startsWith('vbscript:') || lowercaseUrl.startsWith('data:')) {
+    return undefined;
   }
+  
+  // Allow safe non-http protocols
+  if (lowercaseUrl.startsWith('mailto:') || lowercaseUrl.startsWith('tel:')) {
+    return trimmedUrl;
+  }
+  
+  // If it has a protocol, verify it's http or https
+  if (lowercaseUrl.includes('://')) {
+    if (lowercaseUrl.startsWith('http://') || lowercaseUrl.startsWith('https://')) {
+      return trimmedUrl;
+    }
+    return undefined; // Block other protocols
+  }
+  
+  // If it doesn't have a protocol, assume it's an external link and add https://
+  // This prevents relative URL issues (e.g. "google.com" becoming "[origin]/google.com")
+  return `https://${trimmedUrl}`;
 };

@@ -92,7 +92,7 @@ export function useStorage() {
         
         console.log('useStorage: tags snapshot received', snap.size);
         if (!snap.empty) {
-          const cloudTags = snap.docs.map(d => d.data() as Tag);
+          const cloudTags = snap.docs.map(d => ({ ...d.data() as Tag, id: d.id }));
           setTags(cloudTags);
           safeSetItem(`hub_user_${user.uid}_tags`, JSON.stringify(cloudTags));
         } else {
@@ -116,7 +116,7 @@ export function useStorage() {
         if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
-          const cloudCats = snap.docs.map(d => d.data() as Category);
+          const cloudCats = snap.docs.map(d => ({ ...d.data() as Category, id: d.id }));
           setCategories(cloudCats);
           safeSetItem(`hub_user_${user.uid}_categories`, JSON.stringify(cloudCats));
         } else {
@@ -140,7 +140,7 @@ export function useStorage() {
         if (!snap.empty) {
           const cloudPlats = snap.docs.map(d => {
             const data = d.data() as Platform;
-            return { ...data, ownerId: user.uid };
+            return { ...data, id: d.id, ownerId: user.uid };
           });
           setPlatforms(cloudPlats);
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
@@ -163,7 +163,7 @@ export function useStorage() {
         if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
-          const cloudStatuses = snap.docs.map(d => d.data() as Status);
+          const cloudStatuses = snap.docs.map(d => ({ ...d.data() as Status, id: d.id }));
           setStatuses(cloudStatuses);
           safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(cloudStatuses));
         } else {

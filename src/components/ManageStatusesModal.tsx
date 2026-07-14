@@ -88,6 +88,7 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
   const [newStatusLabel, setNewStatusLabel] = useState('');
   const [selectedColor, setSelectedColor] = useState('#3b82f6');
   const [colorHexInput, setColorHexInput] = useState('3b82f6');
+  const [brightness, setBrightness] = useState(1.0);
   const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
   const [deletingStatusId, setDeletingStatusId] = useState<string | null>(null);
   const [showColorWheel, setShowColorWheel] = useState(false);
@@ -136,14 +137,16 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
   const drawColorWheel = () => {
     const canvas = colorWheelRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     const width = canvas.width;
     const height = canvas.height;
     const cx = width / 2;
     const cy = height / 2;
-    const radius = width / 2;
+    const radius = width / 2 - 2;
+
+    ctx.clearRect(0, 0, width, height);
 
     const imgData = ctx.createImageData(width, height);
     const data = imgData.data;
@@ -155,12 +158,10 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist <= radius) {
-          let angle = Math.atan2(dy, dx) + Math.PI;
+          const angle = Math.atan2(dy, dx) + Math.PI;
           const hue = (angle / (Math.PI * 2)) * 360;
           const sat = dist / radius;
-          const val = 1.0;
-
-          const rgb = hsvToRgb(hue, sat, val);
+          const rgb = hsvToRgb(hue, sat, brightness);
           const index = (y * width + x) * 4;
           data[index] = rgb[0];
           data[index + 1] = rgb[1];
@@ -170,59 +171,99 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
       }
     }
     ctx.putImageData(imgData, 0, 0);
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
   };
 
   useEffect(() => {
     if (isOpen && showColorWheel) {
-      const timer = setTimeout(() => {
-        drawColorWheel();
-      }, 50);
-      return () => clearTimeout(timer);
+      drawColorWheel();
     }
-  }, [isOpen, showColorWheel]);
+  }, [isOpen, showColorWheel, brightness]);
 
+  const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isDraggingRef.current) {
+        handleColorSelection(e.clientX, e.clientY);
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (isDraggingRef.current && e.touches[0]) {
+        e.preventDefault();
+        handleColorSelection(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const handleGlobalTouchEnd = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+    window.addEventListener('touchend', handleGlobalTouchEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
+      window.removeEventListener('touchend', handleGlobalTouchEnd);
+    };
+  }, []);
 
   const handleColorSelection = (clientX: number, clientY: number) => {
     const canvas = colorWheelRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const radius = canvas.width / 2 - 2;
+
+    const angle = Math.atan2(dy, dx) + Math.PI;
+    const hue = (angle / (Math.PI * 2)) * 360;
+    const sat = Math.min(1, dist / radius);
     
-    try {
-      const clampedX = Math.max(0, Math.min(canvas.width - 1, x * (canvas.width / rect.width)));
-      const clampedY = Math.max(0, Math.min(canvas.height - 1, y * (canvas.height / rect.height)));
-      
-      const pixel = ctx.getImageData(clampedX, clampedY, 1, 1).data;
-      if (pixel[3] > 0) {
-        const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(val => {
-          const hexStr = val.toString(16);
-          return hexStr.length === 1 ? '0' + hexStr : hexStr;
-        }).join('');
-        updateSelectedColor(hex);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    const rgb = hsvToRgb(hue, sat, brightness);
+    const hex = '#' + rgb.map(val => {
+      const hexStr = val.toString(16);
+      return hexStr.length === 1 ? '0' + hexStr : hexStr;
+    }).join('');
+    
+    updateSelectedColor(hex);
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     isDraggingRef.current = true;
+    setIsDragging(true);
     handleColorSelection(e.clientX, e.clientY);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDraggingRef.current) {
-      handleColorSelection(e.clientX, e.clientY);
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    if (e.touches[0]) {
+      handleColorSelection(e.touches[0].clientX, e.touches[0].clientY);
     }
-  };
-
-  const handleMouseUpOrLeave = () => {
-    isDraggingRef.current = false;
   };
 
   const updateSelectedColor = (color: string) => {
@@ -233,12 +274,15 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
   const handleStartEdit = (status: Status) => {
     setEditingStatusId(status.id);
     setNewStatusLabel(status.label);
+    const hsv = hexToHsv(status.color);
+    setBrightness(hsv.v);
     updateSelectedColor(status.color);
   };
 
   const handleCancelEdit = () => {
     setEditingStatusId(null);
     setNewStatusLabel('');
+    setBrightness(1.0);
     updateSelectedColor('#3b82f6');
   };
 
@@ -268,7 +312,7 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 backdrop-blur-sm select-none">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -402,26 +446,46 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
                   exit={{ opacity: 0, scale: 0.9, height: 0, marginTop: 0 }}
                   className="overflow-hidden flex flex-col items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-[#25283a] bg-white dark:bg-[#14151f] w-full shadow-lg"
                 >
-                  <div className="relative w-32 h-32 flex items-center justify-center select-none touch-none">
-                    <canvas
-                      ref={colorWheelRef}
-                      width={128}
-                      height={128}
-                      onMouseDown={handleMouseDown}
-                      onMouseMove={handleMouseMove}
-                      onMouseUp={handleMouseUpOrLeave}
-                      onMouseLeave={handleMouseUpOrLeave}
-                      className="rounded-full cursor-crosshair border border-neutral-300 shadow-md dark:border-neutral-700 touch-none z-10"
-                    />
-                    {(() => {
-                      const coords = getIndicatorCoords(selectedColor, 64);
-                      return (
-                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
-                          <line x1={64} y1={64} x2={coords.x} y2={coords.y} stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                          <circle cx={coords.x} cy={coords.y} r="5" fill={selectedColor} stroke="white" strokeWidth="2" />
-                        </svg>
-                      );
-                    })()}
+                  <div className="flex flex-col items-center gap-5 w-full">
+                    <div className="relative w-32 h-32 flex items-center justify-center touch-none">
+                      <canvas
+                        ref={colorWheelRef}
+                        width={128}
+                        height={128}
+                        onMouseDown={handleMouseDown}
+                        onTouchStart={handleTouchStart}
+                        className="rounded-full cursor-crosshair border border-neutral-300 shadow-md dark:border-neutral-700 touch-none z-10"
+                      />
+                      {(() => {
+                        const coords = getIndicatorCoords(selectedColor, 64);
+                        return (
+                          <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
+                            <line x1={64} y1={64} x2={coords.x} y2={coords.y} stroke={brightness > 0.5 ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" strokeLinecap="round" />
+                            <circle cx={coords.x} cy={coords.y} r="6" fill={selectedColor} stroke="white" strokeWidth="2" className="shadow-sm" />
+                          </svg>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Brightness Slider */}
+                    <div className="w-full flex flex-col gap-1.5 px-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Brilho</span>
+                        <span className="text-[10px] font-mono text-neutral-400">{Math.round(brightness * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={brightness}
+                        onChange={(e) => setBrightness(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                        style={{
+                          background: `linear-gradient(to right, #000, ${selectedColor})`
+                        }}
+                      />
+                    </div>
                   </div>
                 </motion.div>
               )}

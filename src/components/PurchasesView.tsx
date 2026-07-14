@@ -95,7 +95,7 @@ const CardCarousel = ({ images, productName, onOpenFullScreen }: { images: strin
         <div className="h-14 flex items-center gap-2 px-3 overflow-x-auto scrollbar-hide border-t border-neutral-100 dark:border-[#2a2d40]/40">
           {images.map((img, i) => (
             <button
-              key={i}
+              key={`thumb-${i}-${img.substring(0, 20)}`}
               onClick={(e) => {
                 e.stopPropagation();
                 setCurrentIndex(i);
@@ -647,8 +647,8 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                           if (!tag) return null;
                           return (
                             <span 
-                              key={`${tId}-${idx}`}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tight shadow-sm shrink-0 border"
+                                key={`pur-tag-${purchase.id}-${tId}-${idx}`}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tight shadow-sm shrink-0 border"
                               style={{ backgroundColor: `${tag.color}15`, borderColor: `${tag.color}30`, color: tag.color }}
                             >
                               <span>{tag.emoji}</span>
@@ -783,7 +783,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                             const itemStatus = item.status || 'pedido_feito';
                             const hasPrice = item.price !== undefined && item.price !== null && item.price > 0;
                             return (
-                              <div key={item.id || `bi-${idx}`} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
+                              <div key={item.id || `bi-${purchase.id}-${idx}-${item.name}`} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
                                 <div className="flex items-center gap-2 max-w-[200px]">
                                   <button
                                     type="button"
@@ -883,9 +883,9 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white uppercase shadow-md border-2 border-white dark:border-neutral-800"
                             style={{
                               backgroundColor:
-                                buyerProfile.avatar.type === 'color'
-                                  ? buyerProfile.avatar.value
-                                  : '#4f46e5',
+                              buyerProfile.avatar.bgColor || (buyerProfile.avatar.type === 'color'
+                                ? buyerProfile.avatar.value
+                                : '#4f46e5'),
                             }}
                           >
                             {buyerProfile.avatar.type === 'emoji' ? buyerProfile.avatar.value : buyerProfile.name.slice(0, 1).toUpperCase()}

@@ -61,11 +61,11 @@ const highlightText = (text: string, highlight?: string) => {
     <>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-yellow-200 text-neutral-900 font-bold px-0.5 rounded dark:bg-amber-500/35 dark:text-amber-200">
+          <mark key={`highlight-${part}-${i}`} className="bg-yellow-200 text-neutral-900 font-bold px-0.5 rounded dark:bg-amber-500/35 dark:text-amber-200">
             {part}
           </mark>
         ) : (
-          <span key={i}>{part}</span>
+          <span key={`text-${part}-${i}`}>{part}</span>
         )
       )}
     </>
@@ -302,7 +302,15 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
             <h3 className="font-sans font-bold text-sm text-neutral-900 dark:text-white tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
               {highlightText(platform.name, searchQuery)}
             </h3>
-            <div className="flex items-center gap-1.5 mt-0.5">
+            {platform.url && (
+              <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-500">
+                <Globe className="w-2.5 h-2.5 shrink-0" />
+                <span className="text-[10px] truncate max-w-[140px] font-medium leading-none">
+                  {platform.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 mt-1">
               <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
                 {platform.profiles.length} {platform.profiles.length === 1 ? 'conta' : 'contas'}
               </span>
@@ -336,6 +344,20 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
               <CategoryIcon icon={categoryIcon} className="w-3.5 h-3.5" />
               <span data-testid={`platform-card-category-name-${platform.id}`}>{categoryName}</span>
             </div>
+
+            {platform.url && (
+              <a 
+                href={safeUrl(platform.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 transition-all dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900/40 dark:hover:bg-indigo-900/50"
+              >
+                <Globe className="w-3 h-3" />
+                <span>Site da Plataforma</span>
+                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+              </a>
+            )}
 
             {/* Profile Avatars indicators */}
             <div className="flex items-center -space-x-1.5 overflow-hidden">
@@ -571,6 +593,14 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                       </span>
                                     )}
                                   </span>
+                                  {platform.url && (
+                                    <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-500">
+                                      <Globe className="w-2.5 h-2.5 shrink-0" />
+                                      <span className="text-[9px] truncate max-w-[150px] font-medium leading-none italic">
+                                        {platform.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
@@ -893,7 +923,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   {purchase.bundleItems.slice(0, 3).map((item, idx) => {
                                     const itemStatus = item.status || 'pedido_feito';
                                     return (
-                                      <span key={item.id || `bi-${idx}`} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
+                                      <span key={item.id || `bi-${purchase.id}-${idx}-${item.name}`} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
                                         <button
                                           type="button"
                                           onClick={(e) => cycleBundleItemStatus(e, purchase, idx)}
@@ -921,7 +951,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                 <div className="flex gap-1 mt-1.5">
                                   {purchase.productImages.slice(1, 5).map((img, idx) => (
                                     <div 
-                                      key={idx} 
+                                      key={`p-img-strip-${purchase.id}-${idx}-${img.substring(0, 30)}`} 
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openFullScreen(purchase.productImages!, idx + 1);
@@ -953,7 +983,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     if (!tag) return null;
                                     return (
                                       <span 
-                                        key={`${tId}-${idx}`} 
+                                        key={`tag-pill-${purchase.id}-${tId}-${idx}`} 
                                         className="text-[8px] px-1.5 py-0.5 rounded border font-medium leading-none flex items-center gap-0.5"
                                         style={{ backgroundColor: `${tag.color}15`, borderColor: `${tag.color}30`, color: tag.color }}
                                       >

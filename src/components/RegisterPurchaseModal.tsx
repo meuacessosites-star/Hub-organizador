@@ -781,7 +781,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                           className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase shadow-sm border border-white/20"
                           style={{
                             backgroundColor:
-                              prof.avatar.type === 'color' ? prof.avatar.value : '#4f46e5',
+                              prof.avatar.bgColor || (prof.avatar.type === 'color' ? prof.avatar.value : '#4f46e5'),
                           }}
                         >
                           {prof.avatar.type === 'emoji' ? prof.avatar.value : prof.name.slice(0, 1).toUpperCase()}
@@ -920,7 +920,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
               {productImages.length > 0 ? (
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2 max-h-[150px] overflow-y-auto pr-1">
                   {productImages.map((img, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-lg border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-white dark:bg-[#0e0f14] group">
+                    <div key={`purchase-photo-${idx}-${img.substring(0, 30)}`} className="relative aspect-square rounded-lg border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-white dark:bg-[#0e0f14] group">
                       <img referrerPolicy="no-referrer"
                         src={img}
                         alt={`Produto ${idx + 1}`}
@@ -1016,7 +1016,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   <div className="flex flex-col gap-2 mt-1">
                     {bundleItems.map((item, index) => {
                       return (
-                        <div key={item.id || `bi-${index}`} className="flex flex-col gap-2 bg-white dark:bg-[#0a0a0c] p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 relative group">
+                        <div key={item.id || `bi-${index}-${item.name}`} className="flex flex-col gap-2 bg-white dark:bg-[#0a0a0c] p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 relative group">
                           <button
                             type="button"
                             onClick={() => {
@@ -1108,7 +1108,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                                 return itemImages.length > 0 ? (
                                   <div className="flex flex-wrap gap-1.5 max-h-[85px] overflow-y-auto py-1">
                                     {itemImages.map((img, imgIdx) => (
-                                      <div key={imgIdx} className="w-10 h-10 rounded border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-white dark:bg-[#0e0f14] relative group/img shrink-0">
+                                      <div key={`item-img-${index}-${imgIdx}-${img.substring(0, 20)}`} className="w-10 h-10 rounded border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-white dark:bg-[#0e0f14] relative group/img shrink-0">
                                         <img referrerPolicy="no-referrer" 
                                           src={img} 
                                           alt="" 

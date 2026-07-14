@@ -27,14 +27,19 @@ Para garantir testes estáveis baseados na interface visual, utilize os seguinte
 * **Modal de Perfil do Usuário**: `#user-profile-modal`
 * **Modal de Nova Plataforma**: `#new-platform-modal`
 * **Modal de Registro de Compra**: `#register-purchase-modal`
+* **Botão "Registrar compra" (dentro do modal)**: `#submit-purchase-btn` (data-testid: `submit-purchase-btn`)
 * **Modal de Gerenciamento de Status**: `#manage-statuses-modal`
 * **Modal de Gerenciamento de Categorias**: `#manage-categories-modal`
 * **Botão Fechar (Comum aos Modais)**: `button[title="Fechar"]` ou `.btn-close-modal`
 
 ### 1.4. Roda de Cores Avançada (`Color Wheel Canvas`)
-* **Canvas de Seleção**: `canvas` dentro do contêiner do Color Picker (Ex: `canvas[width="128"]`)
+* **Canvas de Seleção (Categorias)**: `#color-wheel-canvas` (data-testid: `color-wheel-canvas`)
+* **Canvas de Seleção (Perfis)**: `#profile-color-wheel-canvas` (data-testid: `profile-color-wheel-canvas`)
 * **Botão de Toggle da Roda**: `button[title="Abrir/Fechar roda de cores"]` ou `.btn-toggle-color-wheel`
 * **Input de Texto de Cor Hexadecimal**: `input[placeholder="#000000"]` ou `.color-hex-input`
+
+### 1.5. Ações Dinâmicas no Dashboard
+* **Botão "Registrar compra" no Card da Plataforma**: `[id^="platform-register-purchase-btn-"]` (data-testid: `platform-register-purchase-btn-{id}`)
 
 ---
 
@@ -73,10 +78,11 @@ Ferramentas de teste de robustez (fuzzing) devem injetar payloads para tentar es
 | Entidade | Campo | Tipo / Formato | Limite de Entrada esperado | Ação de Falha Esperada |
 | :--- | :--- | :--- | :--- | :--- |
 | **Plataforma** | `name` | String | Mín 1, Máx 100 caracteres | Bloquear submit / Erro visual |
-| | `domain` | URL / Domínio | String sem espaços, ex.: `sub.domain.com` | Limpar espaços / Autocompletar |
-| **Compra** | `name` | String | Mín 1, Máx 150 caracteres | Bloquear submit |
+| | `domain` | URL / Domínio | URL válida com ponto, ex.: `exemplo.com` | Bloquear submit / Erro: "Domínio ou URL inválido" |
+| **Compra** | `name` | String | Mín 1, Máx 150 caracteres. Bloqueado: `<INVALID NAME>` | Bloquear submit |
 | | `price` | Number | `>= 0` (Decimais até 2 casas) | Impedir valores negativos |
 | | `date` | ISO 8601 String | Data válida menor ou igual à atual | Rejeitar datas inválidas |
+| **Perfil / Avatar** | `avatar.bgColor`| Hexadecimal | Regex: `^#[0-9A-Fa-f]{6}$` | Fallback para valor de cor se nulo |
 | **Status / Tag** | `color` | Hexadecimal | Regex: `^#[0-9A-Fa-f]{6}$` | Fallback para `#6366f1` se inválido |
 | | `emoji` | Emoji UTF-8 | 1 único caractere de emoji | Impedir mais de 1 caractere |
 | **Imagens** | `file` | Blob/File | Máx 10MB, formatos: PNG, JPG, WEBP | Redimensionamento client-side para 600x600px |
@@ -95,39 +101,46 @@ As seguintes regras de proteção e segurança estão implementadas e devem ser 
 ### 4.2. Insegurança de IDOR (Insecure Direct Object Reference)
 * **Vetor**: Usuário `User_A` tenta ler ou modificar recursos do `User_B` utilizando APIs do Firestore diretamente a partir do client-side do navegador.
 * **Expectativa de Segurança**: As regras de segurança do Firestore (`firestore.rules`) barram qualquer operação em caminhos que não contenham o UID do próprio usuário logado.
-* **Payload de Automação de Teste**:
-  ```js
-  // Tentativa do User A ler dados do User B via console / script injetado
-  getDoc(doc(db, "platforms", "plat-user-B-id"));
-  ```
-  *Resultado Esperado*: Retornar erro `FirebaseError: Missing or insufficient permissions`.
+* **Redundância UI-Level**: O componente `PlatformCard.tsx` realiza uma verificação secundária de `currentUserUid === platform.ownerId`. Se a propriedade `ownerId` existir e não bater com o usuário logado, o card exibe um estado de "Permissão Negada", bloqueando a renderização de campos sensíveis (email, nome de usuário, etc).
+* **Consistência de Snapshot**: O hook `useStorage.ts` ignora snapshots do Firestore que possuam `hasPendingWrites: true`. Isso garante que o estado da interface não sofra regressões ou vazamentos de dados de sessões anteriores durante atualizações otimistas.
 
 ### 4.3. Regras de Segurança do Firestore (Invariants)
-A ferramenta de teste deve verificar as seguintes regras de segurança aplicadas sobre o banco de dados de produção:
+A ferramenta de teste deve verificar as seguintes regras de segurança aplicadas sobre o banco de dados de produção (Fase 4: Fortress Rules):
 
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regra Global de Usuário
+    // Definições Primitivas
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Coleções aninhadas de plataformas, compras e configurações
-      match /{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) 
+                      && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'avatar']);
+
+      function isValidUser(data) {
+        return (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+          && (!('avatar' in data) || (data.avatar is map 
+            && data.avatar.type is string && data.avatar.type.size() <= 32
+            && data.avatar.value is string && data.avatar.value.size() <= 1048576
+            && (!('bgColor' in data.avatar) || (data.avatar.bgColor is string && data.avatar.bgColor.size() <= 20))));
       }
-    }
-    
-    // Coleções Globais / Compartilhadas (se houver, ex.: tags do sistema)
-    match /tags/{tagId} {
-      allow read: if request.auth != null;
-      allow write: if false; // Somente leitura pelo app client
+
+      // Subcoleções protegidas por hierarquia de userId
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }
 ```
+
+* **Nota Crítica**: No update do usuário, apenas as chaves `displayName` e `avatar` são permitidas. Qualquer tentativa de escalar privilégios ou injetar outros campos no documento raiz do usuário resultará em `PERMISSION_DENIED`.
 
 ### 4.4. Prevenção de Injeção de Dados e Colisões de ID
 * **Problema**: Geradores de ID baseados apenas em `Date.now()` podem colidir sob concorrência rápida ou automações intensas de lote.

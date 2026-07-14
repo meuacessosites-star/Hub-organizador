@@ -73,7 +73,7 @@ export function getDomainFromInput(name: string, url?: string): string {
  */
 export function getLogoUrl(name: string, url?: string): string {
   const domain = getDomainFromInput(name, url);
-  return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
+  return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=404&url=https://${domain}&size=256`;
 }
 
 /**

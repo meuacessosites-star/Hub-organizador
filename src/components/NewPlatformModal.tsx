@@ -61,6 +61,62 @@ const PRESET_EMOJIS = [
   '💻', '📱', '🎮', '❤️', '🌟', '🚀', '🔒', '🔑', '🎨', '✈️'
 ];
 
+// Helper to convert HEX to HSV for exact indicator position
+const hexToHsv = (hex: string): { h: number; s: number; v: number } => {
+  let r = 0, g = 0, b = 0;
+  let cleanHex = hex.replace('#', '');
+  if (cleanHex.length === 3) {
+    r = parseInt(cleanHex[0] + cleanHex[0], 16);
+    g = parseInt(cleanHex[1] + cleanHex[1], 16);
+    b = parseInt(cleanHex[2] + cleanHex[2], 16);
+  } else if (cleanHex.length === 6) {
+    r = parseInt(cleanHex.substring(0, 2), 16);
+    g = parseInt(cleanHex.substring(2, 4), 16);
+    b = parseInt(cleanHex.substring(4, 6), 16);
+  } else {
+    return { h: 0, s: 0, v: 1 };
+  }
+
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  
+  let h = 0;
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+
+  if (max !== min) {
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return { h: h * 360, s, v };
+};
+
+const getIndicatorCoords = (color: string, radius: number = 64) => {
+  const { h, s } = hexToHsv(color);
+  const angle = (h / 360) * (Math.PI * 2) - Math.PI;
+  const dist = s * radius;
+  return {
+    x: radius + Math.cos(angle) * dist,
+    y: radius + Math.sin(angle) * dist,
+  };
+};
+
 const POPULAR_PRESETS = [
   { name: 'Netflix', domain: 'netflix.com' },
   { name: 'Spotify', domain: 'spotify.com' },
@@ -100,6 +156,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   const [platformName, setPlatformName] = useState('');
   const [platformUrl, setPlatformUrl] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(categories[0]?.id || 'outros');
+  const [urlError, setUrlError] = useState('');
 
   // Platform logo states
   const [logoMode, setLogoMode] = useState<'auto' | 'presets' | 'url' | 'upload'>('auto');
@@ -158,67 +215,102 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   // Avatar states
   const [avatarTab, setAvatarTab] = useState<'color' | 'emoji' | 'image'>('color');
   const [selectedColor, setSelectedColor] = useState('#7c5cfc');
+  const [brightness, setBrightness] = useState(1.0);
   const [selectedEmoji, setSelectedEmoji] = useState('👤');
   const [imageUrl, setImageUrl] = useState('');
   const [categorySearch, setCategorySearch] = useState('');
 
-  const colorWheelRef = useRef<HTMLCanvasElement>(null);
+  const colorWheelRef = useRef<HTMLDivElement>(null);
+
+  const [isAccessLinkEdited, setIsAccessLinkEdited] = useState(false);
 
   // Auto-fill access link in Step 2 when platform URL is filled
   useEffect(() => {
-    if (platformUrl && !accessLink) {
+    if (!isAccessLinkEdited && platformUrl) {
       setAccessLink(platformUrl);
     }
-  }, [platformUrl]);
+  }, [platformUrl, isAccessLinkEdited]);
 
-  // Handle color wheel canvas drawing & mouse interactions
-  const drawColorWheel = () => {
-    const canvas = colorWheelRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const cx = width / 2;
-    const cy = height / 2;
-    const radius = width / 2;
 
-    const imgData = ctx.createImageData(width, height);
-    const data = imgData.data;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const dx = x - cx;
-        const dy = y - cy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist <= radius) {
-          let angle = Math.atan2(dy, dx) + Math.PI; // 0 to 2*PI
-          const hue = (angle / (Math.PI * 2)) * 360;
-          const sat = dist / radius;
-          const val = 1.0;
-
-          const rgb = hsvToRgb(hue, sat, val);
-          const index = (y * width + x) * 4;
-          data[index] = rgb[0];
-          data[index + 1] = rgb[1];
-          data[index + 2] = rgb[2];
-          data[index + 3] = 255;
-        }
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-  };
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
-    if (isOpen && avatarTab === 'color') {
-      const timer = setTimeout(() => {
-        drawColorWheel();
-      }, 50);
-      return () => clearTimeout(timer);
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isDraggingRef.current) {
+        handleColorSelection(e.clientX, e.clientY);
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (isDraggingRef.current && e.touches[0]) {
+        e.preventDefault();
+        handleColorSelection(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const handleGlobalTouchEnd = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+    window.addEventListener('touchend', handleGlobalTouchEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
+      window.removeEventListener('touchend', handleGlobalTouchEnd);
+    };
+  }, []);
+
+  const handleColorSelection = (clientX: number, clientY: number) => {
+    const container = colorWheelRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    const width = rect.width;
+    const height = rect.height;
+    const cx = width / 2;
+    const cy = height / 2;
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const radius = width / 2;
+
+    const angle = Math.atan2(dy, dx) + Math.PI;
+    const hue = (angle / (Math.PI * 2)) * 360;
+    const sat = Math.min(1, dist / radius);
+    
+    const rgb = hsvToRgb(hue, sat, brightness);
+    const hex = rgbToHex(rgb[0], rgb[1], rgb[2]);
+    setSelectedColor(hex);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    handleColorSelection(e.clientX, e.clientY);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    if (e.touches[0]) {
+      handleColorSelection(e.touches[0].clientX, e.touches[0].clientY);
     }
-  }, [isOpen, avatarTab]);
+  };
 
   const hsvToRgb = (h: number, s: number, v: number): [number, number, number] => {
     const c = v * s;
@@ -246,30 +338,6 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
       return hex.length === 1 ? '0' + hex : hex;
     }).join('');
   };
-
-  const handleColorWheelClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = colorWheelRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Read pixel color from canvas
-    try {
-      const pixel = ctx.getImageData(x, y, 1, 1).data;
-      if (pixel[3] > 0) { // check alpha
-        const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
-        setSelectedColor(hex);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Image upload base64 parser
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -388,8 +456,34 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
 
   const computedLogoUrl = finalLogoUrlPreview;
 
+  const isValidUrl = (url: string) => {
+    if (!url) return true;
+    try {
+      const cleanUrl = url.trim().toLowerCase();
+      // Basic check: must contain at least one dot and some characters around it
+      if (!cleanUrl.includes('.') || cleanUrl.length < 3) return false;
+      const withHttp = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+      const parsed = new URL(withHttp);
+      return parsed.hostname.includes('.') && parsed.hostname.length > 3;
+    } catch {
+      return false;
+    }
+  };
+
   const handleNext = () => {
     if (!platformName.trim()) return;
+    
+    if (platformUrl && !isValidUrl(platformUrl)) {
+      setUrlError('Domínio ou URL inválido. Use algo como "exemplo.com"');
+      return;
+    }
+
+    if (accessLink && !isValidUrl(accessLink)) {
+      setStep(2); // Ensure we are on step 2 to show error if possible
+      // Actually, handleCreatePlatform is called from Step 2
+    }
+    
+    setUrlError('');
     setStep(2);
   };
 
@@ -430,6 +524,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
       avatar: {
         type: avatarTab,
         value: avatarValue,
+        bgColor: selectedColor,
       },
     };
 
@@ -551,11 +646,21 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                   <input
                     type="url"
                     value={platformUrl}
-                    onChange={(e) => setPlatformUrl(e.target.value)}
+                    onChange={(e) => {
+                      setPlatformUrl(e.target.value);
+                      if (urlError) setUrlError('');
+                    }}
                     placeholder="https://exemplo.com (preenche automaticamente)"
-                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                    className={`w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:text-neutral-200 dark:placeholder-neutral-500 ${
+                      urlError ? 'border-rose-500 dark:border-rose-500' : 'border-neutral-200 dark:border-[#2a2d40]'
+                    }`}
                   />
                 </div>
+                {urlError && (
+                  <p className="text-[10px] text-rose-500 font-medium mt-1">
+                    ⚠️ {urlError}
+                  </p>
+                )}
               </div>
 
               {/* Logotipo da plataforma */}
@@ -571,7 +676,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                 <div className="flex gap-4 items-start">
                   {/* Large Logo Preview */}
                   <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative dark:bg-[#111219] dark:border-[#2a2d40]">
-                    {finalLogoUrlPreview ? (
+                    {finalLogoUrlPreview && logoPreviewErrorCount === 0 ? (
                        <img referrerPolicy="no-referrer"
                          src={finalLogoUrlPreview}
                          alt="Logo Preview"
@@ -653,8 +758,21 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                 <div className="pt-1">
                   {/* AUTO MODE */}
                   {logoMode === 'auto' && (
-                    <div className="text-[11px] text-neutral-500 bg-neutral-50 p-2.5 rounded-lg border border-neutral-200 dark:bg-[#111219]/55 dark:border-[#2a2d40]/40">
-                      💡 O sistema busca a logo oficial baseado no nome (<strong>{platformName || 'Ex: Netflix'}</strong>). Digite o nome acima e o ícone se ajustará automaticamente.
+                    <div className="flex flex-col gap-2">
+                      <div className="text-[11px] leading-relaxed text-neutral-500 bg-neutral-50 p-3 rounded-xl border border-neutral-200 dark:bg-[#111219]/55 dark:border-[#2a2d40]/40">
+                        💡 O sistema busca a logo oficial automaticamente. Se o ícone não aparecer ou estiver incorreto, você pode <strong>prosseguir normalmente</strong> ou usar as abas acima para escolher uma imagem manualmente.
+                      </div>
+                      {platformName.trim() !== '' && logoPreviewErrorCount >= 1 && (
+                        <div className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 p-3 rounded-xl border border-amber-200 dark:border-amber-900/30 flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-1 duration-300">
+                          <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[9px]">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 text-[10px]">⚠️</span>
+                            Logo não encontrada
+                          </div>
+                          <div className="leading-relaxed">
+                            Esse link do site inserido não tem logo, se quiser personalizar a logo utilize uma dessas funções padrões ou upload.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -668,10 +786,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                             Meus Padrões Salvos
                           </span>
                           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-h-[110px] overflow-y-auto p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-[#2a2d40]/70 dark:bg-[#111219]/50">
-                            {customPresets.map((preset) => {
+                            {customPresets.map((preset, idx) => {
                               const isSelected = platformName === preset.name && platformUrl === preset.url;
                               return (
-                                <div key={preset.name} className="relative group">
+                                <div key={`cp-${idx}-${preset.name}`} className="relative group">
                                   <button
                                     type="button"
                                     onClick={() => handleSelectPreset(preset)}
@@ -755,7 +873,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
 
                   {/* URL MODE */}
                   {logoMode === 'url' && (
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2">
                       <input
                         type="url"
                         value={logoUrlInput}
@@ -764,6 +882,19 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                         className="w-full h-10 px-3 rounded-lg text-xs bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
                       />
                       <p className="text-[10px] text-neutral-500">Cole qualquer link de imagem para usá-lo como logo da plataforma.</p>
+                      {logoUrlInput.trim() !== '' && logoPreviewErrorCount >= 2 && (
+                        <div className="text-[10px] text-rose-600 bg-rose-50 dark:bg-rose-950/20 dark:text-rose-400 p-3 rounded-lg border border-rose-200 dark:border-rose-900/30 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1">
+                          <div className="flex items-center gap-2 font-semibold">
+                            <span>❌ Erro ao carregar imagem</span>
+                          </div>
+                          <span>Não foi possível carregar a imagem desta URL.</span>
+                          <div className="flex flex-col gap-1 text-[9px] opacity-80 mt-1">
+                            <p>• Verifique se o link termina em .png, .jpg ou .webp</p>
+                            <p>• Algumas URLs podem estar bloqueadas por segurança</p>
+                            <p>• Tente usar o <strong>Upload</strong> direto se tiver o arquivo</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -888,7 +1019,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       Editar nomes rápidos
                     </span>
                     {profileNames.map((name, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5">
+                      <div key={`profile-name-edit-${idx}-${name}`} className="flex items-center gap-1.5">
                         <input
                           type="text"
                           value={name}
@@ -932,7 +1063,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       const isSel = profileName === name && !isCustomProfile;
                       return (
                         <button
-                          key={`${name}-${idx}`}
+                          key={`profile-name-chip-${idx}-${name}`}
                           type="button"
                           onClick={() => handleProfileNameChip(name)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
@@ -1050,10 +1181,23 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                 <input
                   type="url"
                   value={accessLink}
-                  onChange={(e) => setAccessLink(e.target.value)}
+                  onChange={(e) => {
+                    setAccessLink(e.target.value);
+                    setIsAccessLinkEdited(true);
+                    if (urlError) setUrlError('');
+                  }}
                   placeholder="https://exemplo.com/login"
-                  className="w-full h-11 px-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                  className={`w-full h-11 px-4 rounded-lg text-sm bg-neutral-50 border transition-colors text-neutral-800 placeholder-neutral-400 focus:outline-none dark:bg-[#111219] dark:text-neutral-200 dark:placeholder-neutral-500 ${
+                    accessLink && !isValidUrl(accessLink)
+                      ? 'border-rose-500 focus:border-rose-600'
+                      : 'border-neutral-200 focus:border-indigo-500 dark:border-[#2a2d40]'
+                  }`}
                 />
+                {accessLink && !isValidUrl(accessLink) && (
+                  <p className="text-[10px] text-rose-500 font-medium mt-1 animate-pulse">
+                    ⚠️ Domínio ou URL inválido
+                  </p>
+                )}
               </div>
 
               {/* Rascunho / Descrição */}
@@ -1125,21 +1269,60 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                   {avatarTab === 'color' && (
                     <div className="flex flex-col items-center gap-4 w-full">
                       {/* Circle wheel + Preview */}
-                      <div className="relative w-36 h-36 flex items-center justify-center">
-                        <canvas
+                      <div className="relative w-36 h-36 flex items-center justify-center touch-none">
+                        <div
                           ref={colorWheelRef}
-                          width={144}
-                          height={144}
-                          onClick={handleColorWheelClick}
-                          className="rounded-full cursor-crosshair border border-neutral-300 shadow-lg dark:border-neutral-700"
+                          onMouseDown={handleMouseDown}
+                          onTouchStart={handleTouchStart}
+                          className="w-full h-full rounded-full cursor-crosshair border border-neutral-300 shadow-lg dark:border-neutral-700 z-10 overflow-hidden"
+                          style={{
+                            background: `
+                              radial-gradient(circle, #fff 0%, transparent 100%),
+                              conic-gradient(from 180deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)
+                            `,
+                            filter: `brightness(${brightness})`
+                          }}
                         />
                         {/* Middle color preview dot */}
                         <div
-                          className="absolute w-8 h-8 rounded-full border-2 border-white shadow-md pointer-events-none flex items-center justify-center text-[10px] font-bold text-white uppercase"
+                          className="absolute w-10 h-10 rounded-full border-2 border-white shadow-md pointer-events-none flex items-center justify-center text-[10px] font-bold text-white uppercase z-20"
                           style={{ backgroundColor: selectedColor }}
                         >
                           {profileName ? profileName.slice(0, 2).toUpperCase() : 'PE'}
                         </div>
+
+                        {/* Indicator svg for line and circle */}
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-30">
+                          {(() => {
+                            const coords = getIndicatorCoords(selectedColor, 72);
+                            return (
+                              <>
+                                <line x1={72} y1={72} x2={coords.x} y2={coords.y} stroke={brightness > 0.5 ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" strokeLinecap="round" />
+                                <circle cx={coords.x} cy={coords.y} r="6" fill={selectedColor} stroke="white" strokeWidth="2" />
+                              </>
+                            );
+                          })()}
+                        </svg>
+                      </div>
+
+                      {/* Brightness Slider */}
+                      <div className="w-full flex flex-col gap-1.5 px-6">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Brilho</span>
+                          <span className="text-[10px] font-mono text-neutral-400">{Math.round(brightness * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={brightness}
+                          onChange={(e) => setBrightness(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                          style={{
+                            background: `linear-gradient(to right, #000, ${selectedColor})`
+                          }}
+                        />
                       </div>
 
                       {/* Manual Hex code selector */}
@@ -1179,7 +1362,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                   {/* EMOJI SELECTOR */}
                   {avatarTab === 'emoji' && (
                     <div className="flex flex-col items-center gap-3 w-full">
-                      <div className="w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center text-2xl shadow-inner select-none mb-1 dark:bg-neutral-800">
+                      <div 
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-inner select-none mb-1 text-white"
+                        style={{ backgroundColor: selectedColor }}
+                      >
                         {selectedEmoji}
                       </div>
 

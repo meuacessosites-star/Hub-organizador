@@ -160,7 +160,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
 
-  const colorWheelRef = useRef<HTMLCanvasElement>(null);
+  const colorWheelRef = useRef<HTMLDivElement>(null);
   const colorWheelContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll color wheel into view when shown
@@ -196,11 +196,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setDescription(profile.description || '');
 
       setAvatarTab(profile.avatar.type);
-      if (profile.avatar.type === 'color') {
+      if (profile.avatar.bgColor) {
+        setSelectedColor(profile.avatar.bgColor);
+      } else if (profile.avatar.type === 'color') {
         setSelectedColor(profile.avatar.value);
-      } else if (profile.avatar.type === 'emoji') {
+      }
+      
+      if (profile.avatar.type === 'emoji') {
         setSelectedEmoji(profile.avatar.value);
-      } else {
+      } else if (profile.avatar.type === 'image') {
         setImageUrl(profile.avatar.value);
       }
     } else {
@@ -225,55 +229,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     setShowColorWheel(false);
   }, [avatarTab]);
 
-  // Color wheel generator
-  const drawColorWheel = () => {
-    const canvas = colorWheelRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const cx = width / 2;
-    const cy = height / 2;
-    const radius = width / 2;
-
-    const imgData = ctx.createImageData(width, height);
-    const data = imgData.data;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const dx = x - cx;
-        const dy = y - cy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist <= radius) {
-          let angle = Math.atan2(dy, dx) + Math.PI;
-          const hue = (angle / (Math.PI * 2)) * 360;
-          const sat = dist / radius;
-          const val = 1.0;
-
-          const rgb = hsvToRgb(hue, sat, val);
-          const index = (y * width + x) * 4;
-          data[index] = rgb[0];
-          data[index + 1] = rgb[1];
-          data[index + 2] = rgb[2];
-          data[index + 3] = 255;
-        }
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-  };
-
-  useEffect(() => {
-    if (showColorWheel) {
-      // Delay slightly to ensure framer-motion has mounted the canvas
-      const timer = setTimeout(() => {
-        drawColorWheel();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [showColorWheel, avatarTab]);
 
   const hsvToRgb = (h: number, s: number, v: number): [number, number, number] => {
     const c = v * s;
@@ -298,38 +254,40 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const isDraggingRef = useRef(false);
 
   const handleColorSelection = (clientX: number, clientY: number) => {
-    const canvas = colorWheelRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
+    const container = colorWheelRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const width = rect.width;
+    const height = rect.height;
+    const cx = width / 2;
+    const cy = height / 2;
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const radius = width / 2;
+
+    const angle = Math.atan2(dy, dx) + Math.PI;
+    const hue = (angle / (Math.PI * 2)) * 360;
+    const sat = Math.min(1, dist / radius);
     
-    try {
-      const clampedX = Math.max(0, Math.min(canvas.width - 1, x * (canvas.width / rect.width)));
-      const clampedY = Math.max(0, Math.min(canvas.height - 1, y * (canvas.height / rect.height)));
-      
-      const pixel = ctx.getImageData(clampedX, clampedY, 1, 1).data;
-      if (pixel[3] > 0) {
-        const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(val => {
-          const hexStr = val.toString(16);
-          return hexStr.length === 1 ? '0' + hexStr : hexStr;
-        }).join('');
-        setSelectedColor(hex);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    const rgb = hsvToRgb(hue, sat, 1.0);
+    const hex = '#' + rgb.map(val => {
+      const hexStr = val.toString(16);
+      return hexStr.length === 1 ? '0' + hexStr : hexStr;
+    }).join('');
+    
+    setSelectedColor(hex);
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     isDraggingRef.current = true;
     handleColorSelection(e.clientX, e.clientY);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDraggingRef.current) {
       handleColorSelection(e.clientX, e.clientY);
     }
@@ -339,14 +297,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     isDraggingRef.current = false;
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     isDraggingRef.current = true;
     if (e.touches[0]) {
       handleColorSelection(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (isDraggingRef.current && e.touches[0]) {
       handleColorSelection(e.touches[0].clientX, e.touches[0].clientY);
     }
@@ -487,7 +445,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-md uppercase"
                   style={{
                     backgroundColor:
-                      avatarTab === 'image' ? 'transparent' : (profile?.avatar?.bgColor || selectedColor),
+                      avatarTab === 'image' ? 'transparent' : selectedColor,
                   }}
                 >
                   {avatarTab === 'emoji' ? (
@@ -648,7 +606,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       Editar nomes rápidos
                     </span>
                     {profileNames.map((name, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5">
+                      <div key={`profile-name-edit-${idx}-${name}`} className="flex items-center gap-1.5">
                         <input
                           type="text"
                           value={name}
@@ -692,7 +650,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       const isSel = profileName === name && !isCustomProfile;
                       return (
                         <button
-                          key={`${name}-${idx}`}
+                          key={`profile-name-chip-${idx}-${name}`}
                           type="button"
                           onClick={() => {
                             setIsCustomProfile(false);
@@ -954,12 +912,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             <div className="relative w-32 h-32 flex items-center justify-center select-none touch-none">
                               {/* Pulsing attention halo ripple */}
                               <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
-                              <canvas
+                              <div
                                 ref={colorWheelRef}
                                 id="profile-color-wheel-canvas"
                                 data-testid="profile-color-wheel-canvas"
-                                width={128}
-                                height={128}
                                 onMouseDown={handleMouseDown}
                                 onMouseMove={handleMouseMove}
                                 onMouseUp={handleMouseUpOrLeave}
@@ -967,7 +923,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                                 onTouchStart={handleTouchStart}
                                 onTouchMove={handleTouchMove}
                                 onTouchEnd={handleTouchEnd}
-                                className="rounded-full cursor-crosshair border border-neutral-300 shadow-md dark:border-neutral-700 touch-none z-10"
+                                className="rounded-full cursor-crosshair border border-neutral-300 shadow-md dark:border-neutral-700 touch-none z-10 w-full h-full"
+                                style={{
+                                  background: `
+                                    radial-gradient(circle, #fff 0%, transparent 100%),
+                                    conic-gradient(from 180deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)
+                                  `
+                                }}
                               />
                               <div
                                 className="absolute w-8 h-8 rounded-full border-2 border-white shadow-md pointer-events-none flex items-center justify-center font-bold text-white uppercase"
