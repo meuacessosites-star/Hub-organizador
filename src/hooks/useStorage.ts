@@ -331,14 +331,17 @@ export function useStorage() {
   };
 
   const updatePlatform = (id: string, updated: Partial<Platform>) => {
+    let platToSync: Platform | undefined;
     setPlatforms((prev) => prev.map((plat) => {
       if (plat.id === id) {
-        const updatedPlat = { ...plat, ...updated };
-        fbSet('platforms', id, updatedPlat);
-        return updatedPlat;
+        platToSync = { ...plat, ...updated };
+        return platToSync;
       }
       return plat;
     }));
+    if (platToSync) {
+      fbSet('platforms', id, platToSync);
+    }
   };
 
   const deletePlatform = (id: string) => {
@@ -350,40 +353,53 @@ export function useStorage() {
   const addProfile = (platformId: string, profile: Omit<Profile, 'id'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newProfile: Profile = { ...profile, id: `prof-${Date.now()}-${randomSuffix}` };
+    let platToSync: Platform | undefined;
+    
     setPlatforms((prev) => prev.map((plat) => {
       if (plat.id === platformId) {
-        const updatedPlat = { ...plat, profiles: [...(plat.profiles || []), newProfile] };
-        fbSet('platforms', platformId, updatedPlat);
-        return updatedPlat;
+        platToSync = { ...plat, profiles: [...(plat.profiles || []), newProfile] };
+        return platToSync;
       }
       return plat;
     }));
+    
+    if (platToSync) {
+      fbSet('platforms', platformId, platToSync);
+    }
     return newProfile;
   };
 
   const updateProfile = (platformId: string, profileId: string, updated: Partial<Profile>) => {
+    let platToSync: Platform | undefined;
     setPlatforms((prev) => prev.map((plat) => {
       if (plat.id === platformId) {
         const newProfiles = (plat.profiles || []).map((prof) => prof.id === profileId ? { ...prof, ...updated } : prof);
-        const updatedPlat = { ...plat, profiles: newProfiles };
-        fbSet('platforms', platformId, updatedPlat);
-        return updatedPlat;
+        platToSync = { ...plat, profiles: newProfiles };
+        return platToSync;
       }
       return plat;
     }));
+    
+    if (platToSync) {
+      fbSet('platforms', platformId, platToSync);
+    }
   };
 
   const deleteProfile = (platformId: string, profileId: string) => {
+    let platToSync: Platform | undefined;
     setPlatforms((prev) => prev.map((plat) => {
       if (plat.id === platformId) {
         const newProfiles = (plat.profiles || []).filter((prof) => prof.id !== profileId);
         const newPurchases = (plat.purchases || []).filter((pur) => pur.profileId !== profileId);
-        const updatedPlat = { ...plat, profiles: newProfiles, purchases: newPurchases };
-        fbSet('platforms', platformId, updatedPlat);
-        return updatedPlat;
+        platToSync = { ...plat, profiles: newProfiles, purchases: newPurchases };
+        return platToSync;
       }
       return plat;
     }));
+    
+    if (platToSync) {
+      fbSet('platforms', platformId, platToSync);
+    }
   };
 
   // Purchase CRUD
@@ -409,18 +425,23 @@ export function useStorage() {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newPurchase: Purchase = { ...purchase, id: `pur-${Date.now()}-${randomSuffix}`, date: purchase.date || new Date().toISOString() };
     
+    let platToSync: Platform | undefined;
     setPlatforms((prev) => prev.map((plat) => {
       if (plat.id === platformId) {
-        const updatedPlat = { ...plat, purchases: [...(plat.purchases || []), newPurchase] };
-        fbSet('platforms', platformId, updatedPlat);
-        return updatedPlat;
+        platToSync = { ...plat, purchases: [...(plat.purchases || []), newPurchase] };
+        return platToSync;
       }
       return plat;
     }));
+    
+    if (platToSync) {
+      fbSet('platforms', platformId, platToSync);
+    }
     return newPurchase;
   };
 
   const updatePurchase = (platformId: string, purchaseId: string, updated: Partial<Purchase>) => {
+    let platToSync: Platform | undefined;
     setPlatforms((prev) => prev.map((plat) => {
       if (plat.id === platformId) {
         const existingPur = plat.purchases.find(p => p.id === purchaseId);
@@ -431,24 +452,31 @@ export function useStorage() {
           validatePurchaseData(mergedName, mergedOriginal, mergedFinal);
         }
         const newPurchases = (plat.purchases || []).map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
-        const updatedPlat = { ...plat, purchases: newPurchases };
-        fbSet('platforms', platformId, updatedPlat);
-        return updatedPlat;
+        platToSync = { ...plat, purchases: newPurchases };
+        return platToSync;
       }
       return plat;
     }));
+    
+    if (platToSync) {
+      fbSet('platforms', platformId, platToSync);
+    }
   };
 
   const deletePurchase = (platformId: string, purchaseId: string) => {
+    let platToSync: Platform | undefined;
     setPlatforms((prev) => prev.map((plat) => {
       if (plat.id === platformId) {
         const newPurchases = (plat.purchases || []).filter((pur) => pur.id !== purchaseId);
-        const updatedPlat = { ...plat, purchases: newPurchases };
-        fbSet('platforms', platformId, updatedPlat);
-        return updatedPlat;
+        platToSync = { ...plat, purchases: newPurchases };
+        return platToSync;
       }
       return plat;
     }));
+    
+    if (platToSync) {
+      fbSet('platforms', platformId, platToSync);
+    }
   };
 
   // Status CRUD

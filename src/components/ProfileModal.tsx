@@ -179,8 +179,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   // Load profile data if in edit mode
   useEffect(() => {
     setShowColorWheel(false); // Reset color wheel state
-    if (isEditMode && profile) {
-      setIsEditingInView(startInEditMode);
+    if (profile) {
+      if (isEditMode) {
+        setIsEditingInView(startInEditMode);
+      }
+      
       const isPreset = profileNames.includes(profile.name);
       if (isPreset) {
         setProfileName(profile.name);
@@ -195,17 +198,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setAccessLink(profile.accessLink || '');
       setDescription(profile.description || '');
 
-      setAvatarTab(profile.avatar.type);
-      if (profile.avatar.bgColor) {
-        setSelectedColor(profile.avatar.bgColor);
-      } else if (profile.avatar.type === 'color') {
-        setSelectedColor(profile.avatar.value);
-      }
-      
-      if (profile.avatar.type === 'emoji') {
-        setSelectedEmoji(profile.avatar.value);
-      } else if (profile.avatar.type === 'image') {
-        setImageUrl(profile.avatar.value);
+      if (profile.avatar) {
+        setAvatarTab(profile.avatar.type);
+        if (profile.avatar.bgColor) {
+          setSelectedColor(profile.avatar.bgColor);
+        } else if (profile.avatar.type === 'color') {
+          setSelectedColor(profile.avatar.value);
+        }
+        
+        if (profile.avatar.type === 'emoji') {
+          setSelectedEmoji(profile.avatar.value);
+        } else if (profile.avatar.type === 'image') {
+          setImageUrl(profile.avatar.value);
+        }
       }
     } else {
       setIsEditingInView(true);
@@ -222,7 +227,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setSelectedEmoji('👤');
       setImageUrl('');
     }
-  }, [profile, isOpen, isEditMode, platform]);
+  }, [profile, isOpen, isEditMode, platform, startInEditMode]);
 
   // Reset color wheel state when switching tabs
   useEffect(() => {
