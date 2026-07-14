@@ -94,12 +94,9 @@ export default function App() {
   const currentCategoryObj = categories.find((c) => c.id === selectedCategory);
   const categoryTitle = currentCategoryObj ? currentCategoryObj.name : 'Todas';
 
-  // Filter platforms by ownership first (SECURITY)
+  // Filter platforms by ownership (STRICT SECURITY)
   const userPlatforms = platforms.filter((plat) => {
-    if (plat.ownerId && user && plat.ownerId !== user.uid) {
-      return false;
-    }
-    return true;
+    return user && plat.ownerId === user.uid;
   });
 
   // Find dynamic counts
@@ -265,10 +262,14 @@ export default function App() {
 
   const handleSavePurchase = (purchaseData: Purchase | Omit<Purchase, 'id'>) => {
     if (purchaseModal.platformId) {
-      if ('id' in purchaseData && purchaseData.id) {
-        updatePurchase(purchaseModal.platformId, purchaseData.id, purchaseData);
-      } else {
-        addPurchase(purchaseModal.platformId, purchaseData as Omit<Purchase, 'id'>);
+      try {
+        if ('id' in purchaseData && purchaseData.id) {
+          updatePurchase(purchaseModal.platformId, purchaseData.id, purchaseData);
+        } else {
+          addPurchase(purchaseModal.platformId, purchaseData as Omit<Purchase, 'id'>);
+        }
+      } catch (err: any) {
+        addToast(err.message || 'Erro ao salvar compra', 'error');
       }
     }
   };
@@ -329,7 +330,7 @@ export default function App() {
         {/* Sidebar Component */}
         <Sidebar
           categories={categories}
-          platforms={platforms}
+          platforms={userPlatforms}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
           onManageCategories={() => setIsManageCategoriesOpen(true)}

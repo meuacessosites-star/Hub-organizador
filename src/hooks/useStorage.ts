@@ -36,37 +36,13 @@ const DEFAULT_PLATFORMS: Platform[] = [];
 export function useStorage() {
   const { user, loading: authLoading } = useAuth();
   
-  const [tags, setTags] = useState<Tag[]>(() => {
-    const saved = localStorage.getItem('hub_tags');
-    return safeParse(saved, DEFAULT_TAGS);
-  });
+  const [tags, setTags] = useState<Tag[]>(DEFAULT_TAGS);
   
-  const [categories, setCategories] = useState<Category[]>(() => {
-    try {
-      const saved = localStorage.getItem('hub_categories');
-      return safeParse(saved, DEFAULT_CATEGORIES);
-    } catch {
-      return DEFAULT_CATEGORIES;
-    }
-  });
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   
-  const [platforms, setPlatforms] = useState<Platform[]>(() => {
-    try {
-      const saved = localStorage.getItem('hub_platforms');
-      return safeParse(saved, DEFAULT_PLATFORMS);
-    } catch {
-      return DEFAULT_PLATFORMS;
-    }
-  });
+  const [platforms, setPlatforms] = useState<Platform[]>([]);
   
-  const [statuses, setStatuses] = useState<Status[]>(() => {
-    try {
-      const saved = localStorage.getItem('hub_statuses');
-      return safeParse(saved, DEFAULT_STATUSES);
-    } catch {
-      return DEFAULT_STATUSES;
-    }
-  });
+  const [statuses, setStatuses] = useState<Status[]>(DEFAULT_STATUSES);
 
   // Sync from Firebase & Cleanup on logout
   useEffect(() => {

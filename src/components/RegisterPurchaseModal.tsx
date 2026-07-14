@@ -601,6 +601,24 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       validation.finalPrice = 'O preço final (após descontos) deve ser maior que zero.';
     }
 
+    // Validation for bundle items
+    if (isBundle) {
+      if (bundleItems.length === 0) {
+        addToast('Adicione pelo menos um item ao combo!', 'error');
+        return;
+      }
+      for (const item of bundleItems) {
+        if (!item.name.trim()) {
+          addToast('Todos os itens do combo devem ter um nome!', 'error');
+          return;
+        }
+        if (item.price !== undefined && item.price < 0) {
+          addToast(`O preço do item "${item.name}" não pode ser negativo!`, 'error');
+          return;
+        }
+      }
+    }
+
     if (Object.keys(validation).length > 0) {
       setValidationErrors(validation);
       addToast('Erro de validação: Verifique os campos em vermelho!', 'error');
