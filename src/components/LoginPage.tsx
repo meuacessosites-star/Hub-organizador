@@ -221,7 +221,7 @@ export const LoginPage: React.FC = () => {
                 try {
                   await signInWithGoogle();
                 } catch (err: any) {
-                  setError('Erro ao entrar com Google. Verifique se os popups estão permitidos ou se o domínio está autorizado no Firebase.');
+                  setError(err.message || 'Erro ao entrar com Google. Verifique se os popups estão permitidos.');
                 }
               }}
               disabled={loading}

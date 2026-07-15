@@ -126,13 +126,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      // Use signInWithPopup as preferred in AI Studio environment
+      // Add custom parameters to force account selection if needed
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
       await signInWithPopup(auth, provider);
+      // Success will be handled by onAuthStateChanged
     } catch (err: any) {
       setLoading(false);
+      console.error('Google Sign-In Detailed Error:', err);
+      
+      // Handle specific Firebase error codes
+      if (err?.code === 'auth/popup-blocked') {
+        throw new Error('O pop-up foi bloqueado pelo navegador. Por favor, permita pop-ups para este site.');
+      } else if (err?.code === 'auth/operation-not-allowed') {
+        throw new Error('O login com Google não está ativado no seu projeto Firebase.');
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        throw new Error('Este domínio não está autorizado no Console do Firebase (Authentication > Settings > Authorized Domains).');
+      }
+      
       if (err?.code !== 'auth/popup-closed-by-user' && err?.code !== 'auth/cancelled-popup-request') {
-        console.error('Google Sign-In Error:', err);
-        throw err; // Rethrow to allow UI to catch and display
+        throw err;
       }
     }
   };
