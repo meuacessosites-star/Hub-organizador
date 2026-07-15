@@ -123,12 +123,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
+    setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      // Use signInWithPopup as preferred in AI Studio environment
       await signInWithPopup(auth, provider);
     } catch (err: any) {
+      setLoading(false);
       if (err?.code !== 'auth/popup-closed-by-user' && err?.code !== 'auth/cancelled-popup-request') {
         console.error('Google Sign-In Error:', err);
+        throw err; // Rethrow to allow UI to catch and display
       }
     }
   };

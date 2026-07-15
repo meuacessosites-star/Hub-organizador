@@ -216,7 +216,14 @@ export const LoginPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={signInWithGoogle}
+              onClick={async () => {
+                setError('');
+                try {
+                  await signInWithGoogle();
+                } catch (err: any) {
+                  setError('Erro ao entrar com Google. Verifique se os popups estão permitidos ou se o domínio está autorizado no Firebase.');
+                }
+              }}
               disabled={loading}
               className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 text-neutral-700 dark:text-neutral-200 font-medium text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
             >
