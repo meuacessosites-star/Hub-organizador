@@ -123,32 +123,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
+    console.log('AuthContext: starting signInWithGoogle');
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      // Add custom parameters to force account selection if needed
       provider.setCustomParameters({
         prompt: 'select_account'
       });
       
-      await signInWithPopup(auth, provider);
-      // Success will be handled by onAuthStateChanged
+      console.log('AuthContext: calling signInWithPopup');
+      const result = await signInWithPopup(auth, provider);
+      console.log('AuthContext: signInWithPopup successful', result.user.email);
     } catch (err: any) {
       setLoading(false);
-      console.error('Google Sign-In Detailed Error:', err);
+      console.error('AuthContext: Google Sign-In Error Full Object:', err);
       
-      // Handle specific Firebase error codes
-      if (err?.code === 'auth/popup-blocked') {
-        throw new Error('O pop-up foi bloqueado pelo navegador. Por favor, permita pop-ups para este site.');
-      } else if (err?.code === 'auth/operation-not-allowed') {
-        throw new Error('O login com Google não está ativado no seu projeto Firebase.');
-      } else if (err?.code === 'auth/unauthorized-domain') {
-        throw new Error('Este domínio não está autorizado no Console do Firebase (Authentication > Settings > Authorized Domains).');
+      const errorCode = err?.code;
+      const errorMessage = err?.message;
+
+      if (errorCode === 'auth/popup-blocked') {
+        throw new Error('O pop-up foi bloqueado pelo navegador. Por favor, permita pop-ups para este site e tente novamente.');
+      } else if (errorCode === 'auth/operation-not-allowed') {
+        throw new Error('O login com Google não está ativado no Console do Firebase.');
+      } else if (errorCode === 'auth/unauthorized-domain') {
+        throw new Error('Este domínio não está autorizado no Firebase. Adicione ' + window.location.hostname + ' aos domínios autorizados no Console do Firebase.');
+      } else if (errorCode === 'auth/popup-closed-by-user') {
+        throw new Error('A janela de login foi fechada antes de completar o acesso.');
+      } else if (errorCode === 'auth/internal-error') {
+        throw new Error('Erro interno do Firebase. Verifique se o projeto está configurado corretamente.');
       }
       
-      if (err?.code !== 'auth/popup-closed-by-user' && err?.code !== 'auth/cancelled-popup-request') {
-        throw err;
-      }
+      throw new Error(`Erro (${errorCode || 'unknown'}): ${errorMessage || 'Falha ao entrar com Google'}`);
     }
   };
 
