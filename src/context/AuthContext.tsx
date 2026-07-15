@@ -31,6 +31,7 @@ interface AuthContextType {
   userProfile: UserProfileData | null;
   loading: boolean;
   isGuest: boolean;
+  authError: string | null;
   enterAsGuest: () => void;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -44,6 +45,7 @@ const AuthContext = createContext<AuthContextType>({
   userProfile: null,
   loading: true,
   isGuest: false,
+  authError: null,
   enterAsGuest: () => {},
   signInWithGoogle: async () => {},
   signInWithEmail: async () => {},
@@ -56,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(() => {
     return localStorage.getItem('hub_guest_mode') === 'true';
   });
@@ -100,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
       if (u) {
+        setAuthError(null);
         localStorage.removeItem('hub_guest_mode');
         setIsGuest(false);
         setUser(u);
@@ -128,13 +132,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .then((result) => {
         if (result) {
           console.log('AuthContext: redirect login successful', result.user.email);
+          setAuthError(null);
         }
       })
       .catch((err) => {
         console.error('AuthContext: getRedirectResult error:', err);
-        // If it's a domain error, we can catch it here after redirect back
         if (err?.code === 'auth/unauthorized-domain') {
-          console.error('Domain not authorized in Firebase Console:', window.location.hostname);
+          setAuthError('Domínio não autorizado. Verifique se ' + window.location.hostname + ' está na lista de "Domínios Autorizados" no Firebase.');
+        } else {
+          setAuthError(err.message);
         }
       });
 
@@ -145,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isGuest]);
 
   const enterAsGuest = () => {
+    setAuthError(null);
     localStorage.setItem('hub_guest_mode', 'true');
     setIsGuest(true);
   };
@@ -152,13 +159,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     console.log('AuthContext: starting signInWithGoogle');
     setLoading(true);
+    setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({
         prompt: 'select_account'
       });
       
-      // Check if we are on a mobile device or if the user explicitly mentioned pop-up issues
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
       if (isMobile) {
@@ -185,25 +192,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const errorCode = err?.code;
       const errorMessage = err?.message;
 
+      let finalError = `Erro (${errorCode || 'unknown'}): ${errorMessage || 'Falha ao entrar com Google'}`;
+
       if (errorCode === 'auth/operation-not-allowed') {
-        throw new Error('O login com Google não está ativado no Console do Firebase. Ative-o em Authentication > Sign-in method.');
+        finalError = 'O login com Google não está ativado no Console do Firebase. Ative-o em Authentication > Sign-in method.';
       } else if (errorCode === 'auth/unauthorized-domain') {
-        throw new Error('Domínio não autorizado. Adicione ' + window.location.hostname + ' aos "Domínios Autorizados" no Console do Firebase.');
+        finalError = 'Domínio não autorizado. Adicione ' + window.location.hostname + ' aos "Domínios Autorizados" no Console do Firebase.';
       } else if (errorCode === 'auth/popup-closed-by-user') {
-        throw new Error('A janela de login foi fechada. Tente clicar no botão novamente.');
+        finalError = 'A janela de login foi fechada. Tente clicar no botão novamente.';
       } else if (errorCode === 'auth/internal-error') {
-        throw new Error('Erro interno do Firebase. Tente recarregar a página.');
+        finalError = 'Erro interno do Firebase. Tente recarregar a página.';
       }
       
-      throw new Error(`Erro (${errorCode || 'unknown'}): ${errorMessage || 'Falha ao entrar com Google'}`);
+      setAuthError(finalError);
+      throw new Error(finalError);
     }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
+    setAuthError(null);
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
+    setAuthError(null);
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     if (userCredential.user) {
       await updateProfile(userCredential.user, { displayName });
@@ -211,10 +223,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
+    setAuthError(null);
     await sendPasswordResetEmail(auth, email);
   };
 
   const signOut = async () => {
+    setAuthError(null);
     const isActuallyGuest = isGuest;
     const guestId = localStorage.getItem('hub_guest_id');
 
@@ -255,7 +269,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, isGuest, enterAsGuest, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, signOut }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, isGuest, authError, enterAsGuest, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );

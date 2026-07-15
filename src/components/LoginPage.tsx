@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { Logo } from './Logo';
 
 export const LoginPage: React.FC = () => {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, enterAsGuest, loading } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, enterAsGuest, loading, authError } = useAuth();
   const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -13,6 +13,12 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  React.useEffect(() => {
+    if (authError) {
+      setError(authError);
+    }
+  }, [authError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
