@@ -1,6 +1,6 @@
 <svg width="512" height="512" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="100" height="100" fill="#000000"/>
-  <g transform="translate(18, 18) scale(0.64)">
+  <g transform="translate(24, 24) scale(0.52)">
     <!-- Top Left Rounded Square in Indigo -->
     <rect x="10" y="10" width="36" height="36" rx="8" fill="#4F46E5" />
     
