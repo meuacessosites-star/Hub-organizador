@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="black"/>
+  <!-- Top Left Square -->
+  <rect x="80" y="80" width="150" height="150" rx="30" fill="#4F46E5"/>
+  <!-- Bottom Left Square -->
+  <rect x="80" y="282" width="150" height="150" rx="30" fill="#4F46E5"/>
+  <!-- Bottom Right Square -->
+  <rect x="282" y="282" width="150" height="150" rx="30" fill="#D946EF"/>
+  <!-- Arrow in Top Right -->
+  <path d="M282 230L410 102M410 102H330M410 102V182" stroke="#6366F1" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
