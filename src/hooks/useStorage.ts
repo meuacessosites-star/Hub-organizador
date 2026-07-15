@@ -131,15 +131,6 @@ export function useStorage() {
           const cloudTags = snap.docs.map(d => ({ ...d.data() as Tag, id: d.id }));
           setTags(cloudTags);
           safeSetItem(`hub_user_${user.uid}_tags`, JSON.stringify(cloudTags));
-        } else if (!isClearingRef.current) {
-          // Empty cloud: backup/upload our current state (which might be migrated guest data) to Firestore!
-          tagsToLoad.forEach(async (t: Tag) => {
-            try {
-              await setDoc(doc(db, 'users', user.uid, 'tags', t.id), t);
-            } catch (err) {
-              handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}/tags/${t.id}`);
-            }
-          });
         }
       }, (err) => {
         console.error('useStorage: tags snapshot error', err);
@@ -156,14 +147,6 @@ export function useStorage() {
           const cloudCats = snap.docs.map(d => ({ ...d.data() as Category, id: d.id }));
           setCategories(cloudCats);
           safeSetItem(`hub_user_${user.uid}_categories`, JSON.stringify(cloudCats));
-        } else if (!isClearingRef.current) {
-          catsToLoad.forEach(async (c: Category) => {
-            try {
-              await setDoc(doc(db, 'users', user.uid, 'categories', c.id), c);
-            } catch (err) {
-              handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}/categories/${c.id}`);
-            }
-          });
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/categories`);
@@ -182,14 +165,6 @@ export function useStorage() {
           });
           setPlatforms(cloudPlats);
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
-        } else if (!isClearingRef.current) {
-          platsToLoad.forEach(async (p: Platform) => {
-            try {
-              await setDoc(doc(db, 'users', user.uid, 'platforms', p.id), p);
-            } catch (err) {
-              handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}/platforms/${p.id}`);
-            }
-          });
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/platforms`);
@@ -205,14 +180,6 @@ export function useStorage() {
           const cloudStatuses = snap.docs.map(d => ({ ...d.data() as Status, id: d.id }));
           setStatuses(cloudStatuses);
           safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(cloudStatuses));
-        } else if (!isClearingRef.current) {
-          statusesToLoad.forEach(async (s: Status) => {
-            try {
-              await setDoc(doc(db, 'users', user.uid, 'statuses', s.id), s);
-            } catch (err) {
-              handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}/statuses/${s.id}`);
-            }
-          });
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/statuses`);
@@ -221,6 +188,41 @@ export function useStorage() {
 
     return () => unsubs.forEach(unsub => unsub());
   }, [user, authLoading]);
+
+  // One-time initial backup/migration logic
+  const hasAttemptedInitialBackup = useRef(false);
+  useEffect(() => {
+    if (authLoading || !user || isGuest || hasAttemptedInitialBackup.current) return;
+
+    const performInitialBackup = async () => {
+      hasAttemptedInitialBackup.current = true;
+      console.log('useStorage: Checking for initial data backup/migration...');
+      
+      // We only backup if local storage has non-default data
+      // For simplicity, we'll just check if any platforms exist or if tags/categories differ from defaults
+      const savedPlats = localStorage.getItem(`hub_user_${user.uid}_platforms`);
+      if (!savedPlats || savedPlats === '[]') {
+        console.log('useStorage: No platforms found for initial backup, skipping.');
+        return;
+      }
+
+      const currentPlats = platformsRef.current;
+      if (currentPlats.length > 0) {
+        console.log(`useStorage: Performing initial backup of ${currentPlats.length} platforms.`);
+        for (const p of currentPlats) {
+          await fbSet('platforms', p.id, p);
+        }
+        // Also backup tags/categories if they exist
+        for (const t of tagsRef.current) await fbSet('tags', t.id, t);
+        for (const c of categoriesRef.current) if (c.isCustom) await fbSet('categories', c.id, c);
+        for (const s of statusesRef.current) if (s.isCustom) await fbSet('statuses', s.id, s);
+      }
+    };
+
+    // Small delay to ensure state is loaded from local storage
+    const timer = setTimeout(performInitialBackup, 2000);
+    return () => clearTimeout(timer);
+  }, [user, authLoading, isGuest]);
 
   // Sync to local storage for offline / instant render when state updates
   const lastTagsRef = useRef<string | null>(null);
@@ -540,6 +542,12 @@ export function useStorage() {
     setCategories(DEFAULT_CATEGORIES);
     setPlatforms([]);
     setStatuses(DEFAULT_STATUSES);
+
+    // Update refs immediately to avoid stale data backup
+    tagsRef.current = DEFAULT_TAGS;
+    categoriesRef.current = DEFAULT_CATEGORIES;
+    platformsRef.current = [];
+    statusesRef.current = DEFAULT_STATUSES;
 
     // 2. Clear localStorage IMMEDIATELY
     const keys = [
