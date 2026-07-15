@@ -34,7 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onBackToLogin,
 }) => {
   const [categorySearch, setCategorySearch] = useState('');
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, isGuest } = useAuth();
 
   const getSidebarAvatarContent = () => {
     if (!user) return null;
@@ -260,12 +260,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate flex items-center gap-1.5">
                     <span className="truncate">{userProfile?.displayName || user.displayName || 'Usuário Logado'}</span>
-                    {user.uid === 'guest' && (
+                    {isGuest && (
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" title="Visitante" />
                     )}
                   </div>
                   <div className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate text-left">
-                    {user.uid === 'guest' ? 'Sem backup ativo' : user.email}
+                    {isGuest ? 'Sem backup ativo' : user.email}
                   </div>
                 </div>
               </>

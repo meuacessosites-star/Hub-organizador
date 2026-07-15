@@ -88,7 +88,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   user,
   onSignOut,
 }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, isGuest } = useAuth();
   const { clearAllData } = useStorage();
   const { addToast } = useToast();
 
@@ -269,7 +269,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         }
       };
 
-      if (user.uid !== 'guest') {
+      if (!isGuest) {
         if (displayName !== user.displayName) {
           await firebaseUpdateProfile(user, { displayName });
         }
@@ -282,7 +282,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setTimeout(() => {
         setShowSuccess(false);
         onClose();
-        if (user.uid === 'guest') {
+        if (isGuest) {
           window.location.reload();
         }
       }, 1500);

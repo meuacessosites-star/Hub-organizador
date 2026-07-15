@@ -214,31 +214,29 @@ export const OnboardingTutorial: React.FC = () => {
       <AnimatePresence mode="wait">
         {/* Mobile Arrow - Curved and prominent */}
         {window.innerWidth < 640 && targetRect && (
-          <div key={`arrow-${currentStep}`} className="fixed inset-0 z-[100] pointer-events-none">
+          <div key={`arrow-${currentStep}`} className="fixed inset-0 z-[101] pointer-events-none">
             <svg className="w-full h-full">
               <defs>
-                <filter id="glow-tutorial">
-                  <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
+                <filter id="glow-tutorial" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
                 </filter>
-                <marker id="arrowhead-mobile-tutorial" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                  <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+                <marker id="arrowhead-mobile-tutorial" markerWidth="12" markerHeight="9" refX="10" refY="4.5" orient="auto">
+                  <polygon points="0 0, 12 4.5, 0 9" fill="#fbbf24" />
                 </marker>
               </defs>
               <motion.path
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
                 d={`M ${window.innerWidth / 2} ${window.innerHeight / 2} 
-                   Q ${window.innerWidth / 2} ${targetRect.top + targetRect.height / 2}, 
+                   C ${window.innerWidth / 2} ${window.innerHeight * 0.7}, 
+                     ${targetRect.left + targetRect.width / 2} ${window.innerHeight * 0.7}, 
                      ${targetRect.left + targetRect.width / 2} ${targetRect.top + targetRect.height / 2}`}
                 fill="none"
                 stroke="#fbbf24"
                 strokeWidth="4"
-                strokeDasharray="8 6"
+                strokeDasharray="10 8"
                 markerEnd="url(#arrowhead-mobile-tutorial)"
                 filter="url(#glow-tutorial)"
               />

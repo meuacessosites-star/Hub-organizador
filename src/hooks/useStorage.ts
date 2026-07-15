@@ -34,7 +34,7 @@ const DEFAULT_STATUSES: Status[] = [
 const DEFAULT_PLATFORMS: Platform[] = [];
 
 export function useStorage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isGuest } = useAuth();
   
   const [tags, setTags] = useState<Tag[]>(DEFAULT_TAGS);
   
@@ -77,6 +77,27 @@ export function useStorage() {
 
     console.log('useStorage: Logged in mode');
     // 2. LOGGED IN MODE
+    
+    // MIGRATION: If guest and unique ID keys don't exist, try to load from old 'hub_tags' etc.
+    if (isGuest) {
+      const uniqueKeys = [
+        `hub_user_${user.uid}_tags`, 
+        `hub_user_${user.uid}_categories`, 
+        `hub_user_${user.uid}_platforms`, 
+        `hub_user_${user.uid}_statuses`
+      ];
+      const legacyKeys = ['hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses'];
+      
+      legacyKeys.forEach((oldKey, idx) => {
+        const newKey = uniqueKeys[idx];
+        if (!localStorage.getItem(newKey) && localStorage.getItem(oldKey)) {
+          console.log(`Migrating legacy guest data from ${oldKey} to ${newKey}`);
+          localStorage.setItem(newKey, localStorage.getItem(oldKey)!);
+          // Optional: localStorage.removeItem(oldKey); // Keep for safety for now
+        }
+      });
+    }
+
     // Load user-specific local storage cache for instant offline rendering
     const savedTags = localStorage.getItem(`hub_user_${user.uid}_tags`);
     const savedCats = localStorage.getItem(`hub_user_${user.uid}_categories`);
@@ -98,10 +119,11 @@ export function useStorage() {
 
     const unsubs: (() => void)[] = [];
 
-    if (user.uid !== 'guest') {
+    if (!isGuest && user.uid) {
       // Sync tags with Firestore
       const tagsRef = collection(db, 'users', user.uid, 'tags');
       unsubs.push(onSnapshot(tagsRef, { includeMetadataChanges: true }, (snap) => {
+        if (isClearingRef.current) return;
         if (snap.metadata.hasPendingWrites) return;
         
         console.log('useStorage: tags snapshot received', snap.size);
@@ -127,6 +149,7 @@ export function useStorage() {
       // Sync categories with Firestore
       const catRef = collection(db, 'users', user.uid, 'categories');
       unsubs.push(onSnapshot(catRef, { includeMetadataChanges: true }, (snap) => {
+        if (isClearingRef.current) return;
         if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
@@ -149,6 +172,7 @@ export function useStorage() {
       // Sync platforms with Firestore
       const platRef = collection(db, 'users', user.uid, 'platforms');
       unsubs.push(onSnapshot(platRef, { includeMetadataChanges: true }, (snap) => {
+        if (isClearingRef.current) return;
         if (snap.metadata.hasPendingWrites) return; // Ignore updates while we have pending local writes to this collection
         
         if (!snap.empty) {
@@ -174,6 +198,7 @@ export function useStorage() {
       // Sync statuses with Firestore
       const statusRef = collection(db, 'users', user.uid, 'statuses');
       unsubs.push(onSnapshot(statusRef, { includeMetadataChanges: true }, (snap) => {
+        if (isClearingRef.current) return;
         if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
@@ -202,7 +227,7 @@ export function useStorage() {
   useEffect(() => {
     if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
     const handler = setTimeout(() => {
-      const key = user.uid === 'guest' ? 'hub_tags' : `hub_user_${user.uid}_tags`;
+      const key = `hub_user_${user.uid}_tags`;
       const value = JSON.stringify(tags);
       if (lastTagsRef.current !== value) {
         if (safeSetItem(key, value)) {
@@ -217,7 +242,7 @@ export function useStorage() {
   useEffect(() => {
     if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
     const handler = setTimeout(() => {
-      const key = user.uid === 'guest' ? 'hub_categories' : `hub_user_${user.uid}_categories`;
+      const key = `hub_user_${user.uid}_categories`;
       const value = JSON.stringify(categories);
       if (lastCategoriesRef.current !== value) {
         if (safeSetItem(key, value)) {
@@ -232,7 +257,7 @@ export function useStorage() {
   useEffect(() => {
     if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
     const handler = setTimeout(() => {
-      const key = user.uid === 'guest' ? 'hub_platforms' : `hub_user_${user.uid}_platforms`;
+      const key = `hub_user_${user.uid}_platforms`;
       const value = JSON.stringify(platforms);
       if (lastPlatformsRef.current !== value) {
         if (safeSetItem(key, value)) {
@@ -247,7 +272,7 @@ export function useStorage() {
   useEffect(() => {
     if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
     const handler = setTimeout(() => {
-      const key = user.uid === 'guest' ? 'hub_statuses' : `hub_user_${user.uid}_statuses`;
+      const key = `hub_user_${user.uid}_statuses`;
       const value = JSON.stringify(statuses);
       if (lastStatusesRef.current !== value) {
         if (safeSetItem(key, value)) {
@@ -260,7 +285,7 @@ export function useStorage() {
 
   // Firestore DB Helpers
   const fbSet = async (collectionName: string, id: string, data: any) => {
-    if (user && user.uid !== 'guest') {
+    if (user && !isGuest) {
       try {
         console.log(`[Firestore Write Start] Sincronizando com Firestore: coleção='${collectionName}', docId='${id}'`, data);
         await setDoc(doc(db, 'users', user.uid, collectionName, id), data);
@@ -275,7 +300,7 @@ export function useStorage() {
   };
 
   const fbDelete = async (collectionName: string, id: string) => {
-    if (user && user.uid !== 'guest') {
+    if (user && !isGuest) {
       try {
         console.log(`[Firestore Delete Start] Deletando do Firestore: coleção='${collectionName}', docId='${id}'`);
         await deleteDoc(doc(db, 'users', user.uid, collectionName, id));
@@ -345,7 +370,7 @@ export function useStorage() {
       id: `plat-${Date.now()}-${randomSuffix}`, 
       profiles: [], 
       purchases: [],
-      ownerId: user?.uid || 'guest'
+      ownerId: user?.uid || ''
     };
     setPlatforms((prev) => [...prev, newPlat]);
     fbSet('platforms', newPlat.id, newPlat);
@@ -504,44 +529,49 @@ export function useStorage() {
     if (!user) return;
 
     isClearingRef.current = true;
+    
+    // 1. Reset local states IMMEDIATELY for instant UI feedback
+    const userTags = tagsRef.current;
+    const userCats = categoriesRef.current;
+    const userPlats = platformsRef.current;
+    const userStatuses = statusesRef.current;
+
+    setTags(DEFAULT_TAGS);
+    setCategories(DEFAULT_CATEGORIES);
+    setPlatforms([]);
+    setStatuses(DEFAULT_STATUSES);
+
+    // 2. Clear localStorage IMMEDIATELY
+    const keys = [
+      'hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses',
+      `hub_user_${user.uid}_tags`, `hub_user_${user.uid}_categories`,
+      `hub_user_${user.uid}_platforms`, `hub_user_${user.uid}_statuses`
+    ];
+    keys.forEach(k => localStorage.removeItem(k));
+    
+    // Clear refs to avoid immediate re-save
+    lastTagsRef.current = null;
+    lastCategoriesRef.current = null;
+    lastPlatformsRef.current = null;
+    lastStatusesRef.current = null;
+
     try {
-      // 1. Delete everything from Firestore
-      if (user.uid !== 'guest') {
-        // Use Promise.all for faster deletion and wait for all to finish
+      // 3. Delete everything from Firestore
+      if (!isGuest) {
         const deletePromises: Promise<void>[] = [];
         
-        tags.forEach(t => deletePromises.push(fbDelete('tags', t.id)));
-        categories.filter(c => c.isCustom).forEach(c => deletePromises.push(fbDelete('categories', c.id)));
-        platforms.forEach(p => deletePromises.push(fbDelete('platforms', p.id)));
-        statuses.filter(s => s.isCustom).forEach(s => deletePromises.push(fbDelete('statuses', s.id)));
+        userTags.forEach(t => deletePromises.push(fbDelete('tags', t.id)));
+        userCats.filter(c => c.isCustom).forEach(c => deletePromises.push(fbDelete('categories', c.id)));
+        userPlats.forEach(p => deletePromises.push(fbDelete('platforms', p.id)));
+        userStatuses.filter(s => s.isCustom).forEach(s => deletePromises.push(fbDelete('statuses', s.id)));
         
         await Promise.all(deletePromises);
       }
-
-      // 2. Reset local states
-      setTags(DEFAULT_TAGS);
-      setCategories(DEFAULT_CATEGORIES);
-      setPlatforms([]);
-      setStatuses(DEFAULT_STATUSES);
-
-      // 3. Clear localStorage
-      const keys = [
-        'hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses',
-        `hub_user_${user.uid}_tags`, `hub_user_${user.uid}_categories`,
-        `hub_user_${user.uid}_platforms`, `hub_user_${user.uid}_statuses`
-      ];
-      keys.forEach(k => localStorage.removeItem(k));
-      
-      // Clear refs to avoid immediate re-save
-      lastTagsRef.current = null;
-      lastCategoriesRef.current = null;
-      lastPlatformsRef.current = null;
-      lastStatusesRef.current = null;
     } finally {
-      // Reset the flag after a short delay to allow snapshots to settle
+      // Reset the flag after a delay to allow snapshots to settle
       setTimeout(() => {
         isClearingRef.current = false;
-      }, 2000);
+      }, 5000);
     }
   };
 

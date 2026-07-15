@@ -48,14 +48,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return localStorage.getItem('hub_guest_mode') === 'true';
   });
 
+  // Unique guest ID per device
+  const getGuestId = () => {
+    let id = localStorage.getItem('hub_guest_id');
+    if (!id) {
+      id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('hub_guest_id', id);
+    }
+    return id;
+  };
+
   useEffect(() => {
     let unsubscribeProfile: (() => void) | undefined;
 
     if (isGuest) {
+      const guestId = getGuestId();
       setUser({
-        uid: 'guest',
+        uid: `guest_${guestId}`,
         displayName: 'Visitante',
-        email: 'visitante@huborganizado.local',
+        email: `guest_${guestId}@huborganizado.local`,
         photoURL: null,
         emailVerified: true,
         isAnonymous: true,
@@ -138,14 +149,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    const isActuallyGuest = isGuest;
+    const guestId = localStorage.getItem('hub_guest_id');
+
     localStorage.removeItem('hub_guest_mode');
-    localStorage.removeItem('hub_guest_profile');
     setIsGuest(false);
     setUser(null);
     setUserProfile(null);
 
-    // Security: Clear all user-specific data from localStorage to prevent data leakage on shared devices
+    // Security: Clear all user-specific data from localStorage for REGISTERED users
+    // For GUESTS, we preserve data for device persistence as requested
     Object.keys(localStorage).forEach(key => {
+      const isGuestKey = key.startsWith('hub_guest_') || (guestId && key.startsWith(`hub_user_guest_${guestId}`));
+      
       if (
         key.startsWith('hub_user_') ||
         key.startsWith('hub_guest_') ||
@@ -156,8 +172,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         key === 'hub_profile_names' ||
         key === 'hub_custom_presets'
       ) {
-        if (key !== 'hub_guest_mode') {
-          localStorage.removeItem(key);
+        // Only clear if it's NOT a guest key we want to preserve
+        // OR if the current session was NOT a guest session (registered user logout)
+        if (!isActuallyGuest) {
+          if (key !== 'hub_guest_id' && !isGuestKey) {
+            localStorage.removeItem(key);
+          }
+        } else {
+          // If we are guest, we only clear the current mode, keeping the data for next time
+          // This is handled by removeItem('hub_guest_mode') above
         }
       }
     });
