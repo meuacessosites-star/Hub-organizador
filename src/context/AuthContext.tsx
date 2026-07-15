@@ -1,5 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
+import { 
+  User, 
+  onAuthStateChanged, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
+  signOut as firebaseSignOut, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  updateProfile, 
+  sendPasswordResetEmail 
+} from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
@@ -111,6 +123,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    // Handle Redirect Result for Google Sign-In
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          console.log('AuthContext: redirect login successful', result.user.email);
+        }
+      })
+      .catch((err) => {
+        console.error('AuthContext: getRedirectResult error:', err);
+        // If it's a domain error, we can catch it here after redirect back
+        if (err?.code === 'auth/unauthorized-domain') {
+          console.error('Domain not authorized in Firebase Console:', window.location.hostname);
+        }
+      });
+
     return () => {
       unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
@@ -131,9 +158,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         prompt: 'select_account'
       });
       
-      console.log('AuthContext: calling signInWithPopup');
-      const result = await signInWithPopup(auth, provider);
-      console.log('AuthContext: signInWithPopup successful', result.user.email);
+      // Check if we are on a mobile device or if the user explicitly mentioned pop-up issues
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        console.log('AuthContext: calling signInWithRedirect (mobile detected)');
+        await signInWithRedirect(auth, provider);
+      } else {
+        try {
+          console.log('AuthContext: calling signInWithPopup');
+          const result = await signInWithPopup(auth, provider);
+          console.log('AuthContext: signInWithPopup successful', result.user.email);
+        } catch (popupErr: any) {
+          if (popupErr.code === 'auth/popup-blocked') {
+            console.log('AuthContext: popup blocked, falling back to redirect');
+            await signInWithRedirect(auth, provider);
+          } else {
+            throw popupErr;
+          }
+        }
+      }
     } catch (err: any) {
       setLoading(false);
       console.error('AuthContext: Google Sign-In Error Full Object:', err);
@@ -141,9 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const errorCode = err?.code;
       const errorMessage = err?.message;
 
-      if (errorCode === 'auth/popup-blocked') {
-        throw new Error('O pop-up foi bloqueado! Procure por um ícone de "janela bloqueada" na barra de endereços do seu navegador (no topo) e selecione "Sempre permitir pop-ups".');
-      } else if (errorCode === 'auth/operation-not-allowed') {
+      if (errorCode === 'auth/operation-not-allowed') {
         throw new Error('O login com Google não está ativado no Console do Firebase. Ative-o em Authentication > Sign-in method.');
       } else if (errorCode === 'auth/unauthorized-domain') {
         throw new Error('Domínio não autorizado. Adicione ' + window.location.hostname + ' aos "Domínios Autorizados" no Console do Firebase.');
