@@ -4,24 +4,24 @@
   "description": "Gerenciador Premium de Plataformas e Contas",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4f46e5",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/favicon-black.svg?v=2",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/favicon.svg",
+      "src": "/favicon-black.svg?v=2",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/favicon.svg",
+      "src": "/favicon-black.svg?v=2",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
