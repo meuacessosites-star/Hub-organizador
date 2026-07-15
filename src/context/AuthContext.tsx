@@ -142,15 +142,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const errorMessage = err?.message;
 
       if (errorCode === 'auth/popup-blocked') {
-        throw new Error('O pop-up foi bloqueado pelo navegador. Por favor, permita pop-ups para este site e tente novamente.');
+        throw new Error('O pop-up foi bloqueado! Procure por um ícone de "janela bloqueada" na barra de endereços do seu navegador (no topo) e selecione "Sempre permitir pop-ups".');
       } else if (errorCode === 'auth/operation-not-allowed') {
-        throw new Error('O login com Google não está ativado no Console do Firebase.');
+        throw new Error('O login com Google não está ativado no Console do Firebase. Ative-o em Authentication > Sign-in method.');
       } else if (errorCode === 'auth/unauthorized-domain') {
-        throw new Error('Este domínio não está autorizado no Firebase. Adicione ' + window.location.hostname + ' aos domínios autorizados no Console do Firebase.');
+        throw new Error('Domínio não autorizado. Adicione ' + window.location.hostname + ' aos "Domínios Autorizados" no Console do Firebase.');
       } else if (errorCode === 'auth/popup-closed-by-user') {
-        throw new Error('A janela de login foi fechada antes de completar o acesso.');
+        throw new Error('A janela de login foi fechada. Tente clicar no botão novamente.');
       } else if (errorCode === 'auth/internal-error') {
-        throw new Error('Erro interno do Firebase. Verifique se o projeto está configurado corretamente.');
+        throw new Error('Erro interno do Firebase. Tente recarregar a página.');
       }
       
       throw new Error(`Erro (${errorCode || 'unknown'}): ${errorMessage || 'Falha ao entrar com Google'}`);

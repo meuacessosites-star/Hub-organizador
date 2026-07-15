@@ -221,7 +221,12 @@ export const LoginPage: React.FC = () => {
                 try {
                   await signInWithGoogle();
                 } catch (err: any) {
+                  const isPopupBlocked = err.message.includes('pop-up foi bloqueado');
                   setError(err.message || 'Erro ao entrar com Google. Verifique se os popups estão permitidos.');
+                  if (isPopupBlocked) {
+                    // Extra visual feedback or even a simple alert to make sure user sees it
+                    console.warn('Popup blocked detected');
+                  }
                 }
               }}
               disabled={loading}
