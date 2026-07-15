@@ -107,18 +107,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('hub_guest_mode');
         setIsGuest(false);
         setUser(u);
+        setLoading(false);
         
-        // Listen for profile changes
+        // Listen for profile changes in the background (NON-BLOCKING)
         unsubscribeProfile = onSnapshot(doc(db, 'users', u.uid), (docSnap) => {
           if (docSnap.exists()) {
             setUserProfile(docSnap.data() as UserProfileData);
           } else {
             setUserProfile(null);
           }
-          setLoading(false);
         }, (error) => {
           handleFirestoreError(error, OperationType.GET, `users/${u.uid}`);
-          setLoading(false);
         });
       } else {
         setUserProfile(null);
@@ -166,23 +165,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         prompt: 'select_account'
       });
       
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      
-      if (isMobile) {
-        console.log('AuthContext: calling signInWithRedirect (mobile detected)');
-        await signInWithRedirect(auth, provider);
-      } else {
-        try {
-          console.log('AuthContext: calling signInWithPopup');
-          const result = await signInWithPopup(auth, provider);
-          console.log('AuthContext: signInWithPopup successful', result.user.email);
-        } catch (popupErr: any) {
-          if (popupErr.code === 'auth/popup-blocked') {
-            console.log('AuthContext: popup blocked, falling back to redirect');
-            await signInWithRedirect(auth, provider);
-          } else {
-            throw popupErr;
-          }
+      try {
+        console.log('AuthContext: calling signInWithPopup');
+        const result = await signInWithPopup(auth, provider);
+        console.log('AuthContext: signInWithPopup successful', result.user.email);
+        setLoading(false);
+      } catch (popupErr: any) {
+        console.warn('AuthContext: signInWithPopup error/blocked, checking fallback:', popupErr);
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.message?.includes('popup')) {
+          console.log('AuthContext: popup blocked or closed, falling back to redirect');
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
         }
       }
     } catch (err: any) {
@@ -211,20 +205,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithEmail = async (email: string, password: string) => {
     setAuthError(null);
-    await signInWithEmailAndPassword(auth, email, password);
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err: any) {
+      setLoading(false);
+      throw err;
+    }
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     setAuthError(null);
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    if (userCredential.user) {
-      await updateProfile(userCredential.user, { displayName });
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { displayName });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      throw err;
     }
   };
 
   const resetPassword = async (email: string) => {
     setAuthError(null);
-    await sendPasswordResetEmail(auth, email);
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setLoading(false);
+    } catch (err: any) {
+      setLoading(false);
+      throw err;
+    }
   };
 
   const signOut = async () => {
