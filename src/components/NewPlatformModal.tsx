@@ -1145,7 +1145,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           }`}
                         >
                           {editingPresetId ? <Pencil className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5 fill-current" />}
-                          {editingPresetId ? 'Atualizar Preset' : 'Salvar como Preset'}
+                          {editingPresetId ? 'Atualizar Preset' : 'Salvar'}
                         </button>
                         
                         <button
