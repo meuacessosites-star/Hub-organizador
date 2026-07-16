@@ -985,7 +985,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     onClick={() => setIsEditingNamesList(!isEditingNamesList)}
                     className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    {isEditingNamesList ? 'Concluir' : 'Gerenciar'}
+                    {isEditingNamesList ? '✓ Concluir' : '⚙️ Gerenciar'}
                   </button>
                 </div>
 
