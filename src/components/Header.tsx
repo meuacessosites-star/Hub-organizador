@@ -92,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white border-neutral-200 dark:bg-black dark:border-neutral-900 sticky top-0 z-10 select-none">
+    <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white border-neutral-200 dark:bg-[#000000] dark:border-neutral-900 sticky top-0 z-10 select-none shadow-sm dark:shadow-none">
       {/* Left Area: Menu Button + Search */}
       <div className="flex items-center gap-3 flex-1 mr-4 transition-all duration-300">
         {onMenuClick && (

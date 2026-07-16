@@ -25,9 +25,12 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { ScrollButtons } from './components/ScrollButtons';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
 
+import { useTheme } from './context/ThemeContext';
+
 export default function App() {
   const { addToast } = useToast();
   const { user, loading: authLoading, signOut } = useAuth();
+  const { theme } = useTheme();
   
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
 
@@ -115,6 +118,21 @@ export default function App() {
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
   const [highlightedPurchaseId, setHighlightedPurchaseId] = useState<string | null>(null);
+
+  // Dynamic theme-color meta tag for mobile status bar
+  useEffect(() => {
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    const color = theme === 'dark' ? '#000000' : '#ffffff';
+    
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', color);
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      meta.content = color;
+      document.head.appendChild(meta);
+    }
+  }, [theme]);
 
   // Modals state management
   const [isNewPlatformOpen, setIsNewPlatformOpen] = useState(false);
@@ -392,7 +410,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen font-sans bg-neutral-50 dark:bg-black text-neutral-800 dark:text-neutral-200 transition-colors duration-200">
+    <div className="flex min-h-screen font-sans bg-neutral-50 dark:bg-[#000000] text-neutral-800 dark:text-neutral-200 transition-colors duration-200">
         
         {/* Sidebar Component */}
         <Sidebar
