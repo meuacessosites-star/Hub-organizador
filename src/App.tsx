@@ -453,7 +453,7 @@ export default function App() {
           <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
             
             {/* View Selector Tabs */}
-            <div role="tablist" className="flex bg-neutral-200/50 dark:bg-black/40 p-1 rounded-xl self-start select-none border border-neutral-200 dark:border-neutral-800/50">
+            <div role="tablist" className="flex bg-neutral-200/50 dark:bg-white/[0.03] p-1 rounded-xl self-start select-none border border-neutral-200 dark:border-white/10">
               <button
                 id="view-selector-platforms"
                 data-testid="view-selector-platforms"
@@ -461,10 +461,10 @@ export default function App() {
                 aria-selected={currentView === 'platforms'}
                 aria-label="Ver Plataformas"
                 onClick={() => setCurrentView('platforms')}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                   currentView === 'platforms'
-                    ? 'bg-white dark:bg-[#12131a] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
-                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-white'
+                    ? 'bg-white dark:bg-[#252630] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_20px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-white/20'
+                    : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
                 }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
@@ -477,10 +477,10 @@ export default function App() {
                 aria-selected={currentView === 'purchases'}
                 aria-label="Ver Painel de Compras"
                 onClick={() => setCurrentView('purchases')}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                   currentView === 'purchases'
-                    ? 'bg-white dark:bg-[#12131a] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
-                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-white'
+                    ? 'bg-white dark:bg-[#252630] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_20px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-white/20'
+                    : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
                 }`}
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
@@ -488,81 +488,99 @@ export default function App() {
               </button>
             </div>
 
-            {currentView === 'platforms' ? (
-              <>
-                {/* Subheader summary path */}
-                <div className="flex items-center justify-between select-none">
-                  <h2 className="text-xs font-bold font-sans tracking-wide text-neutral-500 dark:text-neutral-200 uppercase flex items-center gap-1.5">
-                    <span>{subHeaderString}</span>
-                  </h2>
-                </div>
+            <AnimatePresence mode="wait">
+              {currentView === 'platforms' ? (
+                <motion.div
+                  key="platforms-view"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="flex flex-col gap-6"
+                >
+                  {/* Subheader summary path */}
+                  <div className="flex items-center justify-between select-none">
+                    <h2 className="text-xs font-bold font-sans tracking-wide text-neutral-500 dark:text-neutral-200 uppercase flex items-center gap-1.5">
+                      <span>{subHeaderString}</span>
+                    </h2>
+                  </div>
 
-                {/* Platform Grid Layout */}
-                <AnimatePresence mode="popLayout">
-                  {filteredPlatforms.length === 0 ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="flex-1 flex flex-col items-center justify-center py-20 bg-white dark:bg-[#0a0a0c] rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-800"
-                    >
-                      <Inbox className="w-12 h-12 text-neutral-400 dark:text-neutral-600 mb-3" />
-                      <h3 className="font-sans font-semibold text-neutral-800 dark:text-neutral-300 text-sm">
-                        Nenhuma plataforma encontrada
-                      </h3>
-                      <p className="text-neutral-500 dark:text-neutral-300 text-xs mt-1 text-center max-w-xs">
-                        {searchQuery
-                          ? 'Nenhuma plataforma ou conta atende aos seus critérios de busca.'
-                          : 'Comece clicando em "+ Nova Conta" no cabeçalho.'}
-                      </p>
-
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      layout="position"
-                      className="grid grid-cols-1 xl:grid-cols-2 gap-6"
-                    >
-                      {filteredPlatforms.map((plat) => {
-                        const cat = categories.find((c) => c.id === plat.categoryId);
-                        return (
-                          <PlatformCard
-                            key={plat.id}
-                            platform={plat}
-                            categoryName={cat ? cat.name : 'Outros'}
-                            categoryIcon={cat ? cat.icon : '📁'}
-                            tags={tags}
-                            availableStatuses={statuses}
-                            onAddProfile={handleOpenAddProfile}
-                            onEditProfile={handleOpenEditProfile}
-                            onDeletePlatform={handleDeletePlatformAndAssets}
-                            onDeleteProfile={handleDeleteProfileDirect}
-                            onAddPurchase={handleOpenAddPurchase}
-                            onViewPurchase={handleOpenViewPurchase}
-                            onEditPurchase={handleUpdatePurchaseDirect}
-                            onGoToPurchaseInPanel={handleGoToPurchase}
-                            searchQuery={searchQuery}
-                            activeMatchProfileId={activeMatch?.profileId}
-                            currentUserUid={user?.uid}
-                          />
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </>
-            ) : (
-              <PurchasesView
-                platforms={userPlatforms}
-                categories={categories}
-                statuses={statuses}
-                tags={tags}
-                onViewPurchase={handleOpenViewPurchase}
-                onEditPurchase={handleUpdatePurchaseDirect}
-                onAddPurchase={handleOpenAddPurchase}
-                highlightedPurchaseId={highlightedPurchaseId}
-                onClearHighlight={handleClearHighlight}
-              />
-            )}
+                  {/* Platform Grid Layout */}
+                  <AnimatePresence mode="popLayout">
+                    {filteredPlatforms.length === 0 ? (
+                      <motion.div
+                        key="empty-state"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex-1 flex flex-col items-center justify-center py-20 bg-white dark:bg-[#1c1d26] rounded-2xl border border-dashed border-neutral-200 dark:border-white/10"
+                      >
+                        <Inbox className="w-12 h-12 text-neutral-400 dark:text-neutral-600 mb-3" />
+                        <h3 className="font-sans font-semibold text-neutral-800 dark:text-neutral-300 text-sm">
+                          Nenhuma plataforma encontrada
+                        </h3>
+                        <p className="text-neutral-500 dark:text-neutral-300 text-xs mt-1 text-center max-w-xs">
+                          {searchQuery
+                            ? 'Nenhuma plataforma ou conta atende aos seus critérios de busca.'
+                            : 'Comece clicando em "+ Nova Conta" no cabeçalho.'}
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="platforms-grid"
+                        layout="position"
+                        className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+                      >
+                        {filteredPlatforms.map((plat) => {
+                          const cat = categories.find((c) => c.id === plat.categoryId);
+                          return (
+                            <PlatformCard
+                              key={plat.id}
+                              platform={plat}
+                              categoryName={cat ? cat.name : 'Outros'}
+                              categoryIcon={cat ? cat.icon : '📁'}
+                              tags={tags}
+                              availableStatuses={statuses}
+                              onAddProfile={handleOpenAddProfile}
+                              onEditProfile={handleOpenEditProfile}
+                              onDeletePlatform={handleDeletePlatformAndAssets}
+                              onDeleteProfile={handleDeleteProfileDirect}
+                              onAddPurchase={handleOpenAddPurchase}
+                              onViewPurchase={handleOpenViewPurchase}
+                              onEditPurchase={handleUpdatePurchaseDirect}
+                              onGoToPurchaseInPanel={handleGoToPurchase}
+                              searchQuery={searchQuery}
+                              activeMatchProfileId={activeMatch?.profileId}
+                              currentUserUid={user?.uid}
+                            />
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="purchases-view"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <PurchasesView
+                    platforms={userPlatforms}
+                    categories={categories}
+                    statuses={statuses}
+                    tags={tags}
+                    onViewPurchase={handleOpenViewPurchase}
+                    onEditPurchase={handleUpdatePurchaseDirect}
+                    onAddPurchase={handleOpenAddPurchase}
+                    highlightedPurchaseId={highlightedPurchaseId}
+                    onClearHighlight={handleClearHighlight}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </main>
         </div>
 
