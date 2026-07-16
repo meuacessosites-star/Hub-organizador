@@ -757,7 +757,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       <div className="text-[11px] leading-relaxed text-neutral-500 bg-neutral-50 p-3 rounded-xl border border-neutral-200 dark:bg-[#111219]/55 dark:border-[#2a2d40]/40">
                         💡 O sistema busca a logo oficial automaticamente. Se o ícone não aparecer ou estiver incorreto, você pode <strong>prosseguir normalmente</strong> ou usar as abas acima para escolher uma imagem manualmente.
                       </div>
-                      {platformName.trim() !== '' && logoPreviewErrorCount >= 1 && (
+                      {platformName.trim() !== '' && logoPreviewErrorCount >= 2 && (
                         <div className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 p-3 rounded-xl border border-amber-200 dark:border-amber-900/30 flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-1 duration-300">
                           <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[9px]">
                             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 text-[10px]">⚠️</span>
