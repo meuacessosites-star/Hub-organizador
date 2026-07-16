@@ -15,6 +15,11 @@ export interface ProfilePreset {
   id: string;
   name: string;
   avatar: ProfileAvatar;
+  email?: string;
+  username?: string;
+  password?: string;
+  accessLink?: string;
+  description?: string;
   ownerId?: string;
 }
 

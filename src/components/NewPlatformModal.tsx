@@ -995,10 +995,16 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     {profilePresets.map((preset) => (
                       <div key={`preset-edit-${preset.id}`} className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-[#13141c] border border-neutral-100 dark:border-[#2a2d40]/40 shadow-sm">
                         <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0"
-                          style={{ backgroundColor: preset.avatar.bgColor || preset.avatar.value }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0 overflow-hidden"
+                          style={{ backgroundColor: preset.avatar.bgColor || (preset.avatar.type === 'color' ? preset.avatar.value : undefined) }}
                         >
-                          {preset.avatar.type === 'emoji' ? preset.avatar.value : preset.name.slice(0, 2).toUpperCase()}
+                          {preset.avatar.type === 'emoji' ? (
+                            preset.avatar.value
+                          ) : preset.avatar.type === 'image' ? (
+                            <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            preset.name.slice(0, 2).toUpperCase()
+                          )}
                         </div>
                         <span className="flex-1 text-xs font-medium truncate">{preset.name}</span>
                         <button
@@ -1040,6 +1046,18 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                             
                             if (preset.avatar.type === 'emoji') setSelectedEmoji(preset.avatar.value);
                             else if (preset.avatar.type === 'image') setImageUrl(preset.avatar.value);
+
+                            // Apply extra fields
+                            if (preset.email) setEmail(preset.email);
+                            if (preset.username) setUsername(preset.username);
+                            if (preset.password) setPassword(preset.password);
+                            if (preset.accessLink) {
+                              setAccessLink(preset.accessLink);
+                              setIsAccessLinkEdited(true);
+                            }
+                            if (preset.description) setDescription(preset.description);
+                            
+                            addToast(`Preset "${preset.name}" aplicado!`, 'info');
                           }}
                           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                             isSel
@@ -1048,10 +1066,16 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           }`}
                         >
                           <div 
-                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm ${isSel ? 'bg-white/20' : 'bg-neutral-300 dark:bg-neutral-700'}`}
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm overflow-hidden ${isSel ? 'bg-white/20' : 'bg-neutral-300 dark:bg-neutral-700'}`}
                             style={{ backgroundColor: isSel ? 'rgba(255,255,255,0.2)' : (preset.avatar.bgColor || (preset.avatar.type === 'color' ? preset.avatar.value : undefined)) }}
                           >
-                            {preset.avatar.type === 'emoji' ? preset.avatar.value : preset.name.slice(0, 2).toUpperCase()}
+                            {preset.avatar.type === 'emoji' ? (
+                              preset.avatar.value
+                            ) : preset.avatar.type === 'image' ? (
+                              <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              preset.name.slice(0, 2).toUpperCase()
+                            )}
                           </div>
                           {preset.name}
                         </button>
@@ -1112,7 +1136,12 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           type: avatarTab,
                           value: avatarValue,
                           bgColor: selectedColor
-                        }
+                        },
+                        email: email,
+                        username: username,
+                        password: password,
+                        accessLink: accessLink,
+                        description: description
                       });
                       addToast(`Perfil "${nameToSave}" salvo como padrão! 💾`, 'success');
                     }}
