@@ -259,7 +259,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     <div
       id={`platform-card-${platform.id}`}
       data-testid={`platform-card-${platform.id}`}
-      className="bg-white dark:bg-[#12131a] border border-neutral-200 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.6)] hover:border-neutral-300 dark:hover:border-white/20 group"
+      className="bg-white dark:bg-[#16171d] border border-neutral-200 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.8)] hover:border-neutral-300 dark:hover:border-white/20 group"
     >
       {/* Card Header (always visible) */}
       <div
@@ -268,11 +268,11 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
       >
         <div className="flex items-center gap-4">
           {/* Logo container - Standardized App Icon Style */}
-          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-black flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/5 group-hover:scale-105 transition-all duration-500">
+          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#1a1b23] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
             <img referrerPolicy="no-referrer"
               src={currentLogoUrl}
               alt={platform.name}
-              className="w-7 h-7 object-contain pointer-events-none transition-transform duration-500 group-hover:scale-110"
+              className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110"
               onError={handleLogoError}
             />
             {(imageError || !currentLogoUrl) && (

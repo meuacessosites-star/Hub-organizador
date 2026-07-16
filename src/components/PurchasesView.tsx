@@ -425,9 +425,9 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       {/* Dynamic Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Spent */}
-        <div className="bg-white dark:bg-[#181922] p-5 rounded-2xl border border-neutral-200/80 dark:border-[#232534] shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#16171d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400">Total Investido</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-300">Total Investido</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
               R$ {stats.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h3>
@@ -438,9 +438,9 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
         </div>
 
         {/* Total Items */}
-        <div className="bg-white dark:bg-[#181922] p-5 rounded-2xl border border-neutral-200/80 dark:border-[#232534] shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#16171d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400">Compras Registradas</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-300">Compras Registradas</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
               {stats.totalCount} {stats.totalCount === 1 ? 'item' : 'itens'}
             </h3>
@@ -451,9 +451,9 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
         </div>
 
         {/* Pending Delivery */}
-        <div className="bg-white dark:bg-[#181922] p-5 rounded-2xl border border-neutral-200/80 dark:border-[#232534] shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#16171d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400">A Caminho</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-300">A Caminho</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
               {stats.pendingCount} pendentes
             </h3>
@@ -464,9 +464,9 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
         </div>
 
         {/* Delivered count */}
-        <div className="bg-white dark:bg-[#181922] p-5 rounded-2xl border border-neutral-200/80 dark:border-[#232534] shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#16171d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400">Entregues</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-300">Entregues</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
               {stats.deliveredCount} concluídas
             </h3>
@@ -478,11 +478,11 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       </div>
 
       {/* Control Panel: Search & Filters Toggle */}
-      <div className="bg-white dark:bg-[#181922] p-4 rounded-2xl border border-neutral-200/80 dark:border-[#232534] shadow-sm flex flex-col gap-4 overflow-visible relative z-[40]">
+      <div className="bg-white dark:bg-[#16171d] p-4 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex flex-col gap-4 overflow-visible relative z-[40]">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search bar */}
           <div className="relative flex-1">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-300">
               <Search className="w-4 h-4" />
             </span>
             <input
@@ -490,7 +490,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar pelo nome do produto, plataforma ou observações..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+              className="w-full h-11 pl-10 pr-4 rounded-xl text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#12131a] dark:border-white/10 dark:text-neutral-100 dark:placeholder-neutral-500"
             />
           </div>
 
