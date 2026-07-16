@@ -463,8 +463,8 @@ export default function App() {
                 onClick={() => setCurrentView('platforms')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                   currentView === 'platforms'
-                    ? 'bg-white dark:bg-neutral-900 text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
-                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+                    ? 'bg-white dark:bg-[#1a1b28] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
+                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-white'
                 }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
@@ -479,8 +479,8 @@ export default function App() {
                 onClick={() => setCurrentView('purchases')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                   currentView === 'purchases'
-                    ? 'bg-white dark:bg-neutral-900 text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
-                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+                    ? 'bg-white dark:bg-[#1a1b28] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
+                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-white'
                 }`}
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
@@ -492,7 +492,7 @@ export default function App() {
               <>
                 {/* Subheader summary path */}
                 <div className="flex items-center justify-between select-none">
-                  <h2 className="text-xs font-bold font-sans tracking-wide text-neutral-500 dark:text-neutral-400 uppercase flex items-center gap-1.5">
+                  <h2 className="text-xs font-bold font-sans tracking-wide text-neutral-500 dark:text-neutral-200 uppercase flex items-center gap-1.5">
                     <span>{subHeaderString}</span>
                   </h2>
                 </div>
@@ -510,7 +510,7 @@ export default function App() {
                       <h3 className="font-sans font-semibold text-neutral-800 dark:text-neutral-300 text-sm">
                         Nenhuma plataforma encontrada
                       </h3>
-                      <p className="text-neutral-500 dark:text-neutral-400 text-xs mt-1 text-center max-w-xs">
+                      <p className="text-neutral-500 dark:text-neutral-300 text-xs mt-1 text-center max-w-xs">
                         {searchQuery
                           ? 'Nenhuma plataforma ou conta atende aos seus critérios de busca.'
                           : 'Comece clicando em "+ Nova Conta" no cabeçalho.'}

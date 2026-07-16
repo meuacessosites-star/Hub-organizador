@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div id="search-input-container" className={`relative w-full transition-all duration-300 ease-in-out ${
           isSearchActive ? 'max-sm:max-w-full max-sm:flex-1' : 'max-sm:max-w-[140px]'
         } min-w-[100px] sm:max-w-xs md:max-w-md lg:w-96`}>
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-300">
             <Search className="w-4 h-4" />
           </span>
           <input
@@ -128,16 +128,16 @@ export const Header: React.FC<HeaderProps> = ({
               }
             }}
             placeholder="Buscar conta..."
-            className={`w-full h-10 pl-10 rounded-lg text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-200 dark:placeholder-neutral-500 ${
+            className={`w-full h-10 pl-10 rounded-lg text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-[#1a1b28] dark:border-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-400 ${
               searchQuery.trim() ? 'pr-[110px] sm:pr-[130px]' : 'pr-10 sm:pr-12'
             }`}
           />
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {searchQuery.trim() ? (
-              <div className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-1.5 py-0.5 rounded-md shadow-sm animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#252630] border border-neutral-200 dark:border-neutral-700 px-1.5 py-0.5 rounded-md shadow-sm animate-in fade-in zoom-in-95 duration-150">
                 {searchMatchesCount > 0 && (
                   <>
-                    <span className="text-[9px] sm:text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 select-none">
+                    <span className="text-[9px] sm:text-[10px] font-semibold text-neutral-500 dark:text-neutral-300 select-none">
                       {activeMatchIndex + 1}/{searchMatchesCount}
                     </span>
                     <div className="h-3 w-[1px] bg-neutral-200 dark:bg-neutral-700" />

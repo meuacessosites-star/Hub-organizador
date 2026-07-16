@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 lg:z-auto lg:sticky lg:top-0 w-64 border-r flex flex-col justify-between h-screen transition-transform duration-300 select-none bg-slate-50 border-neutral-200/60 text-neutral-650 dark:bg-[#000000] dark:border-neutral-900/80 dark:text-neutral-350 shadow-xl lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 lg:z-auto lg:sticky lg:top-0 w-64 border-r flex flex-col justify-between h-screen transition-transform duration-300 select-none bg-slate-50 border-neutral-200/60 text-neutral-650 dark:bg-[#000000] dark:border-neutral-900/80 dark:text-neutral-200 shadow-xl lg:shadow-none ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   selectedCategory === 'todas'
                     ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-600/10 dark:text-indigo-400'
-                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-800/40'
+                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-white dark:hover:bg-neutral-800/40'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -176,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`text-xs px-2 py-0.5 rounded-full font-mono font-semibold ${
                     selectedCategory === 'todas'
                       ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300'
-                      : 'bg-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'
+                      : 'bg-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
                   }`}
                 >
                   {getCategoryCount('todas')}
@@ -203,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isSelected
                       ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-600/10 dark:text-indigo-400'
-                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-800/40'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-white dark:hover:bg-neutral-800/40'
                   }`}
                 >
                   <div className="flex items-center gap-3">

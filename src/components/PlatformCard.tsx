@@ -259,7 +259,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     <div
       id={`platform-card-${platform.id}`}
       data-testid={`platform-card-${platform.id}`}
-      className="bg-white dark:bg-[#1a1b23] border border-neutral-200 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.8)] hover:border-neutral-300 dark:hover:border-white/20 group"
+      className="bg-white dark:bg-[#23242f] border border-neutral-200 dark:border-white/20 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.7)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.8)] hover:border-neutral-300 dark:hover:border-white/30 group"
     >
       {/* Card Header (always visible) */}
       <div
@@ -268,7 +268,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
       >
         <div className="flex items-center gap-4">
           {/* Logo container - Standardized App Icon Style */}
-          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#111218] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
+          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#252630] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-neutral-200 dark:border-white/20 group-hover:scale-105 transition-all duration-500">
             <img referrerPolicy="no-referrer"
               src={currentLogoUrl}
               alt={platform.name}
@@ -290,7 +290,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
               {highlightText(platform.name, searchQuery)}
             </h3>
             {platform.url && (
-              <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-350">
+              <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-200">
                 <Globe className="w-2.5 h-2.5 shrink-0" />
                 <span className="text-[10px] truncate max-w-[140px] font-medium leading-none">
                   {platform.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
@@ -308,7 +308,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
               </div>
             )}
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-300 font-bold uppercase tracking-wider">
                 {platform.profiles.length} {platform.profiles.length === 1 ? 'conta' : 'contas'}
               </span>
               {isExpanded && platform.categoryId && (
@@ -316,7 +316,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                   <span className="text-neutral-700 dark:text-neutral-500 text-[10px]">•</span>
                   <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-white/10 border border-neutral-200 dark:border-white/10">
                     <CategoryIcon categoryId={platform.categoryId} className="w-2.5 h-2.5 text-indigo-500" />
-                    <span className="text-[9px] font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-tight">
+                    <span className="text-[9px] font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-tight">
                       {categoryName}
                     </span>
                   </div>
@@ -433,14 +433,14 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
             {activeTab === 'contas' && (
               <div className="p-4 flex flex-col gap-3.5">
                 {platform.profiles.length === 0 ? (
-                  <div className="text-center py-6 text-xs text-neutral-500 select-none dark:text-neutral-400">
+                  <div className="text-center py-6 text-xs text-neutral-500 select-none dark:text-neutral-300">
                     Nenhum perfil cadastrado.
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2.5">
                     {/* Header bar with toggle all button */}
                     <div className="flex items-center justify-between px-1 pb-1 select-none border-b border-neutral-100/30 dark:border-neutral-800/20">
-                      <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-300 uppercase tracking-wider">
                         Contas Cadastradas
                       </span>
                       <button
@@ -468,9 +468,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                         <div
                           key={profile.id}
                           id={`profile-card-${profile.id}`}
-                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#14151f] group/profile shadow-inner transition-all duration-200 ${
+                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#252632] group/profile shadow-inner transition-all duration-200 ${
                             isActiveMatch
-                              ? 'ring-2 ring-indigo-500/40 dark:ring-indigo-500/60 shadow-md shadow-indigo-500/10'
+                              ? 'ring-2 ring-indigo-500/40 dark:ring-indigo-500/80 shadow-md shadow-indigo-500/20'
                               : ''
                           }`}
                         >
@@ -541,8 +541,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             }}
                             className={`z-10 relative flex flex-col p-3.5 rounded-xl bg-white border transition-colors duration-150 cursor-grab active:cursor-grabbing select-none shadow-sm ${
                               isActiveMatch
-                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#1a1b2e]'
-                                : 'border-neutral-100 dark:border-transparent dark:bg-[#1c1d2b] hover:border-neutral-200 dark:hover:border-[#2d2f45]'
+                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#32344a]'
+                                : 'border-neutral-100 dark:border-transparent dark:bg-[#2a2b38] hover:border-neutral-200 dark:hover:border-white/20'
                             } ${
                               isCollapsed ? 'gap-0' : 'gap-3'
                             }`}
@@ -588,7 +588,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     )}
                                   </span>
                                   {platform.url && (
-                                    <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-500">
+                                    <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-300">
                                       <Globe className="w-2.5 h-2.5 shrink-0" />
                                       <span className="text-[9px] truncate max-w-[150px] font-medium leading-none italic">
                                         {platform.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
@@ -600,16 +600,16 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
 
                               <div className="flex items-center gap-2">
                                 {/* Swipe Indicator */}
-                                <div className="flex items-center gap-0.5 text-[10px] text-neutral-400 dark:text-neutral-500 font-medium animate-pulse shrink-0">
+                                <div className="flex items-center gap-0.5 text-[10px] text-neutral-400 dark:text-neutral-300 font-medium animate-pulse shrink-0">
                                   <span>arrastar</span>
                                   <ChevronLeft className="w-3 h-3" />
                                 </div>
                                 <div className="h-4 w-[1px] bg-neutral-100 dark:bg-neutral-800" />
                                 {/* Collapse state icon */}
                                 {isCollapsed ? (
-                                  <ChevronDown className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500 hover:text-indigo-500 transition-colors" />
+                                  <ChevronDown className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-300 hover:text-indigo-500 transition-colors" />
                                 ) : (
-                                  <ChevronUp className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500 hover:text-indigo-500 transition-colors" />
+                                  <ChevronUp className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-300 hover:text-indigo-500 transition-colors" />
                                 )}
                               </div>
                             </div>
@@ -623,7 +623,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     <div className="flex items-center gap-2 min-w-0 flex-1">
                                       <Mail className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400 shrink-0" />
                                       <div className="min-w-0 flex-1">
-                                        <span className="text-[9px] text-sky-600/70 dark:text-sky-400/50 block font-medium uppercase tracking-wider leading-none">E-mail</span>
+                                        <span className="text-[9px] text-sky-600 dark:text-sky-300 block font-bold uppercase tracking-wider leading-none">E-mail</span>
                                         <span className="text-xs font-semibold block truncate mt-0.5 select-all">{highlightText(profile.email, searchQuery)}</span>
                                       </div>
                                     </div>
@@ -650,7 +650,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     <div className="flex items-center gap-2 min-w-0 flex-1">
                                       <User className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400 shrink-0" />
                                       <div className="min-w-0 flex-1">
-                                        <span className="text-[9px] text-sky-600/70 dark:text-sky-400/50 block font-medium uppercase tracking-wider leading-none">Usuário</span>
+                                        <span className="text-[9px] text-sky-600 dark:text-sky-300 block font-bold uppercase tracking-wider leading-none">Usuário</span>
                                         <span className="text-xs font-semibold block truncate mt-0.5 select-all">{highlightText(profile.username, searchQuery)}</span>
                                       </div>
                                     </div>
@@ -677,7 +677,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     <div className="flex items-center gap-2 min-w-0 flex-1">
                                       <Lock className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
                                       <div className="min-w-0 flex-1">
-                                        <span className="text-[9px] text-amber-600/70 dark:text-amber-400/50 block font-medium uppercase tracking-wider leading-none">Senha</span>
+                                        <span className="text-[9px] text-amber-600 dark:text-amber-300 block font-bold uppercase tracking-wider leading-none">Senha</span>
                                         <span className="text-xs font-mono font-bold block mt-0.5 truncate tracking-wider">
                                           {visiblePasswords[profile.id] ? profile.password : '••••••••'}
                                         </span>
@@ -727,7 +727,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     <div className="flex items-center gap-2 min-w-0 flex-1">
                                       <Globe className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
                                       <div className="min-w-0 flex-1">
-                                        <span className="text-[9px] text-indigo-600/70 dark:text-indigo-400/50 block font-medium uppercase tracking-wider leading-none">Link de Acesso</span>
+                                        <span className="text-[9px] text-indigo-600 dark:text-indigo-300 block font-bold uppercase tracking-wider leading-none">Link de Acesso</span>
                                         <span className="text-xs font-semibold block truncate mt-0.5 select-all">{highlightText(profile.accessLink, searchQuery)}</span>
                                       </div>
                                     </div>
@@ -762,11 +762,11 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
 
                                 {/* DESCRIPTION / NOTES BLOCK */}
                                 {profile.description && (
-                                  <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/30 border border-neutral-100 dark:border-neutral-800/50 text-neutral-600 dark:text-neutral-400 border-l-2 border-l-indigo-500 dark:border-l-indigo-500">
+                                  <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-[#3d3f52] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-200 border-l-2 border-l-indigo-500 dark:border-l-indigo-400">
                                     <div className="flex gap-1.5">
-                                      <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                                      <FileText className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0 mt-0.5" />
                                       <div>
-                                        <span className="text-[9px] text-neutral-400 dark:text-neutral-500 block uppercase tracking-wider font-semibold leading-none">Rascunho / Notas</span>
+                                        <span className="text-[9px] text-neutral-400 dark:text-neutral-300 block uppercase tracking-wider font-semibold leading-none">Rascunho / Notas</span>
                                         <p className="text-[11px] italic leading-relaxed mt-1">{highlightText(profile.description, searchQuery)}</p>
                                       </div>
                                     </div>
