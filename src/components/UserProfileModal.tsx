@@ -1,7 +1,7 @@
 import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle } from 'lucide-react';
+import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle, Sparkles } from 'lucide-react';
 import { User, updateProfile as firebaseUpdateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -14,6 +14,7 @@ interface UserProfileModalProps {
   onClose: () => void;
   user: User | null;
   onSignOut: () => void;
+  onStartTutorial?: () => void;
 }
 
 const PRESET_EMOJIS = [
@@ -87,6 +88,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onClose,
   user,
   onSignOut,
+  onStartTutorial,
 }) => {
   const { userProfile, isGuest } = useAuth();
   const { clearAllData } = useStorage();
@@ -722,6 +724,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     Salvar Perfil
                   </>
                 )}
+              </button>
+
+              <button
+                onClick={() => {
+                  localStorage.removeItem('hub_onboarding_seen');
+                  onStartTutorial?.();
+                  onClose();
+                }}
+                className="w-full h-11 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-200 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:border-amber-500/30 dark:text-amber-400 cursor-pointer"
+              >
+                <Sparkles className="w-5 h-5 animate-pulse" />
+                Refazer Tutorial do App
               </button>
 
               <button

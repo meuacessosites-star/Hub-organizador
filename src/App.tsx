@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useStorage } from './hooks/useStorage';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -16,7 +16,7 @@ import { ManageStatusesModal } from './components/ManageStatusesModal';
 import { getLogoUrl } from './utils/logoHelper';
 import { Profile, Purchase } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Inbox, LayoutGrid, ShoppingBag } from 'lucide-react';
+import { Inbox, LayoutGrid, ShoppingBag, ChevronRight, Sparkles } from 'lucide-react';
 import { useToast } from './context/ToastContext';
 import { PurchasesView } from './components/PurchasesView';
 import { useAuth } from './context/AuthContext';
@@ -53,14 +53,68 @@ export default function App() {
     addPurchase,
     updatePurchase,
     deletePurchase,
+    isDemoActive,
+    setDemoActive,
   } = useStorage();
+
+  const [isTutorialActive, setIsTutorialActive] = useState(() => {
+    return localStorage.getItem('hub_onboarding_seen') !== 'true';
+  });
 
   const [selectedCategory, setSelectedCategory] = useState('todas');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState<'platforms' | 'purchases'>('platforms');
-  const [highlightedPurchaseId, setHighlightedPurchaseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDemoActive(isTutorialActive);
+  }, [isTutorialActive, setDemoActive]);
+  const handleClearHighlight = useCallback(() => {
+    setHighlightedPurchaseId(null);
+  }, []);
+
+  const handleCloseTutorial = useCallback(() => {
+    setIsTutorialActive(false);
+  }, []);
+
+  const handleShowTutorial = useCallback(() => {
+    setIsTutorialActive(true);
+  }, []);
+
+  const handleOpenNewPlatform = useCallback(() => {
+    setIsNewPlatformOpen(true);
+  }, []);
+
+  const handleOpenManageCategories = useCallback(() => {
+    setIsManageCategoriesOpen(true);
+  }, []);
+
+  const handleOpenManageStatuses = useCallback(() => {
+    setIsManageStatusesOpen(true);
+  }, []);
+
+  const handleOpenSidebarMobile = useCallback(() => {
+    setIsSidebarOpenMobile(true);
+  }, []);
+
+  const handleCloseSidebarMobile = useCallback(() => {
+    setIsSidebarOpenMobile(false);
+  }, []);
+
+  const handleAuthAction = useCallback(() => {
+    if (user) {
+      setIsUserProfileOpen(true);
+    }
+  }, [user]);
+
+  const handleSignOut = useCallback(() => {
+    if (user) {
+      signOut();
+    }
+  }, [user, signOut]);
+
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
+  const [highlightedPurchaseId, setHighlightedPurchaseId] = useState<string | null>(null);
 
   // Modals state management
   const [isNewPlatformOpen, setIsNewPlatformOpen] = useState(false);
@@ -96,60 +150,67 @@ export default function App() {
   const categoryTitle = currentCategoryObj ? currentCategoryObj.name : 'Todas';
 
   // Filter platforms by ownership (STRICT SECURITY)
-  const userPlatforms = platforms.filter((plat) => {
-    return user && plat.ownerId === user.uid;
-  });
+  const userPlatforms = useMemo(() => {
+    return platforms.filter((plat) => {
+      return user && plat.ownerId === user.uid;
+    });
+  }, [platforms, user?.uid]);
 
   // Find dynamic counts
-  const filteredPlatforms = userPlatforms.filter((plat) => {
-    // 1. Category Filter
-    if (selectedCategory !== 'todas' && plat.categoryId !== selectedCategory) {
-      return false;
-    }
+  const filteredPlatforms = useMemo(() => {
+    return userPlatforms.filter((plat) => {
+      // 1. Category Filter
+      if (selectedCategory !== 'todas' && plat.categoryId !== selectedCategory) {
+        return false;
+      }
 
-    // 2. Search Query Filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const platNameMatch = plat.name.toLowerCase().includes(q);
-      const categoryMatch = categories
-        .find((c) => c.id === plat.categoryId)
-        ?.name.toLowerCase()
-        .includes(q);
-      const profileMatch = plat.profiles.some(
-        (prof) =>
-          prof.name.toLowerCase().includes(q) ||
-          prof.username.toLowerCase().includes(q) ||
-          prof.description?.toLowerCase().includes(q) ||
-          prof.accessLink?.toLowerCase().includes(q)
-      );
-      const purchaseMatch = plat.purchases.some((pur) =>
-        pur.productName.toLowerCase().includes(q)
-      );
+      // 2. Search Query Filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const platNameMatch = plat.name.toLowerCase().includes(q);
+        const categoryMatch = categories
+          .find((c) => c.id === plat.categoryId)
+          ?.name.toLowerCase()
+          .includes(q);
+        const profileMatch = plat.profiles.some(
+          (prof) =>
+            prof.name.toLowerCase().includes(q) ||
+            (prof.username?.toLowerCase().includes(q) ?? false) ||
+            prof.description?.toLowerCase().includes(q) ||
+            prof.accessLink?.toLowerCase().includes(q)
+        );
+        const purchaseMatch = plat.purchases.some((pur) =>
+          pur.productName.toLowerCase().includes(q)
+        );
 
-      return platNameMatch || categoryMatch || profileMatch || purchaseMatch;
-    }
+        return platNameMatch || categoryMatch || profileMatch || purchaseMatch;
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [userPlatforms, selectedCategory, searchQuery, categories]);
 
   // Calculate search matches on filtered platforms
-  const searchMatches: Array<{ platformId: string; profileId: string }> = [];
-  if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase().trim();
-    filteredPlatforms.forEach((plat) => {
-      const platNameMatch = plat.name.toLowerCase().includes(q);
-      plat.profiles.forEach((prof) => {
-        const profNameMatch = prof.name.toLowerCase().includes(q);
-        const usernameMatch = prof.username.toLowerCase().includes(q);
-        const descMatch = prof.description?.toLowerCase().includes(q) || false;
-        const linkMatch = prof.accessLink?.toLowerCase().includes(q) || false;
+  const searchMatches = useMemo(() => {
+    const matches: Array<{ platformId: string; profileId: string }> = [];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filteredPlatforms.forEach((plat) => {
+        const platNameMatch = plat.name.toLowerCase().includes(q);
+        plat.profiles.forEach((prof) => {
+          const profNameMatch = prof.name.toLowerCase().includes(q);
+          const usernameMatch = prof.username?.toLowerCase().includes(q) || false;
+          const descMatch = prof.description?.toLowerCase().includes(q) || false;
+          const linkMatch = prof.accessLink?.toLowerCase().includes(q) || false;
 
-        if (platNameMatch || profNameMatch || usernameMatch || descMatch || linkMatch) {
-          searchMatches.push({ platformId: plat.id, profileId: prof.id });
-        }
+          if (platNameMatch || profNameMatch || usernameMatch || descMatch || linkMatch) {
+            matches.push({ platformId: plat.id, profileId: prof.id });
+          }
+        });
       });
-    });
-  }
+    }
+    return matches;
+  }, [filteredPlatforms, searchQuery]);
 
   // Reset active match index when search query changes
   useEffect(() => {
@@ -197,6 +258,11 @@ export default function App() {
 
     addProfile(newPlat.id, data.firstProfile);
     setIsNewPlatformOpen(false);
+    
+    // Automatically complete/hide the onboarding tutorial once they successfully create a platform
+    setIsTutorialActive(false);
+    localStorage.setItem('hub_onboarding_seen', 'true');
+    
     addToast(`Plataforma "${data.name}" criada com sucesso! 🚀`, 'success');
   };
 
@@ -334,15 +400,12 @@ export default function App() {
           platforms={userPlatforms}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
-          onManageCategories={() => setIsManageCategoriesOpen(true)}
-          onManageStatuses={() => setIsManageStatusesOpen(true)}
+          onManageCategories={handleOpenManageCategories}
+          onManageStatuses={handleOpenManageStatuses}
           isOpenMobile={isSidebarOpenMobile}
-          onCloseMobile={() => setIsSidebarOpenMobile(false)}
-          onBackToLogin={() => {
-            if (user) {
-              signOut();
-            }
-          }}
+          onCloseMobile={handleCloseSidebarMobile}
+          onBackToLogin={handleSignOut}
+          onShowTutorial={handleShowTutorial}
         />
 
         {/* Main Content Area */}
@@ -351,8 +414,8 @@ export default function App() {
           <Header
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            onNewPlatform={() => setIsNewPlatformOpen(true)}
-            onMenuClick={() => setIsSidebarOpenMobile(true)}
+            onNewPlatform={handleOpenNewPlatform}
+            onMenuClick={handleOpenSidebarMobile}
             searchMatchesCount={searchMatches.length}
             activeMatchIndex={activeMatchIndex}
             onPrevMatch={() => {
@@ -365,11 +428,7 @@ export default function App() {
                 setActiveMatchIndex((prev) => (prev + 1) % searchMatches.length);
               }
             }}
-            onAuthAction={() => {
-              if (user) {
-                setIsUserProfileOpen(true);
-              }
-            }}
+            onAuthAction={handleAuthAction}
           />
 
           {/* Core Body Container */}
@@ -438,6 +497,7 @@ export default function App() {
                           ? 'Nenhuma plataforma ou conta atende aos seus critérios de busca.'
                           : 'Comece clicando em "+ Nova Conta" no cabeçalho.'}
                       </p>
+
                     </motion.div>
                   ) : (
                     <motion.div
@@ -482,7 +542,7 @@ export default function App() {
                 onEditPurchase={handleUpdatePurchaseDirect}
                 onAddPurchase={handleOpenAddPurchase}
                 highlightedPurchaseId={highlightedPurchaseId}
-                onClearHighlight={() => setHighlightedPurchaseId(null)}
+                onClearHighlight={handleClearHighlight}
               />
             )}
           </main>
@@ -565,12 +625,18 @@ export default function App() {
               signOut();
               setIsUserProfileOpen(false);
             }}
+            onStartTutorial={() => setIsTutorialActive(true)}
           />
 
         </AnimatePresence>
 
         <ScrollButtons />
-        <OnboardingTutorial />
+        <OnboardingTutorial 
+          isActive={isTutorialActive}
+          onClose={handleCloseTutorial}
+          onSetSidebarOpenMobile={setIsSidebarOpenMobile}
+          onSetCurrentView={setCurrentView}
+        />
       </div>
   );
 }

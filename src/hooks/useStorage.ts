@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Tag, Category, Platform, Status, Profile, Purchase } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { db, auth } from '../firebase';
@@ -33,6 +33,75 @@ const DEFAULT_STATUSES: Status[] = [
 
 const DEFAULT_PLATFORMS: Platform[] = [];
 
+const DEMO_TAGS: Tag[] = [
+  { id: 'tag-1', name: 'Importante', emoji: '⭐', color: '#f59e0b' },
+  { id: 'tag-2', name: 'Assinatura', emoji: '🔄', color: '#3b82f6' },
+  { id: 'tag-3', name: 'Físico', emoji: '📦', color: '#10b981' },
+  { id: 'tag-4', name: 'Digital', emoji: '💻', color: '#8b5cf6' },
+];
+
+const DEMO_CATEGORIES: Category[] = [
+  { id: 'compras', name: 'Compras', icon: 'ShoppingBag', color: '#3b82f6' },
+  { id: 'assinaturas', name: 'Assinaturas', icon: 'CreditCard', color: '#8b5cf6' },
+  { id: 'estudos', name: 'Estudos', icon: 'GraduationCap', color: '#10b981' },
+  { id: 'trabalho', name: 'Trabalho', icon: 'Briefcase', color: '#f59e0b' },
+  { id: 'entretenimento', name: 'Entretenimento', icon: 'Gamepad2', color: '#ec4899' },
+  { id: 'outros', name: 'Outros', icon: 'LayoutGrid', color: '#6b7280' },
+];
+
+const DEMO_STATUSES: Status[] = [
+  { id: 'pedido_feito', label: 'Pedido Feito', color: '#f59e0b' },
+  { id: 'enviado', label: 'Enviado', color: '#3b82f6' },
+  { id: 'saiu_entrega', label: 'Saiu para Entrega', color: '#8b5cf6' },
+  { id: 'entregue', label: 'Entregue', color: '#10b981' },
+  { id: 'cancelado', label: 'Cancelado', color: '#f43f5e' },
+  { id: 'devolvido', label: 'Devolvido', color: '#737373' },
+];
+
+const getDemoPlatforms = (userId: string): Platform[] => [
+  {
+    id: 'demo-plat-netflix',
+    name: 'Netflix',
+    url: 'https://netflix.com',
+    logoUrl: 'https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/227_Netflix_logo-512.png',
+    categoryId: 'assinaturas',
+    ownerId: userId,
+    profiles: [
+      {
+        id: 'demo-prof-net1',
+        name: 'Pessoal',
+        username: 'Teste',
+        email: 'teste@gmailm.com',
+        password: 'SenhaSecretaNetflix123',
+        accessLink: 'Netflix.com',
+        description: 'Simulação',
+        avatar: { type: 'color', value: 'PE', bgColor: '#6366f1' }
+      }
+    ],
+    purchases: [
+      {
+        id: 'demo-pur-net1',
+        profileId: 'demo-prof-net1',
+        productName: 'Plano Premium Ultra HD (Mensal)',
+        productLink: 'https://netflix.com/changeplan',
+        status: 'entregue',
+        originalPrice: 55.90,
+        discount: 0,
+        finalPrice: 55.90,
+        notes: 'Renovação automática todo dia 15 no cartão de crédito.',
+        date: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+        paymentDate: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString().split('T')[0],
+        paymentMethod: 'Cartão de Crédito',
+        bankName: 'Nubank',
+        cardName: 'Roxinho Principal',
+        installments: 1,
+        tags: ['tag-2'],
+        purchaseType: 'subscription'
+      }
+    ]
+  }
+];
+
 export function useStorage() {
   const { user, loading: authLoading, isGuest } = useAuth();
   
@@ -43,6 +112,53 @@ export function useStorage() {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   
   const [statuses, setStatuses] = useState<Status[]>(DEFAULT_STATUSES);
+
+  const [isDemoActive, setIsDemoActive] = useState(false);
+  const isDemoActiveRef = useRef(isDemoActive);
+  useEffect(() => { isDemoActiveRef.current = isDemoActive; }, [isDemoActive]);
+
+  const realDataRef = useRef<{
+    platforms: Platform[];
+    categories: Category[];
+    statuses: Status[];
+    tags: Tag[];
+  } | null>(null);
+
+  const setDemoActive = useCallback((active: boolean) => {
+    if (active === isDemoActiveRef.current) return;
+    
+    if (active) {
+      realDataRef.current = {
+        platforms: [...platformsRef.current],
+        categories: [...categoriesRef.current],
+        statuses: [...statusesRef.current],
+        tags: [...tagsRef.current]
+      };
+      setTags(DEMO_TAGS);
+      setCategories(DEMO_CATEGORIES);
+      setStatuses(DEMO_STATUSES);
+      const demoPlats = getDemoPlatforms(user?.uid || 'demo-user-id');
+      setPlatforms(demoPlats);
+      platformsRef.current = demoPlats;
+      setIsDemoActive(true);
+    } else {
+      if (realDataRef.current) {
+        setTags(realDataRef.current.tags);
+        setCategories(realDataRef.current.categories);
+        setStatuses(realDataRef.current.statuses);
+        setPlatforms(realDataRef.current.platforms);
+        platformsRef.current = realDataRef.current.platforms;
+      } else {
+        setTags(DEFAULT_TAGS);
+        setCategories(DEFAULT_CATEGORIES);
+        setStatuses(DEFAULT_STATUSES);
+        setPlatforms([]);
+        platformsRef.current = [];
+      }
+      setIsDemoActive(false);
+      realDataRef.current = null;
+    }
+  }, [user?.uid]);
 
   // Flag to prevent re-upload during bulk deletion
   const isClearingRef = useRef(false);
@@ -64,6 +180,8 @@ export function useStorage() {
 
     if (!user) {
       console.log('useStorage: Logged out, resetting states to avoid data leakage');
+      setIsDemoActive(false);
+      realDataRef.current = null;
       setTags(DEFAULT_TAGS);
       setCategories(DEFAULT_CATEGORIES);
       setPlatforms([]);
@@ -77,6 +195,10 @@ export function useStorage() {
 
     console.log('useStorage: Logged in mode');
     // 2. LOGGED IN MODE
+    if (isDemoActive) {
+      console.log('useStorage: Demo mode is active, bypassing firestore/local sync to protect demo data');
+      return;
+    }
     
     // MIGRATION: If guest and unique ID keys don't exist, try to load from old 'hub_tags' etc.
     if (isGuest) {
@@ -123,7 +245,7 @@ export function useStorage() {
       // Sync tags with Firestore
       const tagsRef = collection(db, 'users', user.uid, 'tags');
       unsubs.push(onSnapshot(tagsRef, { includeMetadataChanges: true }, (snap) => {
-        if (isClearingRef.current) return;
+        if (isClearingRef.current || isDemoActive) return;
         if (snap.metadata.hasPendingWrites) return;
         
         console.log('useStorage: tags snapshot received', snap.size);
@@ -140,7 +262,7 @@ export function useStorage() {
       // Sync categories with Firestore
       const catRef = collection(db, 'users', user.uid, 'categories');
       unsubs.push(onSnapshot(catRef, { includeMetadataChanges: true }, (snap) => {
-        if (isClearingRef.current) return;
+        if (isClearingRef.current || isDemoActive) return;
         if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
@@ -155,7 +277,7 @@ export function useStorage() {
       // Sync platforms with Firestore
       const platRef = collection(db, 'users', user.uid, 'platforms');
       unsubs.push(onSnapshot(platRef, { includeMetadataChanges: true }, (snap) => {
-        if (isClearingRef.current) return;
+        if (isClearingRef.current || isDemoActive) return;
         if (snap.metadata.hasPendingWrites) return; // Ignore updates while we have pending local writes to this collection
         
         if (!snap.empty) {
@@ -164,6 +286,7 @@ export function useStorage() {
             return { ...data, id: d.id, ownerId: user.uid };
           });
           setPlatforms(cloudPlats);
+          platformsRef.current = cloudPlats;
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
         }
       }, (err) => {
@@ -173,7 +296,7 @@ export function useStorage() {
       // Sync statuses with Firestore
       const statusRef = collection(db, 'users', user.uid, 'statuses');
       unsubs.push(onSnapshot(statusRef, { includeMetadataChanges: true }, (snap) => {
-        if (isClearingRef.current) return;
+        if (isClearingRef.current || isDemoActive) return;
         if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
@@ -187,12 +310,12 @@ export function useStorage() {
     }
 
     return () => unsubs.forEach(unsub => unsub());
-  }, [user, authLoading]);
+  }, [user, authLoading, isDemoActive]);
 
   // One-time initial backup/migration logic
   const hasAttemptedInitialBackup = useRef(false);
   useEffect(() => {
-    if (authLoading || !user || isGuest || hasAttemptedInitialBackup.current) return;
+    if (authLoading || !user || isGuest || isDemoActive || hasAttemptedInitialBackup.current) return;
 
     const performInitialBackup = async () => {
       hasAttemptedInitialBackup.current = true;
@@ -227,7 +350,7 @@ export function useStorage() {
   // Sync to local storage for offline / instant render when state updates
   const lastTagsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
+    if (authLoading || !user || isDemoActive) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING OR DEMO ACTIVE
     const handler = setTimeout(() => {
       const key = `hub_user_${user.uid}_tags`;
       const value = JSON.stringify(tags);
@@ -238,11 +361,11 @@ export function useStorage() {
       }
     }, 500);
     return () => clearTimeout(handler);
-  }, [tags, user, authLoading]);
+  }, [tags, user, authLoading, isDemoActive]);
 
   const lastCategoriesRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
+    if (authLoading || !user || isDemoActive) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING OR DEMO ACTIVE
     const handler = setTimeout(() => {
       const key = `hub_user_${user.uid}_categories`;
       const value = JSON.stringify(categories);
@@ -253,11 +376,11 @@ export function useStorage() {
       }
     }, 500);
     return () => clearTimeout(handler);
-  }, [categories, user, authLoading]);
+  }, [categories, user, authLoading, isDemoActive]);
 
   const lastPlatformsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
+    if (authLoading || !user || isDemoActive) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING OR DEMO ACTIVE
     const handler = setTimeout(() => {
       const key = `hub_user_${user.uid}_platforms`;
       const value = JSON.stringify(platforms);
@@ -268,11 +391,11 @@ export function useStorage() {
       }
     }, 500);
     return () => clearTimeout(handler);
-  }, [platforms, user, authLoading]);
+  }, [platforms, user, authLoading, isDemoActive]);
 
   const lastStatusesRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING
+    if (authLoading || !user || isDemoActive) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING OR DEMO ACTIVE
     const handler = setTimeout(() => {
       const key = `hub_user_${user.uid}_statuses`;
       const value = JSON.stringify(statuses);
@@ -283,10 +406,14 @@ export function useStorage() {
       }
     }, 500);
     return () => clearTimeout(handler);
-  }, [statuses, user, authLoading]);
+  }, [statuses, user, authLoading, isDemoActive]);
 
   // Firestore DB Helpers
-  const fbSet = async (collectionName: string, id: string, data: any) => {
+  const fbSet = useCallback(async (collectionName: string, id: string, data: any) => {
+    if (isDemoActive) {
+      console.log(`[Demo Mode] Skip fbSet: collection='${collectionName}', docId='${id}'`);
+      return;
+    }
     if (user && !isGuest) {
       try {
         console.log(`[Firestore Write Start] Sincronizando com Firestore: coleção='${collectionName}', docId='${id}'`, data);
@@ -299,9 +426,13 @@ export function useStorage() {
     } else {
       console.log(`[Firestore Write Ignored] Ignorado (usuário visitante/não autenticado): coleção='${collectionName}', docId='${id}'`);
     }
-  };
+  }, [isDemoActive, user, isGuest]);
 
-  const fbDelete = async (collectionName: string, id: string) => {
+  const fbDelete = useCallback(async (collectionName: string, id: string) => {
+    if (isDemoActive) {
+      console.log(`[Demo Mode] Skip fbDelete: collection='${collectionName}', docId='${id}'`);
+      return;
+    }
     if (user && !isGuest) {
       try {
         console.log(`[Firestore Delete Start] Deletando do Firestore: coleção='${collectionName}', docId='${id}'`);
@@ -314,18 +445,18 @@ export function useStorage() {
     } else {
       console.log(`[Firestore Delete Ignored] Ignorado (usuário visitante/não autenticado): coleção='${collectionName}', docId='${id}'`);
     }
-  };
+  }, [isDemoActive, user, isGuest]);
 
   // Tag CRUD (Optimistic local updates + async Firestore backup)
-  const addTag = (tag: Omit<Tag, 'id'>) => {
+  const addTag = useCallback((tag: Omit<Tag, 'id'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newTag: Tag = { ...tag, id: `tag-${Date.now()}-${randomSuffix}` };
     setTags((prev) => [...prev, newTag]);
     fbSet('tags', newTag.id, newTag);
     return newTag;
-  };
+  }, [fbSet]);
 
-  const updateTag = (id: string, updated: Partial<Tag>) => {
+  const updateTag = useCallback((id: string, updated: Partial<Tag>) => {
     const currentTags = tagsRef.current;
     const tag = currentTags.find(t => t.id === id);
     if (!tag) return;
@@ -333,23 +464,23 @@ export function useStorage() {
     const newTag = { ...tag, ...updated };
     setTags((prev) => prev.map((t) => (t.id === id ? newTag : t)));
     fbSet('tags', id, newTag);
-  };
+  }, [fbSet]);
 
-  const deleteTag = (id: string) => {
+  const deleteTag = useCallback((id: string) => {
     setTags((prev) => prev.filter((tag) => tag.id !== id));
     fbDelete('tags', id);
-  };
+  }, [fbDelete]);
 
   // Category CRUD
-  const addCategory = (category: Omit<Category, 'id' | 'isCustom'>) => {
+  const addCategory = useCallback((category: Omit<Category, 'id' | 'isCustom'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newCat: Category = { ...category, id: `cat-${Date.now()}-${randomSuffix}`, isCustom: true };
     setCategories((prev) => [...prev, newCat]);
     fbSet('categories', newCat.id, newCat);
     return newCat;
-  };
+  }, [fbSet]);
 
-  const updateCategory = (id: string, updated: Partial<Category>) => {
+  const updateCategory = useCallback((id: string, updated: Partial<Category>) => {
     const currentCats = categoriesRef.current;
     const cat = currentCats.find(c => c.id === id);
     if (!cat) return;
@@ -357,15 +488,15 @@ export function useStorage() {
     const newCat = { ...cat, ...updated };
     setCategories((prev) => prev.map((c) => (c.id === id ? newCat : c)));
     fbSet('categories', id, newCat);
-  };
+  }, [fbSet]);
 
-  const deleteCategory = (id: string) => {
+  const deleteCategory = useCallback((id: string) => {
     setCategories((prev) => prev.filter((cat) => cat.id !== id || !cat.isCustom));
     fbDelete('categories', id);
-  };
+  }, [fbDelete]);
 
   // Platform CRUD
-  const addPlatform = (platform: Omit<Platform, 'id' | 'profiles' | 'purchases'>) => {
+  const addPlatform = useCallback((platform: Omit<Platform, 'id' | 'profiles' | 'purchases'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newPlat: Platform = { 
       ...platform, 
@@ -374,28 +505,40 @@ export function useStorage() {
       purchases: [],
       ownerId: user?.uid || ''
     };
-    setPlatforms((prev) => [...prev, newPlat]);
+    setPlatforms((prev) => {
+      const next = [...prev, newPlat];
+      platformsRef.current = next;
+      return next;
+    });
     fbSet('platforms', newPlat.id, newPlat);
     return newPlat;
-  };
+  }, [fbSet, user?.uid]);
 
-  const updatePlatform = (id: string, updated: Partial<Platform>) => {
+  const updatePlatform = useCallback((id: string, updated: Partial<Platform>) => {
     const currentPlatforms = platformsRef.current;
     const plat = currentPlatforms.find(p => p.id === id);
     if (!plat) return;
 
     const newPlat = { ...plat, ...updated };
-    setPlatforms((prev) => prev.map((p) => (p.id === id ? newPlat : p)));
+    setPlatforms((prev) => {
+      const next = prev.map((p) => (p.id === id ? newPlat : p));
+      platformsRef.current = next;
+      return next;
+    });
     fbSet('platforms', id, newPlat);
-  };
+  }, [fbSet]);
 
-  const deletePlatform = (id: string) => {
-    setPlatforms((prev) => prev.filter((plat) => plat.id !== id));
+  const deletePlatform = useCallback((id: string) => {
+    setPlatforms((prev) => {
+      const next = prev.filter((plat) => plat.id !== id);
+      platformsRef.current = next;
+      return next;
+    });
     fbDelete('platforms', id);
-  };
+  }, [fbDelete]);
 
   // Profile CRUD within platform
-  const addProfile = (platformId: string, profile: Omit<Profile, 'id'>) => {
+  const addProfile = useCallback((platformId: string, profile: Omit<Profile, 'id'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newProfile: Profile = { ...profile, id: `prof-${Date.now()}-${randomSuffix}` };
     
@@ -404,13 +547,17 @@ export function useStorage() {
     if (!plat) return newProfile;
 
     const newPlat = { ...plat, profiles: [...(plat.profiles || []), newProfile] };
-    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    setPlatforms((prev) => {
+      const next = prev.map((p) => (p.id === platformId ? newPlat : p));
+      platformsRef.current = next;
+      return next;
+    });
     fbSet('platforms', platformId, newPlat);
     
     return newProfile;
-  };
+  }, [fbSet]);
 
-  const updateProfile = (platformId: string, profileId: string, updated: Partial<Profile>) => {
+  const updateProfile = useCallback((platformId: string, profileId: string, updated: Partial<Profile>) => {
     const currentPlatforms = platformsRef.current;
     const plat = currentPlatforms.find(p => p.id === platformId);
     if (!plat) return;
@@ -420,11 +567,15 @@ export function useStorage() {
     );
     const newPlat = { ...plat, profiles: newProfiles };
     
-    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    setPlatforms((prev) => {
+      const next = prev.map((p) => (p.id === platformId ? newPlat : p));
+      platformsRef.current = next;
+      return next;
+    });
     fbSet('platforms', platformId, newPlat);
-  };
+  }, [fbSet]);
 
-  const deleteProfile = (platformId: string, profileId: string) => {
+  const deleteProfile = useCallback((platformId: string, profileId: string) => {
     const currentPlatforms = platformsRef.current;
     const plat = currentPlatforms.find(p => p.id === platformId);
     if (!plat) return;
@@ -433,12 +584,16 @@ export function useStorage() {
     const newPurchases = (plat.purchases || []).filter((pur) => pur.profileId !== profileId);
     const newPlat = { ...plat, profiles: newProfiles, purchases: newPurchases };
 
-    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    setPlatforms((prev) => {
+      const next = prev.map((p) => (p.id === platformId ? newPlat : p));
+      platformsRef.current = next;
+      return next;
+    });
     fbSet('platforms', platformId, newPlat);
-  };
+  }, [fbSet]);
 
   // Purchase CRUD
-  const validatePurchaseData = (productName: string, originalPrice: number, finalPrice: number) => {
+  const validatePurchaseData = useCallback((productName: string, originalPrice: number, finalPrice: number) => {
     const trimmedName = (productName || '').trim();
     if (!trimmedName) {
       throw new Error('O nome do produto/serviço não pode ser vazio.');
@@ -452,9 +607,9 @@ export function useStorage() {
     if (finalPrice <= 0) {
       throw new Error('O preço final deve ser maior que zero (positivo).');
     }
-  };
+  }, []);
 
-  const addPurchase = (platformId: string, purchase: Omit<Purchase, 'id'> & { date?: string }) => {
+  const addPurchase = useCallback((platformId: string, purchase: Omit<Purchase, 'id'> & { date?: string }) => {
     validatePurchaseData(purchase.productName, purchase.originalPrice, purchase.finalPrice);
 
     const randomSuffix = Math.random().toString(36).substring(2, 9);
@@ -465,13 +620,17 @@ export function useStorage() {
     if (!plat) return newPurchase;
 
     const newPlat = { ...plat, purchases: [...(plat.purchases || []), newPurchase] };
-    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    setPlatforms((prev) => {
+      const next = prev.map((p) => (p.id === platformId ? newPlat : p));
+      platformsRef.current = next;
+      return next;
+    });
     fbSet('platforms', platformId, newPlat);
     
     return newPurchase;
-  };
+  }, [fbSet, validatePurchaseData]);
 
-  const updatePurchase = (platformId: string, purchaseId: string, updated: Partial<Purchase>) => {
+  const updatePurchase = useCallback((platformId: string, purchaseId: string, updated: Partial<Purchase>) => {
     const currentPlatforms = platformsRef.current;
     const plat = currentPlatforms.find(p => p.id === platformId);
     if (!plat) return;
@@ -487,11 +646,15 @@ export function useStorage() {
     const newPurchases = (plat.purchases || []).map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
     const newPlat = { ...plat, purchases: newPurchases };
 
-    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    setPlatforms((prev) => {
+      const next = prev.map((p) => (p.id === platformId ? newPlat : p));
+      platformsRef.current = next;
+      return next;
+    });
     fbSet('platforms', platformId, newPlat);
-  };
+  }, [fbSet, validatePurchaseData]);
 
-  const deletePurchase = (platformId: string, purchaseId: string) => {
+  const deletePurchase = useCallback((platformId: string, purchaseId: string) => {
     const currentPlatforms = platformsRef.current;
     const plat = currentPlatforms.find(p => p.id === platformId);
     if (!plat) return;
@@ -499,20 +662,24 @@ export function useStorage() {
     const newPurchases = (plat.purchases || []).filter((pur) => pur.id !== purchaseId);
     const newPlat = { ...plat, purchases: newPurchases };
 
-    setPlatforms((prev) => prev.map((p) => (p.id === platformId ? newPlat : p)));
+    setPlatforms((prev) => {
+      const next = prev.map((p) => (p.id === platformId ? newPlat : p));
+      platformsRef.current = next;
+      return next;
+    });
     fbSet('platforms', platformId, newPlat);
-  };
+  }, [fbSet]);
 
   // Status CRUD
-  const addStatus = (status: Omit<Status, 'id' | 'isCustom'>) => {
+  const addStatus = useCallback((status: Omit<Status, 'id' | 'isCustom'>) => {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newStatus: Status = { ...status, id: `status-${Date.now()}-${randomSuffix}`, isCustom: true };
     setStatuses((prev) => [...prev, newStatus]);
     fbSet('statuses', newStatus.id, newStatus);
     return newStatus;
-  };
+  }, [fbSet]);
 
-  const updateStatus = (id: string, updated: Partial<Status>) => {
+  const updateStatus = useCallback((id: string, updated: Partial<Status>) => {
     const currentStatuses = statusesRef.current;
     const status = currentStatuses.find(s => s.id === id);
     if (!status) return;
@@ -520,14 +687,14 @@ export function useStorage() {
     const newStatus = { ...status, ...updated };
     setStatuses((prev) => prev.map((s) => (s.id === id ? newStatus : s)));
     fbSet('statuses', id, newStatus);
-  };
+  }, [fbSet]);
 
-  const deleteStatus = (id: string) => {
+  const deleteStatus = useCallback((id: string) => {
     setStatuses((prev) => prev.filter((s) => s.id !== id || !s.isCustom));
     fbDelete('statuses', id);
-  };
+  }, [fbDelete]);
 
-  const clearAllData = async () => {
+  const clearAllData = useCallback(async () => {
     if (!user) return;
 
     isClearingRef.current = true;
@@ -581,9 +748,9 @@ export function useStorage() {
         isClearingRef.current = false;
       }, 5000);
     }
-  };
+  }, [user, isGuest, fbDelete]);
 
-  return {
+  return useMemo(() => ({
     tags, addTag, updateTag, deleteTag,
     categories, addCategory, updateCategory, deleteCategory,
     platforms, addPlatform, updatePlatform, deletePlatform,
@@ -591,5 +758,15 @@ export function useStorage() {
     addPurchase, updatePurchase, deletePurchase,
     statuses, addStatus, updateStatus, deleteStatus,
     clearAllData,
-  };
+    isDemoActive, setDemoActive,
+  }), [
+    tags, addTag, updateTag, deleteTag,
+    categories, addCategory, updateCategory, deleteCategory,
+    platforms, addPlatform, updatePlatform, deletePlatform,
+    addProfile, updateProfile, deleteProfile,
+    addPurchase, updatePurchase, deletePurchase,
+    statuses, addStatus, updateStatus, deleteStatus,
+    clearAllData,
+    isDemoActive, setDemoActive
+  ]);
 }

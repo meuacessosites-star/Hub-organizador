@@ -103,7 +103,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     );
   }
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(() => platform.id.startsWith('demo-'));
 
   const cycleStatus = (e: React.MouseEvent, purchase: Purchase) => {
     e.stopPropagation();
@@ -259,7 +259,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     <div
       id={`platform-card-${platform.id}`}
       data-testid={`platform-card-${platform.id}`}
-      className="bg-white dark:bg-[#0a0a0c] border border-neutral-200 dark:border-white/[0.05] rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_12px_30px_rgba(0,0,0,0.4)] hover:shadow-md dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-neutral-300 dark:hover:border-white/[0.1] group"
+      className="bg-white dark:bg-[#111218] border border-neutral-200 dark:border-neutral-800/80 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_12px_30px_rgba(0,0,0,0.4)] hover:shadow-md dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-neutral-300 dark:hover:border-white/[0.1] group"
     >
       {/* Card Header (always visible) */}
       <div
@@ -290,7 +290,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
               {highlightText(platform.name, searchQuery)}
             </h3>
             {platform.url && (
-              <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-500">
+              <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-350">
                 <Globe className="w-2.5 h-2.5 shrink-0" />
                 <span className="text-[10px] truncate max-w-[140px] font-medium leading-none">
                   {platform.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
@@ -298,13 +298,13 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
               </div>
             )}
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
                 {platform.profiles.length} {platform.profiles.length === 1 ? 'conta' : 'contas'}
               </span>
               {platform.purchases.length > 0 && (
                 <>
-                  <span className="text-neutral-700 text-[10px]">•</span>
-                  <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
+                  <span className="text-neutral-700 dark:text-neutral-500 text-[10px]">•</span>
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
                     {platform.purchases.length} {platform.purchases.length === 1 ? 'compra' : 'compras'}
                   </span>
                 </>
@@ -321,30 +321,16 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
       {/* Card Bottom Panel (always visible when collapsed, or integrated dynamically) */}
       <AnimatePresence initial={false}>
         {!isExpanded && (
-          <div className="px-5 pb-5 pt-4 flex items-center justify-between border-t border-neutral-100 dark:border-[#232534]/50 mt-1.5 select-none">
+          <div className="px-5 pb-5 pt-4 flex items-center justify-between border-t border-neutral-100 dark:border-neutral-800/50 mt-1.5 select-none">
             {/* Category badge */}
             <div
               id={`platform-card-category-badge-${platform.id}`}
               data-testid={`platform-card-category-badge-${platform.id}`}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200/50 dark:bg-[#13141c] dark:text-neutral-400 dark:border-neutral-800/40"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200/50 dark:bg-neutral-800/40 dark:text-neutral-300 dark:border-neutral-700/30"
             >
               <CategoryIcon icon={categoryIcon} className="w-3.5 h-3.5" />
               <span data-testid={`platform-card-category-name-${platform.id}`}>{categoryName}</span>
             </div>
-
-            {platform.url && (
-              <a 
-                href={safeUrl(platform.url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 transition-all dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900/40 dark:hover:bg-indigo-900/50"
-              >
-                <Globe className="w-3 h-3" />
-                <span>Site da Plataforma</span>
-                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-              </a>
-            )}
 
             {/* Profile Avatars indicators */}
             <div className="flex items-center -space-x-1.5 overflow-hidden">
@@ -400,7 +386,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all relative cursor-pointer ${
                   activeTab === 'contas'
                     ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
                 }`}
               >
                 Contas ({(platform.profiles || []).length})
@@ -415,7 +401,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all relative cursor-pointer ${
                   activeTab === 'compras'
                     ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
                 }`}
               >
                 Compras ({(platform.purchases || []).length})
@@ -433,7 +419,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                   <div className="flex flex-col gap-2.5">
                     {/* Header bar with toggle all button */}
                     <div className="flex items-center justify-between px-1 pb-1 select-none border-b border-neutral-100/30 dark:border-neutral-800/20">
-                      <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-400 uppercase tracking-wider">
                         Contas Cadastradas
                       </span>
                       <button
@@ -714,27 +700,6 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   </div>
                                 )}
 
-                                {/* ACCESS LINK BLOCK */}
-                                {profile.accessLink && (
-                                  <a
-                                    href={safeUrl(profile.accessLink)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/70 dark:border-emerald-900/30 text-emerald-950 dark:text-emerald-300 hover:bg-emerald-100/40 dark:hover:bg-emerald-900/20 transition-all cursor-pointer"
-                                  >
-                                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                                      <Globe className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
-                                      <div className="min-w-0 flex-1">
-                                        <span className="text-[9px] text-emerald-600/70 dark:text-emerald-400/50 block font-medium uppercase tracking-wider leading-none">Link de Login</span>
-                                        <span className="text-xs font-semibold block truncate mt-0.5">{highlightText(profile.accessLink, searchQuery)}</span>
-                                      </div>
-                                    </div>
-                                    <div className="p-1 rounded bg-white dark:bg-[#1a1b26] border border-emerald-200/40 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 shrink-0">
-                                      <ExternalLink className="w-3 h-3" />
-                                    </div>
-                                  </a>
-                                )}
 
                                 {/* DESCRIPTION / NOTES BLOCK */}
                                 {profile.description && (
@@ -767,7 +732,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                     className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 text-[11px] font-semibold transition-colors cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
-                    <span>Adicionar conta na plataforma</span>
+                    <span>Adicionar conta</span>
                   </button>
 
                   {showDeleteConfirm ? (
@@ -802,38 +767,101 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                       className="flex items-center gap-1.5 text-rose-500 hover:text-rose-400 dark:text-rose-500 dark:hover:text-rose-400 text-[11px] font-semibold transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>Remover plataforma inteira</span>
+                      <span>Excluir plataforma</span>
                     </button>
                   )}
                 </div>
               </div>
             )}
 
-            {/* TAB CONTENT: COMPRAS */}
-            {activeTab === 'compras' && (
+              {/* TAB CONTENT: COMPRAS */}
+              {activeTab === 'compras' && (
               <div className="p-4 flex flex-col gap-3.5">
                 {platform.purchases.length === 0 ? (
-                  <div className="text-center py-6 text-xs text-neutral-500 select-none dark:text-neutral-400">
-                    Nenhuma compra registrada.
+                  <div className="p-5 rounded-xl bg-indigo-50/40 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/30 text-center select-none flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-neutral-800 dark:text-neutral-200 text-xs tracking-tight">
+                        Acompanhe suas Compras & Assinaturas
+                      </h4>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 max-w-sm leading-relaxed mx-auto">
+                        Organize e monitore todas as licenças de software, assinaturas ativas de serviços de streaming ou pacotes físicos vinculados às suas contas da {platform.name}.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3.5 w-full max-w-md text-left mt-1.5 border-t border-neutral-200/50 dark:border-neutral-800/40 pt-3.5 text-[10px] text-neutral-600 dark:text-neutral-400">
+                      <div className="flex gap-2 items-start">
+                        <span className="text-indigo-500 font-bold shrink-0">💳</span>
+                        <div>
+                          <p className="font-bold text-neutral-700 dark:text-neutral-300">Pagamento & Cartão</p>
+                          <p className="text-[9px] leading-snug">Vincule compras aos perfis, controlando banco, parcelas e qual cartão foi usado.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-start">
+                        <span className="text-indigo-500 font-bold shrink-0">📦</span>
+                        <div>
+                          <p className="font-bold text-neutral-700 dark:text-neutral-300">Entrega & Rastreio</p>
+                          <p className="text-[9px] leading-snug">Monitore as etapas do envio físico com código de rastreamento e datas.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-start">
+                        <span className="text-indigo-500 font-bold shrink-0">🔄</span>
+                        <div>
+                          <p className="font-bold text-neutral-700 dark:text-neutral-300">Assinaturas Ativas</p>
+                          <p className="text-[9px] leading-snug">Monitore renovações mensais ou recorrentes e o valor investido.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-start">
+                        <span className="text-indigo-500 font-bold shrink-0">🏷️</span>
+                        <div>
+                          <p className="font-bold text-neutral-700 dark:text-neutral-300">Tags & Anexos</p>
+                          <p className="text-[9px] leading-snug">Adicione fotos de produtos, notas e tags coloridas personalizadas.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => onAddPurchase(platform.id)}
+                      className="mt-3.5 h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm cursor-pointer select-none transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>Registrar Primeira Compra</span>
+                    </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-3">
+                    {/* Informative Header Indicator */}
+                    <div className="bg-neutral-50 dark:bg-neutral-900/40 p-2.5 rounded-lg border border-neutral-200/50 dark:border-neutral-800/40 text-[10px] text-neutral-500 dark:text-neutral-400 select-none">
+                      <span className="font-bold text-indigo-600 dark:text-indigo-400">💡 Dica de Controle:</span> Clique em uma compra para gerenciar fotos de produtos, notas detalhadas e pacotes (bundles), ou clique diretamente no botão de status colorido para avançar a etapa da entrega!
+                    </div>
+
                     {platform.purchases.map((purchase) => {
                       const buyerProfile = platform.profiles.find(
                         (p) => p.id === purchase.profileId
                       );
+
+                      // Calculate progress timeline index
+                      const sequence = availableStatuses.map(s => s.id);
+                      const currentStatusIndex = sequence.indexOf(purchase.status);
+
                       return (
                         <div
                           key={purchase.id}
                           onClick={() => onViewPurchase(platform.id, purchase)}
-                          className="flex flex-col p-3 rounded-lg bg-neutral-50/60 border border-transparent hover:border-neutral-200 transition-all duration-150 cursor-pointer dark:bg-[#111219] dark:hover:border-[#282a3c] group/p"
+                          className="flex flex-col p-3.5 rounded-xl bg-neutral-50/60 border border-neutral-200/40 hover:border-neutral-300 dark:border-transparent dark:hover:border-neutral-800/40 transition-all duration-150 cursor-pointer dark:bg-[#111219] dark:hover:bg-[#151622] group/p shadow-xs"
                         >
                           <div className="flex gap-3">
                             {/* Product Image Thumbnail */}
                             {purchase.productImages && purchase.productImages.length > 0 ? (
                               <div 
-                                className="w-10 h-10 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800 shrink-0 bg-white dark:bg-neutral-900 flex items-center justify-center relative cursor-pointer"
-                                onClick={() => openFullScreen(purchase.productImages, 0)}
+                                className="w-11 h-11 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800 shrink-0 bg-white dark:bg-neutral-900 flex items-center justify-center relative cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openFullScreen(purchase.productImages!, 0);
+                                }}
                               >
                                 <img referrerPolicy="no-referrer"
                                   src={purchase.productImages[0]}
@@ -847,7 +875,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                 )}
                               </div>
                             ) : (
-                              <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-[#1c1d29] border border-neutral-200/50 dark:border-transparent flex items-center justify-center shrink-0">
+                              <div className="w-11 h-11 rounded-lg bg-neutral-100 dark:bg-[#1c1d29] border border-neutral-200/50 dark:border-transparent flex items-center justify-center shrink-0">
                                 <Tag className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
                               </div>
                             )}
@@ -891,13 +919,13 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     borderColor: `${getStatusColor(purchase.status)}40`,
                                     color: getStatusColor(purchase.status)
                                   }}
-                                  title="Clique para mudar o status"
+                                  title="Clique para mudar o status da entrega"
                                 >
                                   {getStatusLabel(purchase.status)}
                                 </button>
                               </div>
                               
-                              {/* Tracking Code / Notes - Moved outside the flex header row */}
+                              {/* Tracking Code / Notes */}
                               {purchase.notes && (
                                 <p className="text-[10px] text-neutral-500 dark:text-neutral-400 italic line-clamp-1 truncate mt-1">
                                   {purchase.notes}
@@ -961,7 +989,6 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                 </div>
                               )}
 
-                              
                               {/* Tags pill list */}
                               {purchase.tags && purchase.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-1.5">
@@ -983,9 +1010,48 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               )}
                             </div>
                           </div>
- 
+
+                          {/* Interactive Delivery Progress Bar/Timeline */}
+                          <div className="mt-3.5 mb-2 px-1 select-none border-t border-dashed border-neutral-200/40 dark:border-neutral-800/40 pt-2.5">
+                            <div className="flex items-center justify-between text-[8px] uppercase tracking-wider text-neutral-400 font-bold mb-1.5">
+                              <span>Progresso de Envio</span>
+                              <span className="text-indigo-600 dark:text-indigo-400 font-black">{getStatusLabel(purchase.status)}</span>
+                            </div>
+                            <div className="relative h-1 w-full bg-neutral-200/60 dark:bg-neutral-800/60 rounded-full overflow-hidden flex">
+                              {availableStatuses.map((st, idx) => {
+                                const isActive = idx <= currentStatusIndex;
+                                return (
+                                  <div 
+                                    key={`bar-${st.id}-${idx}`}
+                                    className="h-full flex-1 transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                                    style={{
+                                      backgroundColor: isActive ? getStatusColor(purchase.status) : 'transparent',
+                                      opacity: isActive ? 1 - (currentStatusIndex - idx) * 0.18 : 0,
+                                      borderRight: idx < availableStatuses.length - 1 ? '1px solid rgba(255,255,255,0.25)' : 'none'
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                            {/* Stage labels dots */}
+                            <div className="flex justify-between items-center mt-1">
+                              {availableStatuses.map((st, idx) => {
+                                const isActive = idx <= currentStatusIndex;
+                                const isCurrent = idx === currentStatusIndex;
+                                return (
+                                  <span 
+                                    key={`dot-label-${st.id}-${idx}`}
+                                    className={`text-[8px] font-bold ${isCurrent ? 'text-indigo-600 dark:text-indigo-400 scale-105' : isActive ? 'text-neutral-500' : 'text-neutral-400'} transition-all`}
+                                  >
+                                    {st.label}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+  
                           {/* Purchase detail metadata */}
-                          <div className="grid grid-cols-3 gap-2 mt-2.5 pt-2 border-t border-neutral-200/50 dark:border-[#2a2d40]/40 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 select-none">
+                          <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-neutral-200/50 dark:border-[#2a2d40]/40 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 select-none">
                             <div>
                               <span className="text-[9px] text-neutral-500 block">Comprador</span>
                               <span className="font-semibold text-neutral-700 dark:text-neutral-300">
@@ -1072,7 +1138,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                   </div>
                 )}
 
-                {/* FullScreen Modal */}
+                {/* FullScreen Carousel */}
                 {fullScreenCarousel && (
                   <FullScreenCarousel
                     images={fullScreenCarousel.images}
@@ -1082,17 +1148,19 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 )}
                 
                 {/* Purchase tab bottom action */}
-                <div className="flex items-center border-t border-neutral-200 dark:border-[#232534] pt-3 select-none">
-                  <button
-                    id={`platform-register-purchase-btn-${platform.id}`}
-                    data-testid={`platform-register-purchase-btn-${platform.id}`}
-                    onClick={() => onAddPurchase(platform.id)}
-                    className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 text-[11px] font-semibold transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Registrar compra</span>
-                  </button>
-                </div>
+                {platform.purchases.length > 0 && (
+                  <div className="flex items-center border-t border-neutral-200 dark:border-[#232534] pt-3 select-none">
+                    <button
+                      id={`platform-register-purchase-btn-${platform.id}`}
+                      data-testid={`platform-register-purchase-btn-${platform.id}`}
+                      onClick={() => onAddPurchase(platform.id)}
+                      className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 text-[11px] font-bold transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>Registrar nova compra</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
