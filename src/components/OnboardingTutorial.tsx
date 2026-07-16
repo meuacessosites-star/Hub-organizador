@@ -481,7 +481,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
                                 <ShoppingBag className="w-3 h-3 text-indigo-400" />
                               </div>
                               <div>
-                                <p className="text-[9px] sm:text-[11px] font-bold text-neutral-200">Plano Premium 4K</p>
+                                <p className="text-[9px] sm:text-[11px] font-bold text-neutral-200">Plano Premium Ultra HD</p>
                                 <p className="text-[7px] sm:text-[8px] text-neutral-500">Vence: 15/08/2026</p>
                               </div>
                             </div>
@@ -499,7 +499,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
                                 <Calendar className="w-3 h-3 text-amber-500" />
                               </div>
                               <div>
-                                <p className="text-[9px] sm:text-[11px] font-bold text-neutral-200">Adicional de Telas</p>
+                                <p className="text-[9px] sm:text-[11px] font-bold text-neutral-200">Adicional de Telas Extra</p>
                                 <p className="text-[7px] sm:text-[8px] text-neutral-500">Próximo: 15/09/2026</p>
                               </div>
                             </div>

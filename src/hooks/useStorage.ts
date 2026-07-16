@@ -97,6 +97,25 @@ const getDemoPlatforms = (userId: string): Platform[] => [
         installments: 1,
         tags: ['tag-2'],
         purchaseType: 'subscription'
+      },
+      {
+        id: 'demo-pur-net2',
+        profileId: 'demo-prof-net1',
+        productName: 'Adicional de Telas Extra',
+        productLink: 'https://netflix.com/changeplan',
+        status: 'pedido_feito',
+        originalPrice: 12.90,
+        discount: 0,
+        finalPrice: 12.90,
+        notes: 'Adicionado para a casa dos pais.',
+        date: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
+        paymentDate: new Date(Date.now() + 25 * 24 * 3600 * 1000).toISOString().split('T')[0],
+        paymentMethod: 'Cartão de Crédito',
+        bankName: 'Nubank',
+        cardName: 'Roxinho Principal',
+        installments: 1,
+        tags: ['tag-2'],
+        purchaseType: 'single'
       }
     ]
   }
