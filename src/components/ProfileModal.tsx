@@ -416,10 +416,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-lg bg-white dark:bg-[#181922] rounded-2xl border border-neutral-200 dark:border-[#26283b] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
+        className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-200 dark:border-[#26283b]/70 flex items-center justify-between bg-neutral-50 dark:bg-[#111219]/90">
+        <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
           <div>
             <h2 className="font-sans font-bold text-base text-neutral-900 dark:text-white flex items-center gap-2">
               <span>{isEditMode ? 'Visualizar perfil' : 'Adicionar conta'}</span>
@@ -445,7 +445,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             /* VIEW DETAILS MODE */
             <div className="flex flex-col gap-5 select-text">
               {/* Profile Avatar Card */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-[#111219]/80 border border-neutral-200 dark:border-[#25283a]">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/[0.06]">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-md uppercase"
                   style={{

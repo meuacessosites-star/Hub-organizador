@@ -577,10 +577,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-lg bg-white dark:bg-[#050505] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
+        className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#08090d]">
+        <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
           <div>
             <h2 className="font-sans font-bold text-base text-neutral-900 dark:text-white">
               {step === 1 ? 'Nova plataforma' : `Primeiro perfil — ${platformName}`}
@@ -617,7 +617,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     value={platformName}
                     onChange={(e) => setPlatformName(e.target.value)}
                     placeholder="Ex: GitHub, Nubank, Netflix..."
-                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-200 dark:placeholder-neutral-500"
+                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#0d0d0d] dark:border-white/[0.08] dark:text-neutral-200 dark:placeholder-neutral-500"
                   />
                 </div>
                 <p className="text-[10px] text-neutral-500 flex items-center gap-1.5 mt-0.5">
@@ -649,7 +649,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       }
                     }}
                     placeholder="https://exemplo.com (preenche automaticamente)"
-                    className={`w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:text-neutral-200 dark:placeholder-neutral-500 ${
+                    className={`w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#0d0d0d] dark:text-neutral-200 dark:placeholder-neutral-500 ${
                       urlError ? 'border-rose-500 dark:border-rose-500' : 'border-neutral-200 dark:border-white/[0.08]'
                     }`}
                   />
@@ -673,7 +673,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                 {/* Active Logo Preview & Tabs */}
                 <div className="flex gap-4 items-start">
                   {/* Large Logo Preview */}
-                  <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative dark:bg-[#08090d] dark:border-white/[0.08]">
+                  <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative dark:bg-[#0d0d0d] dark:border-white/[0.08]">
                     {finalLogoUrlPreview && logoPreviewErrorCount < 2 ? (
                        <img referrerPolicy="no-referrer"
                          src={finalLogoUrlPreview}
@@ -695,7 +695,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
 
                   {/* Selection tabs */}
                   <div className="flex-1 flex flex-col gap-2">
-                    <div className="grid grid-cols-2 gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200/80 text-[10px] sm:text-[11px] font-medium dark:bg-[#111219] dark:border-[#25283a]">
+                    <div className="grid grid-cols-2 gap-1 rounded-lg bg-neutral-100 p-1 border border-neutral-200/80 text-[10px] sm:text-[11px] font-medium dark:bg-[#0a0a0a] dark:border-[#25283a]">
                       <button
                         type="button"
                         id="new-platform-logo-auto-btn"
@@ -757,7 +757,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                   {/* AUTO MODE */}
                   {logoMode === 'auto' && (
                     <div className="flex flex-col gap-2">
-                      <div className="text-[11px] leading-relaxed text-neutral-500 bg-neutral-50 p-3 rounded-xl border border-neutral-200 dark:bg-[#111219]/55 dark:border-[#2a2d40]/40">
+                      <div className="text-[11px] leading-relaxed text-neutral-500 bg-neutral-50 p-3 rounded-xl border border-neutral-200 dark:bg-[#000000]/55 dark:border-[#2a2d40]/40">
                         💡 O sistema busca a logo oficial automaticamente. Se o ícone não aparecer ou estiver incorreto, você pode <strong>prosseguir normalmente</strong> ou usar as abas acima para escolher uma imagem manualmente.
                       </div>
                       {platformName.trim() !== '' && logoPreviewErrorCount >= 2 && (
@@ -783,7 +783,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                             Meus Padrões Salvos
                           </span>
-                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-h-[110px] overflow-y-auto p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-[#2a2d40]/70 dark:bg-[#111219]/50">
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-h-[110px] overflow-y-auto p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-[#2a2d40]/70 dark:bg-[#000000]/50">
                             {customPresets.map((preset, idx) => {
                               const isSelected = platformName === preset.name && platformUrl === preset.url;
                               return (
@@ -942,7 +942,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       value={categorySearch}
                       onChange={(e) => setCategorySearch(e.target.value)}
                       placeholder="Filtrar categorias..."
-                      className="w-full h-7 pl-8 pr-2 rounded-md bg-neutral-100 border border-neutral-200 text-[10px] text-neutral-700 placeholder:text-neutral-500 focus:outline-none focus:border-indigo-500 transition-all duration-200 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-300"
+                      className="w-full h-7 pl-8 pr-2 rounded-md bg-neutral-100 border border-neutral-200 text-[10px] text-neutral-700 placeholder:text-neutral-500 focus:outline-none focus:border-indigo-500 transition-all duration-200 dark:bg-[#000000] dark:border-[#2a2d40] dark:text-neutral-300"
                     />
                   </div>
                 </div>
@@ -963,7 +963,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           className={`px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all duration-150 cursor-pointer ${
                             isSel
                               ? 'bg-indigo-50 border-indigo-400 text-indigo-600 dark:bg-indigo-600/15 dark:border-indigo-500 dark:text-indigo-400'
-                              : 'bg-neutral-50 border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800'
+                              : 'bg-neutral-50 border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:bg-[#000000] dark:border-[#2a2d40] dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800'
                           }`}
                         >
                           <CategoryIcon icon={cat.icon} className="w-3.5 h-3.5" />
@@ -978,7 +978,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
               </div>
 
               {/* SAVE AS PRESET CHECKBOX */}
-              <div className="flex items-center gap-2 mt-2 bg-neutral-50 dark:bg-[#111219]/50 border border-neutral-200/60 dark:border-[#2a2d40]/40 rounded-xl p-3">
+              <div className="flex items-center gap-2 mt-2 bg-neutral-50 dark:bg-[#000000]/50 border border-neutral-200/60 dark:border-[#2a2d40]/40 rounded-xl p-3">
                 <input
                   type="checkbox"
                   id="saveAsPreset"

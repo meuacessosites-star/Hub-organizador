@@ -92,13 +92,13 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white border-neutral-200 dark:bg-[#050505] dark:border-white/5 sticky top-0 z-10 select-none shadow-sm dark:shadow-[0_2px_15px_rgba(0,0,0,0.6)]">
+    <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white border-neutral-200 dark:bg-[#0d0d0d] dark:border-white/5 sticky top-0 z-10 select-none shadow-sm dark:shadow-[0_2px_15px_rgba(0,0,0,0.6)]">
       {/* Left Area: Menu Button + Search */}
       <div className="flex items-center gap-3 flex-1 mr-4 transition-all duration-300">
         {onMenuClick && (
           <button
             onClick={onMenuClick}
-            className={`lg:hidden p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-500 hover:text-neutral-700 dark:border-neutral-800 dark:bg-black dark:hover:bg-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200 transition-all duration-300 cursor-pointer shrink-0 ${
+            className={`lg:hidden p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-500 hover:text-neutral-700 dark:border-neutral-800 dark:bg-[#141414] dark:hover:bg-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200 transition-all duration-300 cursor-pointer shrink-0 ${
               isSearchActive ? 'max-sm:hidden max-sm:opacity-0 max-sm:scale-95' : 'flex'
             }`}
             aria-label="Abrir menu"
@@ -128,13 +128,13 @@ export const Header: React.FC<HeaderProps> = ({
               }
             }}
             placeholder="Buscar conta..."
-            className={`w-full h-10 pl-10 rounded-lg text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-[#0d0e14] dark:border-white/[0.06] dark:text-neutral-100 dark:placeholder-neutral-500 ${
+            className={`w-full h-10 pl-10 rounded-lg text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-[#141414] dark:border-white/[0.06] dark:text-neutral-100 dark:placeholder-neutral-500 ${
               searchQuery.trim() ? 'pr-[110px] sm:pr-[130px]' : 'pr-10 sm:pr-12'
             }`}
           />
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {searchQuery.trim() ? (
-              <div className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#111218] border border-neutral-200 dark:border-white/10 px-1.5 py-0.5 rounded-md shadow-sm animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#1c1c1c] border border-neutral-200 dark:border-white/10 px-1.5 py-0.5 rounded-md shadow-sm animate-in fade-in zoom-in-95 duration-150">
                 {searchMatchesCount > 0 && (
                   <>
                     <span className="text-[9px] sm:text-[10px] font-semibold text-neutral-500 dark:text-neutral-300 select-none">
@@ -204,7 +204,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onAuthAction}
             disabled={loading}
-            className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-500 transition-all duration-300 dark:border-neutral-800 dark:bg-black dark:hover:bg-neutral-900 dark:text-neutral-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-500 transition-all duration-300 dark:border-neutral-800 dark:bg-[#141414] dark:hover:bg-neutral-900 dark:text-neutral-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Fazer login"
             title="Fazer login"
           >
@@ -217,10 +217,10 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Theme Toggle */}
-        <button
+          <button
           id="theme-toggle-btn"
           onClick={toggleTheme}
-          className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-500 transition-all duration-300 dark:border-neutral-800 dark:bg-black dark:hover:bg-neutral-900 dark:text-neutral-400 cursor-pointer"
+          className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-500 transition-all duration-300 dark:border-neutral-800 dark:bg-[#141414] dark:hover:bg-neutral-900 dark:text-neutral-400 cursor-pointer"
           aria-label="Alternar tema"
           title={theme === 'light' ? 'Mudar para tema escuro' : 'Mudar para tema claro'}
         >

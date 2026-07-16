@@ -145,7 +145,7 @@ const SearchableFilterSelect = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none flex items-center justify-between cursor-pointer w-full"
+        className="h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#0a0a0a] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none flex items-center justify-between cursor-pointer w-full"
       >
         <span className="truncate flex items-center gap-1.5">
           {selectedOption?.icon && <span className="shrink-0">{selectedOption.icon}</span>}
@@ -164,7 +164,7 @@ const SearchableFilterSelect = ({
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
                 placeholder="Pesquisar..."
-                className="w-full h-8 pl-7 pr-3.5 rounded-md text-[11px] bg-neutral-50 border border-neutral-100 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-200"
+                className="w-full h-8 pl-7 pr-3.5 rounded-md text-[11px] bg-neutral-50 border border-neutral-100 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#0a0a0a] dark:border-white/[0.08] dark:text-neutral-200"
               />
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
@@ -439,7 +439,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       {/* Dynamic Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Spent */}
-        <div className="bg-white dark:bg-[#08090d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
+        <div className="bg-white dark:bg-[#0d0d0d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
           <div>
             <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-500 group-hover/stat:text-indigo-500 transition-colors">Total Investido</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
@@ -452,7 +452,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
         </div>
 
         {/* Total Items */}
-        <div className="bg-white dark:bg-[#08090d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
+        <div className="bg-white dark:bg-[#0d0d0d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
           <div>
             <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-500 group-hover/stat:text-indigo-500 transition-colors">Compras Registradas</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
@@ -465,7 +465,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
         </div>
 
         {/* Pending Delivery */}
-        <div className="bg-white dark:bg-[#08090d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
+        <div className="bg-white dark:bg-[#0d0d0d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
           <div>
             <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-500 group-hover/stat:text-indigo-500 transition-colors">A Caminho</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
@@ -478,7 +478,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
         </div>
 
         {/* Delivered count */}
-        <div className="bg-white dark:bg-[#08090d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
+        <div className="bg-white dark:bg-[#0d0d0d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
           <div>
             <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-500 group-hover/stat:text-indigo-500 transition-colors">Entregues</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
@@ -492,7 +492,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       </div>
 
       {/* Control Panel: Search & Filters Toggle */}
-      <div className="bg-white dark:bg-[#08090d] p-4 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex flex-col gap-4 overflow-visible relative z-[40]">
+      <div className="bg-white dark:bg-[#0d0d0d] p-4 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex flex-col gap-4 overflow-visible relative z-[40]">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search bar */}
           <div className="relative flex-1">
@@ -504,7 +504,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar pelo nome do produto, plataforma ou observações..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:border-white/[0.06] dark:text-neutral-100 dark:placeholder-neutral-600 transition-all focus:ring-1 focus:ring-indigo-500/30"
+              className="w-full h-11 pl-10 pr-4 rounded-xl text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#141414] dark:border-white/[0.06] dark:text-neutral-100 dark:placeholder-neutral-600 transition-all focus:ring-1 focus:ring-indigo-500/30"
             />
           </div>
 
@@ -515,7 +515,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               className={`h-11 px-4 rounded-xl border text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all ${
                 showFilters || platformFilter !== 'todos' || profileFilter !== 'todos' || statusFilter !== 'todos' || tagFilter !== 'todos' || startDate !== '' || endDate !== ''
                   ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:text-indigo-400'
-                  : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02]'
+                  : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 dark:bg-[#050505] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02]'
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -530,7 +530,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as any)}
-                className="h-11 px-4 rounded-xl border border-neutral-200 text-xs font-semibold bg-white text-neutral-600 hover:bg-neutral-50 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02] cursor-pointer appearance-none pr-8"
+                className="h-11 px-4 rounded-xl border border-neutral-200 text-xs font-semibold bg-white text-neutral-600 hover:bg-neutral-50 focus:outline-none focus:border-indigo-500 dark:bg-[#050505] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02] cursor-pointer appearance-none pr-8"
               >
                 <option value="date_desc">Mais Recentes</option>
                 <option value="date_asc">Mais Antigas</option>
@@ -617,7 +617,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#000000] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
                     />
                     <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
                   </div>
@@ -630,7 +630,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#000000] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
                     />
                     <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
                   </div>
@@ -670,7 +670,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                   key={`${purchase.platformId}-${purchase.id}`}
                   id={`purchase-card-${purchase.id}`}
                   layoutId={`purchase-card-${purchase.id}`}
-                  className={`bg-[#0a0a0c] border rounded-2xl overflow-hidden transition-all duration-300 shadow-[0_15px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] hover:border-white/[0.1] flex flex-col group ${
+                  className={`bg-[#0d0d0d] border rounded-2xl overflow-hidden transition-all duration-300 shadow-[0_15px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] hover:border-white/[0.1] flex flex-col group ${
                     highlightedPurchaseId === purchase.id
                       ? 'border-indigo-500 ring-2 ring-indigo-500/50 shadow-[0_0_20px_rgba(79,70,229,0.3)]'
                       : 'border-white/[0.05]'
@@ -722,7 +722,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {/* Logo container - Standardized App Icon Style */}
-                        <div className="w-8 h-8 rounded-lg bg-[#0a0a0c] flex items-center justify-center overflow-hidden shrink-0 shadow-[0_6px_12px_-4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] border border-white/10 transition-transform hover:scale-105 active:scale-95 group">
+                        <div className="w-8 h-8 rounded-lg bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-[0_6px_12px_-4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] border border-white/10 transition-transform hover:scale-105 active:scale-95 group">
                           <img referrerPolicy="no-referrer"
                             src={getLogoUrl(purchase.platformName, purchase.platformUrl)}
                             alt={purchase.platformName}

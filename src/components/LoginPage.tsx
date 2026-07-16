@@ -61,7 +61,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-radial from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-black p-4 sm:p-6 md:p-8 font-sans transition-colors duration-300">
+    <div className="min-h-screen w-full flex items-center justify-center bg-radial from-neutral-50 to-neutral-100 dark:from-[#050505] dark:to-black p-4 sm:p-6 md:p-8 font-sans transition-colors duration-300">
       
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -73,7 +73,7 @@ export const LoginPage: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="relative w-full max-w-xl bg-white dark:bg-[#0b0c10] border border-neutral-200 dark:border-[#1e2030] rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-10"
+        className="relative w-full max-w-xl bg-white dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-10"
       >
         {/* App Logo / Icon */}
         <div className="flex flex-col items-center text-center mb-6">

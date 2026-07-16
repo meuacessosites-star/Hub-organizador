@@ -355,9 +355,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-32px)] sm:w-full sm:max-w-md bg-white dark:bg-[#0a0a0c] rounded-2xl shadow-2xl z-[101] border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col max-h-[90vh]"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-32px)] sm:w-full sm:max-w-md bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-2xl z-[101] border border-neutral-200 dark:border-white/[0.08] overflow-hidden flex flex-col max-h-[90vh]"
           >
-            <div className="px-6 py-5 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-center shrink-0">
+            <div className="px-6 py-5 border-b border-neutral-200 dark:border-white/[0.08] flex justify-between items-center shrink-0">
               <h2 className="text-xl font-bold text-neutral-900 dark:text-white font-sans tracking-tight">
                 Meu Perfil
               </h2>
@@ -698,7 +698,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 bg-neutral-50 dark:bg-[#111219]/90 border-t border-neutral-200 dark:border-[#26283b]/70 flex flex-col gap-3">
+            <div className="px-6 py-4 bg-neutral-50 dark:bg-[#0d0d0d] border-t border-neutral-200 dark:border-white/[0.08] flex flex-col gap-3">
               <button
                 onClick={handleSave}
                 disabled={isSaving}

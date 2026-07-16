@@ -282,7 +282,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-neutral-900 text-white rounded-3xl p-5 sm:p-8 max-w-5xl w-full shadow-2xl border border-neutral-800 relative my-auto mx-auto overflow-hidden flex flex-col max-h-[95vh] sm:max-h-none"
+          className="bg-[#0a0a0a] text-white rounded-3xl p-5 sm:p-8 max-w-5xl w-full shadow-2xl border border-neutral-800 relative my-auto mx-auto overflow-hidden flex flex-col max-h-[95vh] sm:max-h-none"
         >
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600 via-indigo-600 to-purple-600 shrink-0" />
           
@@ -305,7 +305,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
           <div className="flex-1 overflow-y-auto pr-0 sm:pr-1 custom-scrollbar">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8 items-start">
               {/* Left side: Saved Account Mockup */}
-              <div className="lg:col-span-5 bg-[#0e0f14] p-3 sm:p-5 rounded-2xl border border-neutral-800/80">
+              <div className="lg:col-span-5 bg-[#0a0a0a] p-3 sm:p-5 rounded-2xl border border-neutral-800/80">
                   <div className="flex items-center justify-between mb-3 select-none">
                     <span className="text-[8px] sm:text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1">
                       TODAS &gt; 1 CONTA
@@ -319,7 +319,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
                   </div>
 
                 {/* Replica of User Screenshot Card */}
-                <div className="bg-[#16171d] rounded-2xl border border-neutral-800/60 p-3 sm:p-4 shadow-xl text-left select-none">
+                <div className="bg-[#0d0d0d] rounded-2xl border border-neutral-800/60 p-3 sm:p-4 shadow-xl text-left select-none">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -715,7 +715,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
           }}
           className="fixed z-[101] pointer-events-auto w-[92vw] max-w-[340px] sm:w-[320px] h-fit"
         >
-          <div className="bg-white dark:bg-[#16171d] rounded-2xl p-4 sm:p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800 relative max-h-[85vh] overflow-y-auto">
+          <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl p-4 sm:p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800 relative max-h-[85vh] overflow-y-auto">
             {step.position !== 'center' && targetRect && window.innerWidth > 640 && (
               <div className={getArrowClass(step.position)} />
             )}

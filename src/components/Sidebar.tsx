@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 lg:z-auto lg:sticky lg:top-0 w-64 border-r flex flex-col justify-between h-screen transition-transform duration-300 select-none bg-slate-50 border-neutral-200/60 text-neutral-650 dark:bg-[#000000] dark:border-neutral-900/80 dark:text-neutral-200 shadow-xl lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 lg:z-auto lg:sticky lg:top-0 w-64 border-r flex flex-col justify-between h-screen transition-transform duration-300 select-none bg-slate-50 border-neutral-200/60 text-neutral-650 dark:bg-[#0d0d0d] dark:border-neutral-900/80 dark:text-neutral-200 shadow-xl lg:shadow-none ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -227,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Bottom Part */}
-        <div className="flex flex-col border-t border-neutral-200 dark:border-[#1e202c] p-4 gap-3">
+        <div className="flex flex-col border-t border-neutral-200 dark:border-white/5 p-4 gap-3">
           <button
             id="sidebar-manage-status-btn"
             onClick={() => {

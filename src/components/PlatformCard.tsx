@@ -259,23 +259,24 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     <div
       id={`platform-card-${platform.id}`}
       data-testid={`platform-card-${platform.id}`}
-      className="bg-white dark:bg-[#111218] border border-neutral-200 dark:border-white/[0.06] rounded-2xl overflow-hidden transition-all duration-500 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.7)] hover:border-neutral-300 dark:hover:border-white/[0.12] group"
+      className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/[0.06] rounded-2xl overflow-hidden transition-all duration-500 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.7)] hover:border-neutral-300 dark:hover:border-white/[0.12] group"
     >
       {/* Card Header (always visible) */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="p-5 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-neutral-50 dark:hover:bg-white/[0.02]"
+        className="p-6 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-neutral-50 dark:hover:bg-white/[0.02]"
       >
         <div className="flex items-center gap-4">
           {/* Logo container - Standardized App Icon Style (Squircle) */}
-          <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-[#1a1b23] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
-            <img referrerPolicy="no-referrer"
-              src={currentLogoUrl}
-              alt={platform.name}
-              className="w-full h-full object-cover pointer-events-none transition-transform duration-700 group-hover:scale-110"
-              onError={handleLogoError}
-            />
-            {(imageError || !currentLogoUrl) && (
+          <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
+            {currentLogoUrl && !imageError ? (
+              <img referrerPolicy="no-referrer"
+                src={currentLogoUrl}
+                alt={platform.name}
+                className="w-full h-full object-cover pointer-events-none transition-transform duration-700 group-hover:scale-110"
+                onError={handleLogoError}
+              />
+            ) : (
               <div
                 className="w-full h-full flex items-center justify-center text-white font-extrabold text-[14px] tracking-tight"
                 style={{ backgroundColor: getPlatformColor(platform.name) }}
@@ -367,7 +368,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
             className="border-t border-neutral-200 dark:border-[#232534]"
           >
             {/* TAB SELECTOR */}
-            <div className="flex border-b border-neutral-200 bg-neutral-50 px-5 select-none dark:border-white/[0.04] dark:bg-[#0d0e14]">
+            <div className="flex border-b border-neutral-200 bg-neutral-50 px-5 select-none dark:border-white/[0.04] dark:bg-[#1c1c1c]">
               <button
                 id={`platform-contas-tab-${platform.id}`}
                 data-testid={`platform-contas-tab-${platform.id}`}
@@ -439,7 +440,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                         <div
                           key={profile.id}
                           id={`profile-card-${profile.id}`}
-                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#1a1b23] group/profile shadow-inner transition-all duration-200 ${
+                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#141414] group/profile shadow-inner transition-all duration-200 ${
                             isActiveMatch
                               ? 'ring-2 ring-indigo-500/40 dark:ring-indigo-500/60 shadow-md shadow-indigo-500/10'
                               : ''
@@ -505,8 +506,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             dragMomentum={false}
                             className={`z-10 relative flex flex-col p-3.5 rounded-xl bg-white border transition-colors duration-150 cursor-grab active:cursor-grabbing select-none shadow-sm ${
                               isActiveMatch
-                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#20212d]'
-                                : 'border-neutral-100 dark:border-transparent dark:bg-[#1a1b24] hover:border-neutral-200 dark:hover:border-white/10'
+                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#1a1a1a]'
+                                : 'border-neutral-100 dark:border-transparent dark:bg-[#0d0d0d] hover:border-neutral-200 dark:hover:border-white/10'
                             } ${
                               isCollapsed ? 'gap-0' : 'gap-3'
                             }`}
@@ -726,7 +727,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
 
                                 {/* DESCRIPTION / NOTES BLOCK */}
                                 {profile.description && (
-                                  <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-[#3d3f52] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-200 border-l-2 border-l-indigo-500 dark:border-l-indigo-400">
+                                  <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-[#0a0a0a] border border-neutral-100 dark:border-white/10 text-neutral-600 dark:text-neutral-200 border-l-2 border-l-indigo-500 dark:border-l-indigo-400">
                                     <div className="flex gap-1.5">
                                       <FileText className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0 mt-0.5" />
                                       <div>

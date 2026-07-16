@@ -410,7 +410,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen font-sans bg-neutral-50 dark:bg-[#000000] text-neutral-800 dark:text-neutral-200 transition-colors duration-200">
+    <div className="flex min-h-screen font-sans bg-neutral-50 dark:bg-[#0f0f0f] text-neutral-800 dark:text-neutral-200 transition-colors duration-200">
         
         {/* Sidebar Component */}
         <Sidebar
@@ -450,10 +450,10 @@ export default function App() {
           />
 
           {/* Core Body Container */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col gap-12">
             
             {/* View Selector Tabs */}
-            <div role="tablist" className="flex bg-neutral-200/50 dark:bg-white/[0.02] p-1 rounded-xl self-start select-none border border-neutral-200 dark:border-white/5">
+            <div role="tablist" className="flex bg-neutral-200/50 dark:bg-white/[0.02] p-1.5 rounded-2xl self-start select-none border border-neutral-200 dark:border-white/5 shadow-sm">
               <button
                 id="view-selector-platforms"
                 data-testid="view-selector-platforms"
@@ -461,9 +461,9 @@ export default function App() {
                 aria-selected={currentView === 'platforms'}
                 aria-label="Ver Plataformas"
                 onClick={() => setCurrentView('platforms')}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                   currentView === 'platforms'
-                    ? 'bg-white dark:bg-[#0d0e14] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_20px_rgba(79,70,229,0.1)] border border-neutral-200 dark:border-white/10'
+                    ? 'bg-white dark:bg-[#141414] text-indigo-600 dark:text-indigo-400 shadow-md dark:shadow-[0_0_20px_rgba(79,70,229,0.15)] border border-neutral-200 dark:border-white/10'
                     : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
                 }`}
               >
@@ -477,9 +477,9 @@ export default function App() {
                 aria-selected={currentView === 'purchases'}
                 aria-label="Ver Painel de Compras"
                 onClick={() => setCurrentView('purchases')}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                   currentView === 'purchases'
-                    ? 'bg-white dark:bg-[#0d0e14] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_20px_rgba(79,70,229,0.1)] border border-neutral-200 dark:border-white/10'
+                    ? 'bg-white dark:bg-[#141414] text-indigo-600 dark:text-indigo-400 shadow-md dark:shadow-[0_0_20px_rgba(79,70,229,0.15)] border border-neutral-200 dark:border-white/10'
                     : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
                 }`}
               >
@@ -529,7 +529,7 @@ export default function App() {
                       <motion.div
                         key="platforms-grid"
                         layout="position"
-                        className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+                        className="grid grid-cols-1 xl:grid-cols-2 gap-10"
                       >
                         {filteredPlatforms.map((plat) => {
                           const cat = categories.find((c) => c.id === plat.categoryId);

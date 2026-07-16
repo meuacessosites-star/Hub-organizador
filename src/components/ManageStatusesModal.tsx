@@ -317,10 +317,10 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-xl bg-white dark:bg-[#181922] rounded-2xl border border-neutral-200 dark:border-[#26283b] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
+        className="w-full max-w-xl bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-200 dark:border-[#26283b]/70 flex items-center justify-between bg-neutral-50 dark:bg-[#111219]/90">
+        <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
           <div>
             <h2 className="font-sans font-bold text-base text-neutral-900 dark:text-white">
               Gerenciar Status de Pedido
@@ -340,7 +340,7 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
         {/* Content */}
         <div className="p-6 flex flex-col gap-5 max-h-[65vh] overflow-y-auto">
           {/* Create new status form */}
-          <form onSubmit={handleSubmit} className="p-4 rounded-xl border border-neutral-200 dark:border-[#25283a] bg-neutral-50/60 dark:bg-[#13141c]/90 flex flex-col gap-3.5">
+          <form onSubmit={handleSubmit} className="p-4 rounded-xl border border-neutral-200 dark:border-white/[0.06] bg-neutral-50/60 dark:bg-[#0a0a0a] flex flex-col gap-3.5">
             <h3 className="text-xs font-bold text-neutral-900 dark:text-white flex items-center gap-1.5 uppercase tracking-wider">
               <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
               <span>{editingStatusId ? 'Editar status' : 'Novo status'}</span>
@@ -353,7 +353,7 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
                 value={newStatusLabel}
                 onChange={(e) => setNewStatusLabel(e.target.value)}
                 placeholder="Ex: Em separação, Aguardando, Reembolsado..."
-                className="w-full sm:flex-1 h-12 px-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                className="w-full sm:flex-1 h-12 px-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#0a0a0a] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
               />
               <div className="flex gap-2 w-full sm:w-auto shrink-0">
                 <button
@@ -409,7 +409,7 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
               >
                 <Palette className="w-4.5 h-4.5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] opacity-80 group-hover:opacity-100 transition-opacity" />
               </button>
-              <div className="flex-1 flex items-center gap-0.5 bg-neutral-50 dark:bg-[#111219] border border-neutral-200 dark:border-[#2a2d40] rounded-xl px-3 h-10">
+              <div className="flex-1 flex items-center gap-0.5 bg-neutral-50 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-[#2a2d40] rounded-xl px-3 h-10">
                 <span className="text-xs text-neutral-500 font-mono">#</span>
                 <input
                   type="text"
@@ -444,7 +444,7 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
                   initial={{ opacity: 0, scale: 0.9, height: 0, marginTop: 0 }}
                   animate={{ opacity: 1, scale: 1, height: 'auto', marginTop: 12 }}
                   exit={{ opacity: 0, scale: 0.9, height: 0, marginTop: 0 }}
-                  className="overflow-hidden flex flex-col items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-[#25283a] bg-white dark:bg-[#14151f] w-full shadow-lg"
+                  className="overflow-hidden flex flex-col items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-white/[0.06] bg-white dark:bg-[#050505] w-full shadow-lg"
                 >
                   <div className="flex flex-col items-center gap-5 w-full">
                     <div className="relative w-32 h-32 flex items-center justify-center touch-none">
@@ -503,18 +503,13 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
                 return (
                   <div
                     key={status.id}
-                    className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-[#2a2d40]/40 bg-neutral-50 dark:bg-[#111219]/60"
+                    className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-white/[0.06] bg-neutral-50 dark:bg-[#080808]"
                   >
                     <div className="flex items-center gap-2.5">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: status.color }} />
                       <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                         {status.label}
                       </span>
-                      {isSystem && (
-                        <span className="text-[8px] font-bold font-sans uppercase px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-400 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700">
-                          Sistema
-                        </span>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5">
@@ -553,15 +548,13 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
-                          {!isSystem && (
-                            <button
-                              type="button"
-                              onClick={() => setDeletingStatusId(status.id)}
-                              className="p-1.5 rounded hover:bg-neutral-200 text-neutral-500 hover:text-rose-400 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => setDeletingStatusId(status.id)}
+                            className="p-1.5 rounded hover:bg-neutral-200 text-neutral-500 hover:text-rose-400 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </>
                       )}
                     </div>
@@ -573,7 +566,7 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-neutral-200 dark:border-[#26283b]/70 flex items-center justify-end bg-neutral-50 dark:bg-[#111219]/90 select-none">
+        <div className="px-6 py-4 border-t border-neutral-200 dark:border-white/[0.08] flex items-center justify-end bg-neutral-50 dark:bg-[#0d0d0d] select-none">
           <button
             onClick={onClose}
             className="px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer"
