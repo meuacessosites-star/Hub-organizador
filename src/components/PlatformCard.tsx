@@ -311,6 +311,17 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
               <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
                 {platform.profiles.length} {platform.profiles.length === 1 ? 'conta' : 'contas'}
               </span>
+              {isExpanded && platform.categoryId && (
+                <>
+                  <span className="text-neutral-700 dark:text-neutral-500 text-[10px]">•</span>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-white/10 border border-neutral-200 dark:border-white/10">
+                    <CategoryIcon categoryId={platform.categoryId} className="w-2.5 h-2.5 text-indigo-500" />
+                    <span className="text-[9px] font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-tight">
+                      {categories.find(c => c.id === platform.categoryId)?.name}
+                    </span>
+                  </div>
+                </>
+              )}
               {platform.purchases.length > 0 && (
                 <>
                   <span className="text-neutral-700 dark:text-neutral-500 text-[10px]">•</span>

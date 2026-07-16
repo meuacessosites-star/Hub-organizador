@@ -191,9 +191,12 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   
   const [isEditingNamesList, setIsEditingNamesList] = useState(false);
 
-  const saveProfileNames = (names: string[]) => {
-    setProfileNames(names);
-    safeSetItem(getProfileNamesKey(), JSON.stringify(names));
+  const saveProfileNames = (namesOrFn: string[] | ((prev: string[]) => string[])) => {
+    setProfileNames(prev => {
+      const next = typeof namesOrFn === 'function' ? namesOrFn(prev) : namesOrFn;
+      safeSetItem(getProfileNamesKey(), JSON.stringify(next));
+      return next;
+    });
   };
 
   const [profileName, setProfileName] = useState(() => {
@@ -1029,11 +1032,13 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const updated = profileNames.filter((_, i) => i !== idx);
-                            saveProfileNames(updated);
-                            if (profileName === name) {
-                              setProfileName(updated[0] || '');
-                            }
+                            saveProfileNames(prev => {
+                              const updated = prev.filter((_, i) => i !== idx);
+                              if (profileName === name) {
+                                setProfileName(updated[0] || '');
+                              }
+                              return updated;
+                            });
                           }}
                           className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer transition-colors"
                           title="Excluir"
@@ -1046,7 +1051,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       type="button"
                       onClick={() => {
                         const newName = `Novo Perfil ${profileNames.length + 1}`;
-                        saveProfileNames([...profileNames, newName]);
+                        saveProfileNames(prev => [...prev, newName]);
                       }}
                       className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-semibold text-left mt-1 cursor-pointer"
                     >
@@ -1102,7 +1107,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           type="button"
                           onClick={() => {
                             const nameToSave = customProfileName.trim();
-                            saveProfileNames([...profileNames, nameToSave]);
+                            saveProfileNames(prev => [...prev, nameToSave]);
                             setProfileName(nameToSave);
                             setIsCustomProfile(false);
                           }}
