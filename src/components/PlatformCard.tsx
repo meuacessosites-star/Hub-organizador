@@ -259,25 +259,25 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     <div
       id={`platform-card-${platform.id}`}
       data-testid={`platform-card-${platform.id}`}
-      className="bg-white dark:bg-[#16171d] border border-neutral-200 dark:border-neutral-800/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.7)] hover:border-neutral-300 dark:hover:border-white/10 group"
+      className="bg-white dark:bg-[#1a1b23] border border-neutral-200 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.8)] hover:border-neutral-300 dark:hover:border-white/20 group"
     >
       {/* Card Header (always visible) */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="p-5 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-neutral-50 dark:hover:bg-white/[0.03]"
+        className="p-5 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-neutral-50 dark:hover:bg-white/[0.04]"
       >
         <div className="flex items-center gap-4">
           {/* Logo container - Standardized App Icon Style */}
-          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-black flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/5 group-hover:scale-105 transition-all duration-500">
+          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#111218] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
             <img referrerPolicy="no-referrer"
               src={currentLogoUrl}
               alt={platform.name}
-              className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110"
+              className="w-7 h-7 object-contain pointer-events-none transition-transform duration-500 group-hover:scale-110"
               onError={handleLogoError}
             />
             {(imageError || !currentLogoUrl) && (
               <div
-                className="w-full h-full flex items-center justify-center text-white font-extrabold text-[11px] tracking-tight"
+                className="w-full h-full flex items-center justify-center text-white font-extrabold text-[12px] tracking-tight"
                 style={{ backgroundColor: getPlatformColor(platform.name) }}
               >
                 {getInitials(platform.name)}
@@ -468,9 +468,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                         <div
                           key={profile.id}
                           id={`profile-card-${profile.id}`}
-                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#0b0c12] group/profile shadow-inner transition-all duration-200 ${
+                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#14151f] group/profile shadow-inner transition-all duration-200 ${
                             isActiveMatch
-                              ? 'ring-2 ring-indigo-500/30 dark:ring-indigo-500/50 shadow-md shadow-indigo-500/10'
+                              ? 'ring-2 ring-indigo-500/40 dark:ring-indigo-500/60 shadow-md shadow-indigo-500/10'
                               : ''
                           }`}
                         >
@@ -541,8 +541,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             }}
                             className={`z-10 relative flex flex-col p-3.5 rounded-xl bg-white border transition-colors duration-150 cursor-grab active:cursor-grabbing select-none shadow-sm ${
                               isActiveMatch
-                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#151624]'
-                                : 'border-neutral-100 dark:border-transparent dark:bg-[#111219] hover:border-neutral-200 dark:hover:border-[#282a3c]'
+                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#1a1b2e]'
+                                : 'border-neutral-100 dark:border-transparent dark:bg-[#1c1d2b] hover:border-neutral-200 dark:hover:border-[#2d2f45]'
                             } ${
                               isCollapsed ? 'gap-0' : 'gap-3'
                             }`}
