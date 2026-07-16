@@ -1009,12 +1009,12 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                 </div>
 
                 {isEditingNamesList ? (
-                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[180px] overflow-y-auto">
+                  <div className="flex flex-col gap-2 p-3 pr-3.5 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[180px] overflow-y-auto custom-scrollbar">
                     <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                       Editar nomes rápidos
                     </span>
                     {profileNames.map((name, idx) => (
-                      <div key={`profile-name-edit-${idx}-${name}`} className="flex items-center gap-1.5">
+                      <div key={`profile-name-edit-${idx}`} className="flex items-center gap-1.5">
                         <input
                           type="text"
                           value={name}
@@ -1027,7 +1027,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                         />
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             const updated = profileNames.filter((_, i) => i !== idx);
                             saveProfileNames(updated);
                             if (profileName === name) {

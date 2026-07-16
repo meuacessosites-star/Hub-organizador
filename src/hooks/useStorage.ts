@@ -292,17 +292,12 @@ export function useStorage() {
         console.log('useStorage: tags snapshot received', snap.size);
         if (!snap.empty) {
           const cloudTags = snap.docs.map(d => ({ ...d.data() as Tag, id: d.id }));
-          // Merge defaults with cloud tags to ensure defaults are not lost
-          setTags(prev => {
-            const merged = [...DEFAULT_TAGS];
-            cloudTags.forEach(ct => {
-              const idx = merged.findIndex(m => m.id === ct.id);
-              if (idx > -1) merged[idx] = ct;
-              else merged.push(ct);
-            });
-            return merged;
-          });
+          setTags(cloudTags);
           safeSetItem(`hub_user_${user.uid}_tags`, JSON.stringify(cloudTags));
+        } else {
+          // If empty in cloud, check if we should keep defaults or go truly empty
+          // For now, if cloud is empty, we show defaults for new users
+          setTags(DEFAULT_TAGS);
         }
       }, (err) => {
         console.error('useStorage: tags snapshot error', err);
@@ -317,17 +312,10 @@ export function useStorage() {
         
         if (!snap.empty) {
           const cloudCats = snap.docs.map(d => ({ ...d.data() as Category, id: d.id }));
-          // Merge defaults with cloud categories
-          setCategories(prev => {
-            const merged = [...DEFAULT_CATEGORIES];
-            cloudCats.forEach(cc => {
-              const idx = merged.findIndex(m => m.id === cc.id);
-              if (idx > -1) merged[idx] = cc;
-              else merged.push(cc);
-            });
-            return merged;
-          });
+          setCategories(cloudCats);
           safeSetItem(`hub_user_${user.uid}_categories`, JSON.stringify(cloudCats));
+        } else {
+          setCategories(DEFAULT_CATEGORIES);
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/categories`);
@@ -360,17 +348,10 @@ export function useStorage() {
         
         if (!snap.empty) {
           const cloudStatuses = snap.docs.map(d => ({ ...d.data() as Status, id: d.id }));
-          // Merge defaults with cloud statuses
-          setStatuses(prev => {
-            const merged = [...DEFAULT_STATUSES];
-            cloudStatuses.forEach(cs => {
-              const idx = merged.findIndex(m => m.id === cs.id);
-              if (idx > -1) merged[idx] = cs;
-              else merged.push(cs);
-            });
-            return merged;
-          });
+          setStatuses(cloudStatuses);
           safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(cloudStatuses));
+        } else {
+          setStatuses(DEFAULT_STATUSES);
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/statuses`);
@@ -559,7 +540,7 @@ export function useStorage() {
   }, [fbSet]);
 
   const deleteCategory = useCallback((id: string) => {
-    setCategories((prev) => prev.filter((cat) => cat.id !== id || !cat.isCustom));
+    setCategories((prev) => prev.filter((cat) => cat.id !== id));
     fbDelete('categories', id);
   }, [fbDelete]);
 
@@ -758,7 +739,7 @@ export function useStorage() {
   }, [fbSet]);
 
   const deleteStatus = useCallback((id: string) => {
-    setStatuses((prev) => prev.filter((s) => s.id !== id || !s.isCustom));
+    setStatuses((prev) => prev.filter((s) => s.id !== id));
     fbDelete('statuses', id);
   }, [fbDelete]);
 
