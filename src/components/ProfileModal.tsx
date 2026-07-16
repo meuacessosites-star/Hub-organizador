@@ -6,7 +6,7 @@ import { resizeImage } from "../utils/imageHelper";
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Profile, Platform, ProfileAvatar, ProfilePreset } from '../types';
-import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
@@ -120,14 +120,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const isEditMode = !!profile;
   const { addToast } = useToast();
   const { user } = useAuth();
-  const { profilePresets, addProfilePreset, deleteProfilePreset } = useStorage();
+  const { profilePresets, addProfilePreset, deleteProfilePreset, updateProfilePreset } = useStorage();
   
   const getProfileNamesKey = () => user ? `hub_user_${user.uid}_profile_names` : 'hub_profile_names';
 
   const [isEditingNamesList, setIsEditingNamesList] = useState(false);
+  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
 
   const [profileName, setProfileName] = useState('Pessoal');
   const [customProfileName, setCustomProfileName] = useState('');
+  const customNameInputRef = useRef<HTMLInputElement>(null);
   const [isCustomProfile, setIsCustomProfile] = useState(false);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -591,12 +593,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     onClick={() => setIsEditingNamesList(!isEditingNamesList)}
                     className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    {isEditingNamesList ? '✓ Concluir' : '⚙️ Gerenciar Presets'}
+                    {isEditingNamesList ? 'Concluir' : 'Gerenciar'}
                   </button>
                 </div>
 
                 {isEditingNamesList ? (
-                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[220px] overflow-y-auto">
+                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/20 scrollbar-track-transparent">
                     <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                       Gerenciar perfis salvos
                     </span>
@@ -615,22 +617,161 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           )}
                         </div>
                         <span className="flex-1 text-xs font-medium truncate">{preset.name}</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPresetId(preset.id);
+                              setProfileName(preset.name);
+                              setIsCustomProfile(true);
+                              setCustomProfileName(preset.name);
+                              setAvatarTab(preset.avatar.type);
+                              if (preset.avatar.bgColor) setSelectedColor(preset.avatar.bgColor);
+                              else if (preset.avatar.type === 'color') setSelectedColor(preset.avatar.value);
+                              
+                              if (preset.avatar.type === 'emoji') setSelectedEmoji(preset.avatar.value);
+                              else if (preset.avatar.type === 'image') setImageUrl(preset.avatar.value);
+                              
+                              setEmail(preset.email || '');
+                              setUsername(preset.username || '');
+                              setPassword(preset.password || '');
+                              setAccessLink(preset.accessLink || '');
+                              setDescription(preset.description || '');
+                              
+                              addToast(`Editando preset: ${preset.name}`, 'info');
+                              setTimeout(() => {
+                                customNameInputRef.current?.focus();
+                                customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }, 100);
+                            }}
+                            className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 cursor-pointer transition-colors"
+                            title="Editar preset"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteProfilePreset(preset.id);
+                              if (profileName === preset.name) {
+                                setProfileName(profilePresets[0]?.name || '');
+                              }
+                              if (editingPresetId === preset.id) {
+                                setEditingPresetId(null);
+                                setIsCustomProfile(false);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer transition-colors"
+                            title="Excluir preset"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* New/Edit Preset Form Integrated */}
+                    {isCustomProfile && (
+                      <div className="mt-2 p-3 rounded-xl border-2 border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-500/5 flex flex-col gap-3">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                            {editingPresetId ? 'Nome do Preset (Editando)' : 'Nome do Novo Preset'}
+                          </label>
+                          <input
+                            ref={customNameInputRef}
+                            type="text"
+                            value={customProfileName}
+                            onChange={(e) => setCustomProfileName(e.target.value)}
+                            placeholder="Ex: Minha Empresa"
+                            className="w-full h-10 px-3 rounded-lg text-xs bg-white border border-indigo-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#13141c] dark:border-[#2a2d40] dark:text-neutral-200 shadow-sm"
+                          />
+                        </div>
+
+                        {/* Save Action for Presets */}
                         <button
                           type="button"
                           onClick={() => {
-                            deleteProfilePreset(preset.id);
-                            if (profileName === preset.name) {
-                              setProfileName(profilePresets[0]?.name || '');
+                            const nameToSave = customProfileName.trim();
+                            if (!nameToSave) {
+                              addToast('O preset precisa de um nome.', 'error');
+                              customNameInputRef.current?.focus();
+                              return;
                             }
+
+                            let avatarValue = '';
+                            if (avatarTab === 'color') avatarValue = selectedColor;
+                            else if (avatarTab === 'emoji') avatarValue = selectedEmoji;
+                            else avatarValue = imageUrl || '';
+
+                            const presetData = {
+                              name: nameToSave,
+                              avatar: { type: avatarTab, value: avatarValue, bgColor: selectedColor },
+                              email, username, password, accessLink, description
+                            };
+
+                            if (editingPresetId) {
+                              updateProfilePreset(editingPresetId, presetData);
+                              addToast(`Preset "${nameToSave}" atualizado!`, 'success');
+                            } else {
+                              addProfilePreset(presetData);
+                              addToast(`Novo preset "${nameToSave}" criado!`, 'success');
+                            }
+                            setEditingPresetId(null);
+                            setIsCustomProfile(false);
+                            setCustomProfileName('');
                           }}
-                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer transition-colors"
-                          title="Excluir preset"
+                          className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer border flex items-center justify-center gap-2 ${
+                            editingPresetId 
+                              ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500' 
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
+                          }`}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          {editingPresetId ? <Pencil className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5 fill-current" />}
+                          {editingPresetId ? 'Atualizar Preset' : 'Salvar como Preset'}
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCustomProfile(false);
+                            setEditingPresetId(null);
+                            setCustomProfileName('');
+                          }}
+                          className="text-[10px] font-bold text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 uppercase tracking-wider text-center"
+                        >
+                          Cancelar
                         </button>
                       </div>
-                    ))}
-                    {profilePresets.length === 0 && (
+                    )}
+
+                    {!isCustomProfile && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingPresetId(null);
+                          setProfileName('');
+                          setIsCustomProfile(true);
+                          setCustomProfileName('');
+                          setEmail('');
+                          setUsername('');
+                          setPassword('');
+                          setAccessLink('');
+                          setDescription('');
+                          setAvatarTab('emoji');
+                          setSelectedEmoji('👤');
+                          addToast('Preencha os dados e salve como novo padrão!', 'info');
+                          setTimeout(() => {
+                            customNameInputRef.current?.focus();
+                            customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 100);
+                        }}
+                        className="w-full py-2.5 rounded-lg border border-dashed border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-50 dark:hover:bg-indigo-500/5 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Adicionar novo</span>
+                      </button>
+                    )}
+                    
+                    {profilePresets.length === 0 && !isCustomProfile && (
                       <p className="text-[10px] text-neutral-500 text-center py-4">
                         Nenhum perfil salvo como padrão.
                       </p>
@@ -700,63 +841,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </div>
                 )}
 
-                {isCustomProfile && (
+                {isCustomProfile && !isEditingNamesList && (
                   <div className="flex flex-col gap-2 mt-1.5">
                     <div className="flex gap-2">
                       <input
+                        ref={customNameInputRef}
                         type="text"
                         value={customProfileName}
                         onChange={(e) => setCustomProfileName(e.target.value)}
-                        placeholder="Nome do perfil (ex: Pessoal)"
+                        placeholder="Nome do perfil personalizado (para este uso)"
                         className="flex-1 h-11 px-4 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
                       />
                     </div>
                   </div>
                 )}
 
-                {/* Save as Preset Button */}
-                {!isEditMode && (
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nameToSave = isCustomProfile ? customProfileName : profileName;
-                        if (!nameToSave.trim()) {
-                          addToast('O perfil precisa de um nome.', 'error');
-                          return;
-                        }
-
-                        let avatarValue = '';
-                        if (avatarTab === 'color') {
-                          avatarValue = selectedColor;
-                        } else if (avatarTab === 'emoji') {
-                          avatarValue = selectedEmoji;
-                        } else {
-                          avatarValue = imageUrl || '';
-                        }
-
-                        addProfilePreset({
-                          name: nameToSave,
-                          avatar: {
-                            type: avatarTab,
-                            value: avatarValue,
-                            bgColor: selectedColor
-                          },
-                          email: email,
-                          username: username,
-                          password: password,
-                          accessLink: accessLink,
-                          description: description
-                        });
-                        addToast(`Perfil "${nameToSave}" salvo como padrão! 💾`, 'success');
-                      }}
-                      className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors uppercase tracking-wider px-1 cursor-pointer"
-                    >
-                      <Bookmark className="w-3.5 h-3.5 fill-current" />
-                      Salvar este perfil como padrão para usar depois
-                    </button>
-                  </div>
-                )}
+                {/* Save/Update as Preset Button removed from here as per user request */}
               </div>
 
               {/* E-mail Input */}

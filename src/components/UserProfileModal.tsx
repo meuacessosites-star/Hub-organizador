@@ -1,7 +1,7 @@
 import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle, Sparkles } from 'lucide-react';
+import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle, Sparkles, Download } from 'lucide-react';
 import { User, updateProfile as firebaseUpdateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -91,7 +91,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onStartTutorial,
 }) => {
   const { userProfile, isGuest } = useAuth();
-  const { clearAllData } = useStorage();
+  const { 
+    clearAllData, 
+    platforms, 
+    categories, 
+    tags, 
+    statuses, 
+    profilePresets,
+    importData
+  } = useStorage();
   const { addToast } = useToast();
 
   const [displayName, setDisplayName] = useState('');
@@ -240,6 +248,69 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setShowSuccess(false);
     }
   }, [isOpen, user, userProfile]);
+
+  const handleExportData = () => {
+    try {
+      const exportData = {
+        platforms,
+        categories: categories.filter(c => c.isCustom),
+        tags,
+        statuses: statuses.filter(s => s.isCustom),
+        profilePresets,
+        exportDate: new Date().toISOString(),
+        version: '1.0.0'
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `hub_organizador_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      addToast('Backup exportado com sucesso!', 'success');
+    } catch (err) {
+      console.error('Export failed:', err);
+      addToast('Falha ao exportar backup.', 'error');
+    }
+  };
+
+  const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        const data = JSON.parse(content);
+
+        // Validation
+        if (!data.platforms || !Array.isArray(data.platforms)) {
+          throw new Error('Formato de arquivo inválido.');
+        }
+
+        if (!window.confirm('Isso irá mesclar os dados importados com os seus atuais. Deseja continuar?')) {
+          return;
+        }
+
+        // Import logic via useStorage (we'll need to add a bulk import if needed, 
+        // but for now we can rely on the fact that useStorage will sync if we 
+        // implement it or just add them one by one)
+        // For simplicity and safety, we'll suggest a refresh after manual local insertion or just alert
+        addToast('Processando importação...', 'info');
+        
+        await importData(data);
+      } catch (err) {
+        console.error('Import failed:', err);
+        addToast('Falha ao importar arquivo. Verifique o formato.', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
 
   if (!user) return null;
 
@@ -725,6 +796,21 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   </>
                 )}
               </button>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={handleExportData}
+                  className="flex-1 h-11 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-200 dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:text-neutral-300 cursor-pointer"
+                >
+                  <Download className="w-5 h-5" />
+                  Exportar
+                </button>
+                <label className="flex-1 h-11 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-200 dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:text-neutral-300 cursor-pointer">
+                  <Download className="w-5 h-5 rotate-180" />
+                  Importar
+                  <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
+                </label>
+              </div>
 
               <button
                 onClick={() => {

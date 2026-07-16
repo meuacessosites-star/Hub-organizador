@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Tag, Category, Platform, Status, Profile, Purchase, ProfilePreset } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { db, auth } from '../firebase';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { safeParse, safeSetItem } from '../lib/utils';
@@ -132,6 +133,7 @@ const getDemoPlatforms = (userId: string): Platform[] => [
 
 export function useStorage() {
   const { user, loading: authLoading, isGuest } = useAuth();
+  const { addToast } = useToast();
   
   const [tags, setTags] = useState<Tag[]>(DEFAULT_TAGS);
   
@@ -869,6 +871,39 @@ export function useStorage() {
     fbDelete('profilePresets', id);
   }, [fbDelete]);
 
+  const importData = useCallback(async (data: any) => {
+    if (!user) return;
+    isClearingRef.current = true;
+
+    try {
+      if (data.platforms) {
+        for (const p of data.platforms) {
+          const newP = { ...p, ownerId: user.uid };
+          await fbSet('platforms', p.id, newP);
+        }
+      }
+      if (data.profilePresets) {
+        for (const pr of data.profilePresets) {
+          const newPr = { ...pr, ownerId: user.uid };
+          await fbSet('profilePresets', pr.id, newPr);
+        }
+      }
+      if (data.categories) {
+        for (const c of data.categories) {
+          if (c.isCustom) await fbSet('categories', c.id, { ...c, ownerId: user.uid });
+        }
+      }
+      addToast('Dados importados com sucesso! Sincronizando...', 'success');
+    } catch (err) {
+      console.error('Import failed:', err);
+      addToast('Erro ao importar dados.', 'error');
+    } finally {
+      setTimeout(() => {
+        isClearingRef.current = false;
+      }, 3000);
+    }
+  }, [user, fbSet, addToast]);
+
   const clearAllData = useCallback(async () => {
     if (!user) return;
 
@@ -939,6 +974,7 @@ export function useStorage() {
     addPurchase, updatePurchase, deletePurchase,
     statuses, addStatus, updateStatus, deleteStatus,
     profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset,
+    importData,
     clearAllData,
     isDemoActive, setDemoActive,
   }), [
@@ -949,6 +985,7 @@ export function useStorage() {
     addPurchase, updatePurchase, deletePurchase,
     statuses, addStatus, updateStatus, deleteStatus,
     profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset,
+    importData,
     clearAllData,
     isDemoActive, setDemoActive
   ]);
