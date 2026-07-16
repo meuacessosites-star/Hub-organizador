@@ -37,6 +37,9 @@ const DEFAULT_PROFILE_PRESETS: ProfilePreset[] = [
   { id: 'preset-pessoal', name: 'Pessoal', avatar: { type: 'color', value: 'PE', bgColor: '#6366f1' } },
   { id: 'preset-trabalho', name: 'Trabalho', avatar: { type: 'color', value: 'TR', bgColor: '#f59e0b' } },
   { id: 'preset-familia', name: 'Família', avatar: { type: 'color', value: 'FA', bgColor: '#10b981' } },
+  { id: 'preset-estudos', name: 'Estudos', avatar: { type: 'color', value: 'ES', bgColor: '#8b5cf6' } },
+  { id: 'preset-freelance', name: 'Freelance', avatar: { type: 'color', value: 'FR', bgColor: '#ec4899' } },
+  { id: 'preset-empresa', name: 'Empresa', avatar: { type: 'color', value: 'EM', bgColor: '#06b6d4' } },
 ];
 
 const DEMO_TAGS: Tag[] = [

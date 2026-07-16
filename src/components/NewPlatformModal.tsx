@@ -5,14 +5,15 @@ import { resizeImage } from "../utils/imageHelper";
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Category, ProfileAvatar, Platform, Profile } from '../types';
-import { X, Globe, Link, Eye, EyeOff, Shield, Image as ImageIcon, Smile, Palette, Upload, Check, Trash2, Search, User, Mail } from 'lucide-react';
+import { Category, ProfileAvatar, Platform, Profile, ProfilePreset } from '../types';
+import { X, Globe, Link, Eye, EyeOff, Shield, Image as ImageIcon, Smile, Palette, Upload, Check, Trash2, Search, User, Mail, Bookmark } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getLogoUrl, getDomainFromInput, getInitials, getPlatformColor, getPlatformNameFromUrl } from '../utils/logoHelper';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { CategoryIcon } from './CategoryIcon';
 import { safeParse, safeSetItem } from '../lib/utils';
+import { useStorage } from '../hooks/useStorage';
 
 interface CustomPreset {
   name: string;
@@ -33,15 +34,6 @@ interface NewPlatformModalProps {
   }) => void;
 }
 
-
-const PRESET_PROFILE_NAMES = [
-  'Pessoal',
-  'Trabalho',
-  'Família',
-  'Estudos',
-  'Freelance',
-  'Empresa',
-];
 
 const PRESET_COLORS = [
   '#3b82f6', // Blue
@@ -146,6 +138,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const { profilePresets, addProfilePreset, deleteProfilePreset } = useStorage();
   
   const getCustomPresetsKey = () => user ? `hub_user_${user.uid}_custom_presets` : 'hub_custom_presets';
   const getProfileNamesKey = () => user ? `hub_user_${user.uid}_profile_names` : 'hub_profile_names';
@@ -183,27 +176,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   };
 
   // Step 2: First Profile Data
-  const [profileNames, setProfileNames] = useState<string[]>(() => {
-    let saved = localStorage.getItem(getProfileNamesKey());
-    if (!saved && user) saved = localStorage.getItem('hub_profile_names');
-    return safeParse(saved, ['Pessoal', 'Trabalho', 'Família', 'Estudos', 'Freelance', 'Empresa']);
-  });
-  
   const [isEditingNamesList, setIsEditingNamesList] = useState(false);
 
-  const saveProfileNames = (namesOrFn: string[] | ((prev: string[]) => string[])) => {
-    setProfileNames(prev => {
-      const next = typeof namesOrFn === 'function' ? namesOrFn(prev) : namesOrFn;
-      safeSetItem(getProfileNamesKey(), JSON.stringify(next));
-      return next;
-    });
-  };
-
   const [profileName, setProfileName] = useState(() => {
-    let saved = localStorage.getItem(getProfileNamesKey());
-    if (!saved && user) saved = localStorage.getItem('hub_profile_names');
-    const parsed = safeParse(saved, ['Pessoal']);
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    if (profilePresets && profilePresets.length > 0) return profilePresets[0].name;
     return 'Pessoal';
   });
   const [customProfileName, setCustomProfileName] = useState('');
@@ -1000,80 +976,84 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center mb-0.5">
                   <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                    Nome do perfil
+                    Perfis padrão (Presets)
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsEditingNamesList(!isEditingNamesList)}
                     className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    {isEditingNamesList ? '✓ Concluir' : '⚙️ Editar Lista'}
+                    {isEditingNamesList ? '✓ Concluir' : '⚙️ Gerenciar Presets'}
                   </button>
                 </div>
 
                 {isEditingNamesList ? (
-                  <div className="flex flex-col gap-2 p-3 pr-3.5 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[180px] overflow-y-auto custom-scrollbar">
+                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[180px] overflow-y-auto custom-scrollbar">
                     <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
-                      Editar nomes rápidos
+                      Gerenciar perfis salvos
                     </span>
-                    {profileNames.map((name, idx) => (
-                      <div key={`profile-name-edit-${idx}`} className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          value={name}
-                          onChange={(e) => {
-                            const updated = [...profileNames];
-                            updated[idx] = e.target.value;
-                            saveProfileNames(updated);
-                          }}
-                          className="flex-1 h-8 px-2.5 rounded-lg text-xs bg-white border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#13141c] dark:border-[#2a2d40] dark:text-neutral-200"
-                        />
+                    {profilePresets.map((preset) => (
+                      <div key={`preset-edit-${preset.id}`} className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-[#13141c] border border-neutral-100 dark:border-[#2a2d40]/40 shadow-sm">
+                        <div 
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0"
+                          style={{ backgroundColor: preset.avatar.bgColor || preset.avatar.value }}
+                        >
+                          {preset.avatar.type === 'emoji' ? preset.avatar.value : preset.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <span className="flex-1 text-xs font-medium truncate">{preset.name}</span>
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            saveProfileNames(prev => {
-                              const updated = prev.filter((_, i) => i !== idx);
-                              if (profileName === name) {
-                                setProfileName(updated[0] || '');
-                              }
-                              return updated;
-                            });
+                          onClick={() => {
+                            deleteProfilePreset(preset.id);
+                            if (profileName === preset.name) {
+                              setProfileName(profilePresets[0]?.name || '');
+                            }
                           }}
-                          className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer transition-colors"
-                          title="Excluir"
+                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer transition-colors"
+                          title="Excluir preset"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newName = `Novo Perfil ${profileNames.length + 1}`;
-                        saveProfileNames(prev => [...prev, newName]);
-                      }}
-                      className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-semibold text-left mt-1 cursor-pointer"
-                    >
-                      + Adicionar novo nome rápido
-                    </button>
+                    {profilePresets.length === 0 && (
+                      <p className="text-[10px] text-neutral-500 text-center py-4">
+                        Nenhum perfil salvo como padrão.
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 pt-0.5">
-                    {profileNames.map((name, idx) => {
-                      const isSel = profileName === name && !isCustomProfile;
+                    {profilePresets.map((preset) => {
+                      const isSel = profileName === preset.name && !isCustomProfile;
                       return (
                         <button
-                          key={`profile-name-chip-${idx}-${name}`}
+                          key={`preset-chip-${preset.id}`}
                           type="button"
-                          onClick={() => handleProfileNameChip(name)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                          onClick={() => {
+                            setIsCustomProfile(false);
+                            setProfileName(preset.name);
+                            // Apply preset avatar
+                            setAvatarTab(preset.avatar.type);
+                            if (preset.avatar.bgColor) setSelectedColor(preset.avatar.bgColor);
+                            else if (preset.avatar.type === 'color') setSelectedColor(preset.avatar.value);
+                            
+                            if (preset.avatar.type === 'emoji') setSelectedEmoji(preset.avatar.value);
+                            else if (preset.avatar.type === 'image') setImageUrl(preset.avatar.value);
+                          }}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                             isSel
-                              ? 'bg-indigo-600 text-white font-semibold'
-                              : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-600 dark:bg-[#111219] dark:text-neutral-400 dark:hover:bg-neutral-800/80'
+                              ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/20'
+                              : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-600 border-transparent dark:bg-[#111219] dark:text-neutral-400 dark:hover:bg-neutral-800/80'
                           }`}
                         >
-                          {name}
+                          <div 
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm ${isSel ? 'bg-white/20' : 'bg-neutral-300 dark:bg-neutral-700'}`}
+                            style={{ backgroundColor: isSel ? 'rgba(255,255,255,0.2)' : (preset.avatar.bgColor || (preset.avatar.type === 'color' ? preset.avatar.value : undefined)) }}
+                          >
+                            {preset.avatar.type === 'emoji' ? preset.avatar.value : preset.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          {preset.name}
                         </button>
                       );
                     })}
@@ -1099,27 +1079,49 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                         required
                         value={customProfileName}
                         onChange={(e) => setCustomProfileName(e.target.value)}
-                        placeholder="Digite o nome do perfil..."
-                        className="flex-1 h-10 px-3 rounded-lg text-xs bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                        placeholder="Nome do perfil (ex: Pessoal)"
+                        className="flex-1 h-11 px-4 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
                       />
-                      {customProfileName.trim() && !profileNames.includes(customProfileName.trim()) && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const nameToSave = customProfileName.trim();
-                            saveProfileNames(prev => [...prev, nameToSave]);
-                            setProfileName(nameToSave);
-                            setIsCustomProfile(false);
-                          }}
-                          className="px-3 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 cursor-pointer shadow-sm transition-all whitespace-nowrap"
-                          title="Salvar como padrão"
-                        >
-                          💾 Salvar na Lista
-                        </button>
-                      )}
                     </div>
                   </div>
                 )}
+
+                {/* Save as Preset Button */}
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nameToSave = isCustomProfile ? customProfileName : profileName;
+                      if (!nameToSave.trim()) {
+                        addToast('O perfil precisa de um nome.', 'error');
+                        return;
+                      }
+
+                      let avatarValue = '';
+                      if (avatarTab === 'color') {
+                        avatarValue = selectedColor;
+                      } else if (avatarTab === 'emoji') {
+                        avatarValue = selectedEmoji;
+                      } else {
+                        avatarValue = imageUrl || '';
+                      }
+
+                      addProfilePreset({
+                        name: nameToSave,
+                        avatar: {
+                          type: avatarTab,
+                          value: avatarValue,
+                          bgColor: selectedColor
+                        }
+                      });
+                      addToast(`Perfil "${nameToSave}" salvo como padrão! 💾`, 'success');
+                    }}
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors uppercase tracking-wider px-1 cursor-pointer"
+                  >
+                    <Bookmark className="w-3.5 h-3.5 fill-current" />
+                    Salvar este perfil como padrão para usar depois
+                  </button>
+                </div>
               </div>
 
               {/* E-mail Input */}
