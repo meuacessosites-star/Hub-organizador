@@ -92,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white border-neutral-200 dark:bg-[#08090d] dark:border-white/5 sticky top-0 z-10 select-none shadow-sm dark:shadow-[0_2px_15px_rgba(0,0,0,0.4)]">
+    <header className="h-16 border-b flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white border-neutral-200 dark:bg-[#050505] dark:border-white/5 sticky top-0 z-10 select-none shadow-sm dark:shadow-[0_2px_15px_rgba(0,0,0,0.6)]">
       {/* Left Area: Menu Button + Search */}
       <div className="flex items-center gap-3 flex-1 mr-4 transition-all duration-300">
         {onMenuClick && (
@@ -128,13 +128,13 @@ export const Header: React.FC<HeaderProps> = ({
               }
             }}
             placeholder="Buscar conta..."
-            className={`w-full h-10 pl-10 rounded-lg text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-[#12131a] dark:border-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-400 ${
+            className={`w-full h-10 pl-10 rounded-lg text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-[#0d0e14] dark:border-white/[0.06] dark:text-neutral-100 dark:placeholder-neutral-500 ${
               searchQuery.trim() ? 'pr-[110px] sm:pr-[130px]' : 'pr-10 sm:pr-12'
             }`}
           />
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {searchQuery.trim() ? (
-              <div className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#252630] border border-neutral-200 dark:border-neutral-700 px-1.5 py-0.5 rounded-md shadow-sm animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#111218] border border-neutral-200 dark:border-white/10 px-1.5 py-0.5 rounded-md shadow-sm animate-in fade-in zoom-in-95 duration-150">
                 {searchMatchesCount > 0 && (
                   <>
                     <span className="text-[9px] sm:text-[10px] font-semibold text-neutral-500 dark:text-neutral-300 select-none">

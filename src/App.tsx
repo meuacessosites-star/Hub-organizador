@@ -453,7 +453,7 @@ export default function App() {
           <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
             
             {/* View Selector Tabs */}
-            <div role="tablist" className="flex bg-neutral-200/50 dark:bg-white/[0.03] p-1 rounded-xl self-start select-none border border-neutral-200 dark:border-white/10">
+            <div role="tablist" className="flex bg-neutral-200/50 dark:bg-white/[0.02] p-1 rounded-xl self-start select-none border border-neutral-200 dark:border-white/5">
               <button
                 id="view-selector-platforms"
                 data-testid="view-selector-platforms"
@@ -463,7 +463,7 @@ export default function App() {
                 onClick={() => setCurrentView('platforms')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                   currentView === 'platforms'
-                    ? 'bg-white dark:bg-[#252630] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_20px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-white/20'
+                    ? 'bg-white dark:bg-[#0d0e14] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_20px_rgba(79,70,229,0.1)] border border-neutral-200 dark:border-white/10'
                     : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
                 }`}
               >
@@ -479,7 +479,7 @@ export default function App() {
                 onClick={() => setCurrentView('purchases')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
                   currentView === 'purchases'
-                    ? 'bg-white dark:bg-[#252630] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_20px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-white/20'
+                    ? 'bg-white dark:bg-[#0d0e14] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_20px_rgba(79,70,229,0.1)] border border-neutral-200 dark:border-white/10'
                     : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
                 }`}
               >
@@ -513,7 +513,7 @@ export default function App() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="flex-1 flex flex-col items-center justify-center py-20 bg-white dark:bg-[#1c1d26] rounded-2xl border border-dashed border-neutral-200 dark:border-white/10"
+                        className="flex-1 flex flex-col items-center justify-center py-20 bg-white dark:bg-[#08080a] rounded-2xl border border-dashed border-neutral-200 dark:border-white/5"
                       >
                         <Inbox className="w-12 h-12 text-neutral-400 dark:text-neutral-600 mb-3" />
                         <h3 className="font-sans font-semibold text-neutral-800 dark:text-neutral-300 text-sm">

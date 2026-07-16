@@ -145,7 +145,7 @@ const SearchableFilterSelect = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-300 focus:outline-none flex items-center justify-between cursor-pointer w-full"
+        className="h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none flex items-center justify-between cursor-pointer w-full"
       >
         <span className="truncate flex items-center gap-1.5">
           {selectedOption?.icon && <span className="shrink-0">{selectedOption.icon}</span>}
@@ -157,14 +157,14 @@ const SearchableFilterSelect = ({
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => { setIsOpen(false); setFilterQuery(''); }} />
-          <div className="absolute top-[54px] left-0 right-0 max-h-60 overflow-y-auto bg-white dark:bg-[#181922] border border-neutral-200 dark:border-[#2a2d40] rounded-lg shadow-xl z-50 p-2 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute top-[54px] left-0 right-0 max-h-60 overflow-y-auto bg-white dark:bg-[#050505] border border-neutral-200 dark:border-white/[0.08] rounded-lg shadow-xl z-50 p-2 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150">
             <div className="relative shrink-0">
               <input
                 type="text"
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
                 placeholder="Pesquisar..."
-                className="w-full h-8 pl-7 pr-3.5 rounded-md text-[11px] bg-neutral-50 border border-neutral-100 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40]/40 dark:text-neutral-200"
+                className="w-full h-8 pl-7 pr-3.5 rounded-md text-[11px] bg-neutral-50 border border-neutral-100 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-200"
               />
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
@@ -173,11 +173,11 @@ const SearchableFilterSelect = ({
               {filteredOptions.length === 0 ? (
                 <span className="text-[10px] text-neutral-400 text-center py-2 italic">Nenhuma opção</span>
               ) : (
-                filteredOptions.map((opt) => {
+                filteredOptions.map((opt, idx) => {
                   const isSel = opt.value === value;
                   return (
                     <button
-                      key={opt.value}
+                      key={`${opt.value}-${idx}`}
                       type="button"
                       onClick={() => {
                         onChange(opt.value);
@@ -291,6 +291,8 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
   const [profileFilter, setProfileFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [tagFilter, setTagFilter] = useState('todos');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [sortOrder, setSortOrder] = useState<'date_desc' | 'date_asc' | 'price_desc' | 'price_asc'>('date_desc');
   const [showFilters, setShowFilters] = useState(false);
   const [fullScreenCarousel, setFullScreenCarousel] = useState<{images: string[]; initialIndex: number} | null>(null);
@@ -377,6 +379,18 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       result = result.filter((p) => p.tags?.includes(tagFilter));
     }
 
+    // Date Range Filter
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      result = result.filter((p) => new Date(p.date) >= start);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter((p) => new Date(p.date) <= end);
+    }
+
     // Sorting
     result.sort((a, b) => {
       if (sortOrder === 'date_desc') {
@@ -425,64 +439,64 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       {/* Dynamic Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Spent */}
-        <div className="bg-white dark:bg-[#1c1d26] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#08090d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-300">Total Investido</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-500 group-hover/stat:text-indigo-500 transition-colors">Total Investido</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
               R$ {stats.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-            <DollarSign className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-inner">
+            <CreditCard className="w-5 h-5" />
           </div>
         </div>
 
         {/* Total Items */}
-        <div className="bg-white dark:bg-[#1c1d26] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#08090d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-300">Compras Registradas</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-500 group-hover/stat:text-indigo-500 transition-colors">Compras Registradas</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
               {stats.totalCount} {stats.totalCount === 1 ? 'item' : 'itens'}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/20 flex items-center justify-center text-sky-600 dark:text-sky-400">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-500/10 flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-inner">
             <ShoppingBag className="w-5 h-5" />
           </div>
         </div>
 
         {/* Pending Delivery */}
-        <div className="bg-white dark:bg-[#1c1d26] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#08090d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-300">A Caminho</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-500 group-hover/stat:text-indigo-500 transition-colors">A Caminho</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
               {stats.pendingCount} pendentes
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-inner">
             <Truck className="w-5 h-5" />
           </div>
         </div>
 
         {/* Delivered count */}
-        <div className="bg-white dark:bg-[#1c1d26] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#08090d] p-5 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex items-center justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-white/[0.12] group/stat">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-300">Entregues</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-400 dark:text-neutral-500 group-hover/stat:text-indigo-500 transition-colors">Entregues</span>
             <h3 className="text-xl font-bold text-neutral-800 dark:text-white mt-1 font-mono">
               {stats.deliveredCount} concluídas
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-inner">
             <CheckCircle className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       {/* Control Panel: Search & Filters Toggle */}
-      <div className="bg-white dark:bg-[#1c1d26] p-4 rounded-2xl border border-neutral-200/80 dark:border-white/10 shadow-sm flex flex-col gap-4 overflow-visible relative z-[40]">
+      <div className="bg-white dark:bg-[#08090d] p-4 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex flex-col gap-4 overflow-visible relative z-[40]">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search bar */}
           <div className="relative flex-1">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-300">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
               <Search className="w-4 h-4" />
             </span>
             <input
@@ -490,7 +504,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar pelo nome do produto, plataforma ou observações..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#252632] dark:border-white/10 dark:text-neutral-100 dark:placeholder-neutral-500"
+              className="w-full h-11 pl-10 pr-4 rounded-xl text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:border-white/[0.06] dark:text-neutral-100 dark:placeholder-neutral-600 transition-all focus:ring-1 focus:ring-indigo-500/30"
             />
           </div>
 
@@ -499,14 +513,14 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`h-11 px-4 rounded-xl border text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all ${
-                showFilters || platformFilter !== 'todos' || profileFilter !== 'todos' || statusFilter !== 'todos'
-                  ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/25 dark:border-indigo-900/40 dark:text-indigo-400'
-                  : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-400 dark:hover:bg-neutral-800/80'
+                showFilters || platformFilter !== 'todos' || profileFilter !== 'todos' || statusFilter !== 'todos' || tagFilter !== 'todos' || startDate !== '' || endDate !== ''
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:text-indigo-400'
+                  : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02]'
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               <span>Filtros</span>
-              {(platformFilter !== 'todos' || profileFilter !== 'todos' || statusFilter !== 'todos') && (
+              {(platformFilter !== 'todos' || profileFilter !== 'todos' || statusFilter !== 'todos' || tagFilter !== 'todos' || startDate !== '' || endDate !== '') && (
                 <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
               )}
             </button>
@@ -516,7 +530,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as any)}
-                className="h-11 px-4 rounded-xl border border-neutral-200 text-xs font-semibold bg-white text-neutral-600 hover:bg-neutral-50 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-400 dark:hover:bg-neutral-800/80 cursor-pointer appearance-none pr-8"
+                className="h-11 px-4 rounded-xl border border-neutral-200 text-xs font-semibold bg-white text-neutral-600 hover:bg-neutral-50 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02] cursor-pointer appearance-none pr-8"
               >
                 <option value="date_desc">Mais Recentes</option>
                 <option value="date_asc">Mais Antigas</option>
@@ -543,10 +557,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                 {/* Platform Filter */}
                 <SearchableFilterSelect
                   label="Filtrar por Loja/Plataforma"
-                  value={platformFilter}
-                  onChange={setPlatformFilter}
+                  value={platformFilter === 'todas' ? 'filter-all-platforms' : platformFilter}
+                  onChange={(val) => setPlatformFilter(val === 'filter-all-platforms' ? 'todas' : val)}
                   options={[
-                    { value: 'todos', label: 'Todas as Plataformas' },
+                    { value: 'filter-all-platforms', label: 'Todas as Plataformas' },
                     ...platforms.map((p) => ({ value: p.id, label: p.name })),
                   ]}
                   placeholder="Selecione uma loja..."
@@ -555,14 +569,14 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                 {/* Profile Filter */}
                 <SearchableFilterSelect
                   label="Filtrar por Comprador"
-                  value={profileFilter}
-                  onChange={setProfileFilter}
+                  value={profileFilter === 'todos' ? 'filter-all-profiles' : profileFilter}
+                  onChange={(val) => setProfileFilter(val === 'filter-all-profiles' ? 'todos' : val)}
                   options={[
-                    { value: 'todos', label: 'Todos os Perfis' },
+                    { value: 'filter-all-profiles', label: 'Todos os Perfis' },
                     ...allProfiles.map((p) => ({ 
                       value: p.id, 
                       label: p.name, 
-                      icon: p.avatar.type === 'emoji' ? p.avatar.value : undefined 
+                      icon: p.avatar?.type === 'emoji' ? p.avatar.value : undefined 
                     })),
                   ]}
                   placeholder="Selecione um perfil..."
@@ -571,10 +585,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                 {/* Status Filter */}
                 <SearchableFilterSelect
                   label="Filtrar por Status"
-                  value={statusFilter}
-                  onChange={setStatusFilter}
+                  value={statusFilter === 'todos' ? 'filter-all-statuses' : statusFilter}
+                  onChange={(val) => setStatusFilter(val === 'filter-all-statuses' ? 'todos' : val)}
                   options={[
-                    { value: 'todos', label: 'Todos os Status' },
+                    { value: 'filter-all-statuses', label: 'Todos os Status' },
                     ...statuses.map((s) => ({ value: s.id, label: s.label })),
                   ]}
                   placeholder="Selecione um status..."
@@ -585,14 +599,41 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                   <label className="text-[10px] font-bold text-neutral-400 uppercase">Filtrar por Tag</label>
                   <SearchableFilterSelect
                     label=""
-                    value={tagFilter}
-                    onChange={setTagFilter}
+                    value={tagFilter === 'todos' ? 'filter-all-tags' : tagFilter}
+                    onChange={(val) => setTagFilter(val === 'filter-all-tags' ? 'todos' : val)}
                     options={[
-                      { value: 'todos', label: 'Todas as Tags' },
+                      { value: 'filter-all-tags', label: 'Todas as Tags' },
                       ...tags.map((t) => ({ value: t.id, label: t.name, icon: t.emoji })),
                     ]}
                     placeholder="Selecione uma tag..."
                   />
+                </div>
+
+                {/* Date Filters */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-neutral-400 uppercase">De (Data Inicial)</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                    />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-neutral-400 uppercase">Até (Data Final)</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-neutral-200 text-xs bg-neutral-50 text-neutral-700 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-300 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+                    />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -626,7 +667,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
 
               return (
                 <motion.div
-                  key={purchase.id}
+                  key={`${purchase.platformId}-${purchase.id}`}
                   id={`purchase-card-${purchase.id}`}
                   layoutId={`purchase-card-${purchase.id}`}
                   className={`bg-[#0a0a0c] border rounded-2xl overflow-hidden transition-all duration-300 shadow-[0_15px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] hover:border-white/[0.1] flex flex-col group ${

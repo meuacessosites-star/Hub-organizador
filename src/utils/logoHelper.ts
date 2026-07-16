@@ -64,7 +64,12 @@ export function getDomainFromInput(name: string, url?: string): string {
     return normalized;
   }
 
-  // Fallback guess: name + .com or .com.br
+  // Fallback guess: only guess if name is at least 3 characters AND we have a URL hint
+  // If no URL is provided, we prefer initials unless it's a known brand (checked above)
+  if (!url || normalized.length < 3) {
+    return '';
+  }
+
   return `${normalized.replace(/\s+/g, '')}.com`;
 }
 
@@ -127,6 +132,8 @@ export function getPlatformNameFromUrl(url: string): string {
  */
 export function getLogoUrl(name: string, url?: string, attempt: number = 0): string {
   const domain = getDomainFromInput(name, url);
+  if (!domain) return '';
+  
   if (attempt === 0) {
     return `https://logo.clearbit.com/${domain}`;
   }
@@ -154,6 +161,7 @@ export function getPlatformColor(name: string): string {
     nubank: '#8a05be',
     netflix: '#e50914',
     'mercado livre': '#ffe600',
+    'mercado pago': '#009ee3',
     spotify: '#1db954',
     notion: '#000000',
     figma: '#f24e1e',
@@ -165,6 +173,38 @@ export function getPlatformColor(name: string): string {
     aliexpress: '#ff4747',
     apple: '#000000',
     google: '#4285f4',
+    youtube: '#ff0000',
+    facebook: '#1877f2',
+    instagram: '#e4405f',
+    twitter: '#1da1f2',
+    linkedin: '#0077b5',
+    whatsapp: '#25d366',
+    telegram: '#0088cc',
+    picpay: '#21c25e',
+    ifood: '#ea1d2c',
+    rappi: '#ff441f',
+    uber: '#000000',
+    steam: '#171a21',
+    epic: '#313131',
+    xbox: '#107c10',
+    playstation: '#003791',
+    disney: '#006e99',
+    hbo: '#000000',
+    paramount: '#0064ff',
+    globo: '#ff0000',
+    'globo play': '#ff0000',
+    star: '#000000',
+    prime: '#00a8e1',
+    itau: '#ec7000',
+    bradesco: '#cc092f',
+    santander: '#ec0000',
+    caixa: '#005ca9',
+    banco: '#000000',
+    safra: '#14254b',
+    xp: '#000000',
+    rico: '#ff4500',
+    clear: '#1b262c',
+    btg: '#002e5d',
   };
 
   if (brandColors[normalized]) return brandColors[normalized];

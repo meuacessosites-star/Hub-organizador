@@ -708,10 +708,10 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-lg bg-white dark:bg-[#181922] rounded-2xl border border-neutral-200 dark:border-[#26283b] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
+        className="w-full max-w-lg bg-white dark:bg-[#050505] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-neutral-200 dark:border-[#26283b]/70 flex items-start justify-between bg-neutral-50 dark:bg-[#111219]/90">
+        <div className="px-5 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-start justify-between bg-neutral-50 dark:bg-[#08090d]">
           <div className="flex-1 min-w-0">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -861,10 +861,10 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
                   placeholder="Ex: Teclado Mecânico RGB"
-                  className={`w-full h-12 pl-11 pr-4 rounded-xl text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 dark:bg-[#111219] dark:text-neutral-200 transition-all ${
+                  className={`w-full h-12 pl-11 pr-4 rounded-xl text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 dark:bg-[#08090d] dark:text-neutral-200 transition-all ${
                     validationErrors.productName
                       ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 dark:border-rose-500/80'
-                      : 'border-neutral-200 dark:border-[#2a2d40] focus:ring-indigo-500/20 focus:border-indigo-500'
+                      : 'border-neutral-200 dark:border-white/[0.08] focus:ring-indigo-500/20 focus:border-indigo-500'
                   }`}
                 />
               </div>
@@ -1016,7 +1016,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   <div className="flex flex-col gap-2 mt-1">
                     {bundleItems.map((item, index) => {
                       return (
-                        <div key={item.id || `bi-${index}-${item.name}`} className="flex flex-col gap-2 bg-white dark:bg-[#0a0a0c] p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 relative group">
+                        <div key={`bundle-item-${index}-${item.id || 'item'}`} className="flex flex-col gap-2 bg-white dark:bg-[#0a0a0c] p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 relative group">
                           <button
                             type="button"
                             onClick={() => {

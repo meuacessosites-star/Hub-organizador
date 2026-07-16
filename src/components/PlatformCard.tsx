@@ -259,25 +259,25 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     <div
       id={`platform-card-${platform.id}`}
       data-testid={`platform-card-${platform.id}`}
-      className="bg-white dark:bg-[#1c1d26] border border-neutral-200 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.8)] hover:border-neutral-300 dark:hover:border-white/20 group"
+      className="bg-white dark:bg-[#111218] border border-neutral-200 dark:border-white/[0.06] rounded-2xl overflow-hidden transition-all duration-500 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.7)] hover:border-neutral-300 dark:hover:border-white/[0.12] group"
     >
       {/* Card Header (always visible) */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="p-5 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-neutral-50 dark:hover:bg-white/[0.04]"
+        className="p-5 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-neutral-50 dark:hover:bg-white/[0.02]"
       >
         <div className="flex items-center gap-4">
-          {/* Logo container - Standardized App Icon Style */}
-          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#161720] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
+          {/* Logo container - Standardized App Icon Style (Squircle) */}
+          <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-[#1a1b23] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
             <img referrerPolicy="no-referrer"
               src={currentLogoUrl}
               alt={platform.name}
-              className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110"
+              className="w-full h-full object-cover pointer-events-none transition-transform duration-700 group-hover:scale-110"
               onError={handleLogoError}
             />
             {(imageError || !currentLogoUrl) && (
               <div
-                className="w-full h-full flex items-center justify-center text-white font-extrabold text-[12px] tracking-tight"
+                className="w-full h-full flex items-center justify-center text-white font-extrabold text-[14px] tracking-tight"
                 style={{ backgroundColor: getPlatformColor(platform.name) }}
               >
                 {getInitials(platform.name)}
@@ -285,47 +285,18 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
             )}
           </div>
 
-          <div>
-            <h3 className="font-sans font-bold text-sm text-neutral-900 dark:text-white tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="font-sans font-bold text-base text-neutral-900 dark:text-white tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
               {highlightText(platform.name, searchQuery)}
             </h3>
-            {platform.url && (
-              <div className="flex items-center gap-1 mt-0.5 text-neutral-400 dark:text-neutral-200">
-                <Globe className="w-2.5 h-2.5 shrink-0" />
-                <span className="text-[10px] truncate max-w-[140px] font-medium leading-none">
-                  {platform.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-                </span>
-                <a
-                  href={safeUrl(platform.url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-0.5 ml-0.5 rounded hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
-                  title="Acessar plataforma"
-                >
-                  <ExternalLink className="w-2.5 h-2.5" />
-                </a>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[10px] text-neutral-500 dark:text-neutral-300 font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 text-neutral-500 dark:text-neutral-400 font-medium">
+              <span className="text-[11px] tracking-wide">
                 {platform.profiles.length} {platform.profiles.length === 1 ? 'conta' : 'contas'}
               </span>
-              {isExpanded && platform.categoryId && (
-                <>
-                  <span className="text-neutral-700 dark:text-neutral-500 text-[10px]">•</span>
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-white/10 border border-neutral-200 dark:border-white/10">
-                    <CategoryIcon categoryId={platform.categoryId} className="w-2.5 h-2.5 text-indigo-500" />
-                    <span className="text-[9px] font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-tight">
-                      {categoryName}
-                    </span>
-                  </div>
-                </>
-              )}
               {platform.purchases.length > 0 && (
                 <>
-                  <span className="text-neutral-700 dark:text-neutral-500 text-[10px]">•</span>
-                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
+                  <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">•</span>
+                  <span className="text-[11px] tracking-wide">
                     {platform.purchases.length} {platform.purchases.length === 1 ? 'compra' : 'compras'}
                   </span>
                 </>
@@ -334,32 +305,32 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
           </div>
         </div>
 
-        <button className="text-neutral-400 hover:text-white transition-colors p-1 cursor-pointer">
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        <button className="text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-400 transition-colors p-1 cursor-pointer">
+          {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* Card Bottom Panel (always visible when collapsed, or integrated dynamically) */}
+      {/* Card Bottom Panel (always visible when collapsed) */}
       <AnimatePresence initial={false}>
         {!isExpanded && (
-          <div className="px-5 pb-5 pt-4 flex items-center justify-between border-t border-neutral-100 dark:border-neutral-800/50 mt-1.5 select-none">
-            {/* Category badge */}
+          <div className="px-5 pb-5 pt-4 flex items-center justify-between border-t border-neutral-100/50 dark:border-white/[0.04] mt-1 select-none">
+            {/* Category badge - Pill style */}
             <div
               id={`platform-card-category-badge-${platform.id}`}
               data-testid={`platform-card-category-badge-${platform.id}`}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200/50 dark:bg-neutral-800/40 dark:text-neutral-300 dark:border-neutral-700/30"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200/50 dark:bg-white/[0.05] dark:text-neutral-400 dark:border-white/[0.05] hover:bg-neutral-200 dark:hover:bg-white/[0.08] transition-colors"
             >
               <CategoryIcon icon={categoryIcon} className="w-3.5 h-3.5" />
               <span data-testid={`platform-card-category-name-${platform.id}`}>{categoryName}</span>
             </div>
 
             {/* Profile Avatars indicators */}
-            <div className="flex items-center -space-x-1.5 overflow-hidden">
+            <div className="flex items-center -space-x-2 overflow-hidden">
               {platform.profiles.map((profile) => (
                 <div
                   key={profile.id}
                   title={`${profile.name} (${profile.email || profile.username || ''})`}
-                  className="w-6 h-6 rounded-full border border-white dark:border-[#181922] flex items-center justify-center text-[9px] font-bold text-white shrink-0 uppercase cursor-pointer"
+                  className="w-7 h-7 rounded-full border-2 border-white dark:border-[#111218] flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase cursor-pointer hover:z-10 transition-transform hover:scale-110"
                   style={{
                     backgroundColor:
                       profile.avatar.type === 'image'
@@ -396,7 +367,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
             className="border-t border-neutral-200 dark:border-[#232534]"
           >
             {/* TAB SELECTOR */}
-            <div className="flex border-b border-neutral-200 bg-neutral-50 px-5 select-none dark:border-[#232534] dark:bg-[#13141c]">
+            <div className="flex border-b border-neutral-200 bg-neutral-50 px-5 select-none dark:border-white/[0.04] dark:bg-[#0d0e14]">
               <button
                 id={`platform-contas-tab-${platform.id}`}
                 data-testid={`platform-contas-tab-${platform.id}`}
@@ -404,10 +375,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 aria-selected={activeTab === 'contas'}
                 aria-label={`Contas ${(platform.profiles || []).length}`}
                 onClick={() => setActiveTab('contas')}
-                className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all relative cursor-pointer ${
+                className={`py-3 px-5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all relative cursor-pointer ${
                   activeTab === 'contas'
-                    ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                    ? 'border-indigo-500 text-indigo-500 dark:text-indigo-400'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300'
                 }`}
               >
                 Contas ({(platform.profiles || []).length})
@@ -419,10 +390,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 aria-selected={activeTab === 'compras'}
                 aria-label={`Compras ${(platform.purchases || []).length}`}
                 onClick={() => setActiveTab('compras')}
-                className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all relative cursor-pointer ${
+                className={`py-3 px-5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all relative cursor-pointer ${
                   activeTab === 'compras'
-                    ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                    ? 'border-indigo-500 text-indigo-500 dark:text-indigo-400'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300'
                 }`}
               >
                 Compras ({(platform.purchases || []).length})
@@ -468,7 +439,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                         <div
                           key={profile.id}
                           id={`profile-card-${profile.id}`}
-                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#252632] group/profile shadow-inner transition-all duration-200 ${
+                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#1a1b23] group/profile shadow-inner transition-all duration-200 ${
                             isActiveMatch
                               ? 'ring-2 ring-indigo-500/40 dark:ring-indigo-500/60 shadow-md shadow-indigo-500/10'
                               : ''
@@ -505,11 +476,11 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   id={`edit-profile-btn-${profile.id}`}
                                   data-testid={`edit-profile-btn-${profile.id}`}
                                   onClick={() => onEditProfile(platform.id, profile, true)}
-                                  className="px-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-white flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer shadow-md shadow-amber-500/10 w-16"
+                                  className="px-3 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer shadow-md shadow-indigo-500/10 w-16"
                                   title={`Editar conta ${profile.name}`}
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-extrabold uppercase tracking-wider">Editar Conta</span>
+                                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-center">Editar Conta</span>
                                 </button>
 
                                 <button
@@ -520,7 +491,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   title={`Excluir conta ${profile.name}`}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-extrabold uppercase tracking-wider">Excluir Conta</span>
+                                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-center">Excluir Conta</span>
                                 </button>
                               </>
                             )}
@@ -532,17 +503,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             dragConstraints={{ left: -140, right: 0 }}
                             dragElastic={{ left: 0.1, right: 0.1 }}
                             dragMomentum={false}
-                            animate={{ x: [0, -60, 0] }}
-                            transition={{
-                              type: 'tween',
-                              ease: 'easeInOut',
-                              duration: 1.2,
-                              delay: 0.6,
-                            }}
                             className={`z-10 relative flex flex-col p-3.5 rounded-xl bg-white border transition-colors duration-150 cursor-grab active:cursor-grabbing select-none shadow-sm ${
                               isActiveMatch
-                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#2c2d40]'
-                                : 'border-neutral-100 dark:border-transparent dark:bg-[#222330] hover:border-neutral-200 dark:hover:border-white/10'
+                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#20212d]'
+                                : 'border-neutral-100 dark:border-transparent dark:bg-[#1a1b24] hover:border-neutral-200 dark:hover:border-white/10'
                             } ${
                               isCollapsed ? 'gap-0' : 'gap-3'
                             }`}

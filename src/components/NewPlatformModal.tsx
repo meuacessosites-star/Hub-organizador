@@ -577,10 +577,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-lg bg-white dark:bg-[#181922] rounded-2xl border border-neutral-200 dark:border-[#26283b] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
+        className="w-full max-w-lg bg-white dark:bg-[#050505] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-200 dark:border-[#26283b]/70 flex items-center justify-between bg-neutral-50 dark:bg-[#111219]/90">
+        <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#08090d]">
           <div>
             <h2 className="font-sans font-bold text-base text-neutral-900 dark:text-white">
               {step === 1 ? 'Nova plataforma' : `Primeiro perfil — ${platformName}`}
@@ -617,7 +617,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     value={platformName}
                     onChange={(e) => setPlatformName(e.target.value)}
                     placeholder="Ex: GitHub, Nubank, Netflix..."
-                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 dark:placeholder-neutral-500"
+                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:border-white/[0.08] dark:text-neutral-200 dark:placeholder-neutral-500"
                   />
                 </div>
                 <p className="text-[10px] text-neutral-500 flex items-center gap-1.5 mt-0.5">
@@ -649,8 +649,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       }
                     }}
                     placeholder="https://exemplo.com (preenche automaticamente)"
-                    className={`w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:text-neutral-200 dark:placeholder-neutral-500 ${
-                      urlError ? 'border-rose-500 dark:border-rose-500' : 'border-neutral-200 dark:border-[#2a2d40]'
+                    className={`w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#08090d] dark:text-neutral-200 dark:placeholder-neutral-500 ${
+                      urlError ? 'border-rose-500 dark:border-rose-500' : 'border-neutral-200 dark:border-white/[0.08]'
                     }`}
                   />
                 </div>
@@ -673,7 +673,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                 {/* Active Logo Preview & Tabs */}
                 <div className="flex gap-4 items-start">
                   {/* Large Logo Preview */}
-                  <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative dark:bg-[#111219] dark:border-[#2a2d40]">
+                  <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative dark:bg-[#08090d] dark:border-white/[0.08]">
                     {finalLogoUrlPreview && logoPreviewErrorCount < 2 ? (
                        <img referrerPolicy="no-referrer"
                          src={finalLogoUrlPreview}
@@ -685,7 +685,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                        />
                     ) : (
                       <div
-                        className="w-full h-full flex items-center justify-center text-lg font-bold text-white uppercase select-none"
+                        className="w-full h-full flex items-center justify-center text-2xl font-extrabold text-white uppercase select-none tracking-tighter"
                         style={{ backgroundColor: getPlatformColor(platformName || 'Plataforma') }}
                       >
                         {getInitials(platformName || 'P')}
