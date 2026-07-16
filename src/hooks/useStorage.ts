@@ -245,18 +245,40 @@ export function useStorage() {
     const savedPlats = localStorage.getItem(`hub_user_${user.uid}_platforms`);
     const savedStatuses = localStorage.getItem(`hub_user_${user.uid}_statuses`);
 
-    const tagsToLoad = safeParse(savedTags, DEFAULT_TAGS);
-    const catsToLoad = safeParse(savedCats, DEFAULT_CATEGORIES);
-    const platsToLoad = safeParse(savedPlats, DEFAULT_PLATFORMS).map((p: Platform) => ({
+    const localTags = safeParse(savedTags, DEFAULT_TAGS);
+    const localCats = safeParse(savedCats, DEFAULT_CATEGORIES);
+    const localPlats = safeParse(savedPlats, DEFAULT_PLATFORMS).map((p: Platform) => ({
       ...p,
       ownerId: user.uid
     }));
-    const statusesToLoad = safeParse(savedStatuses, DEFAULT_STATUSES);
+    const localStatuses = safeParse(savedStatuses, DEFAULT_STATUSES);
 
-    setTags(tagsToLoad);
-    setCategories(catsToLoad);
-    setPlatforms(platsToLoad);
-    setStatuses(statusesToLoad);
+    // Initial merge of defaults with local storage to avoid flickering
+    setTags(() => {
+      const merged = [...DEFAULT_TAGS];
+      localTags.forEach(lt => {
+        if (!merged.find(m => m.id === lt.id)) merged.push(lt);
+      });
+      return merged;
+    });
+
+    setCategories(() => {
+      const merged = [...DEFAULT_CATEGORIES];
+      localCats.forEach(lc => {
+        if (!merged.find(m => m.id === lc.id)) merged.push(lc);
+      });
+      return merged;
+    });
+
+    setStatuses(() => {
+      const merged = [...DEFAULT_STATUSES];
+      localStatuses.forEach(ls => {
+        if (!merged.find(m => m.id === ls.id)) merged.push(ls);
+      });
+      return merged;
+    });
+
+    setPlatforms(localPlats);
 
     const unsubs: (() => void)[] = [];
 
@@ -270,7 +292,16 @@ export function useStorage() {
         console.log('useStorage: tags snapshot received', snap.size);
         if (!snap.empty) {
           const cloudTags = snap.docs.map(d => ({ ...d.data() as Tag, id: d.id }));
-          setTags(cloudTags);
+          // Merge defaults with cloud tags to ensure defaults are not lost
+          setTags(prev => {
+            const merged = [...DEFAULT_TAGS];
+            cloudTags.forEach(ct => {
+              const idx = merged.findIndex(m => m.id === ct.id);
+              if (idx > -1) merged[idx] = ct;
+              else merged.push(ct);
+            });
+            return merged;
+          });
           safeSetItem(`hub_user_${user.uid}_tags`, JSON.stringify(cloudTags));
         }
       }, (err) => {
@@ -286,7 +317,16 @@ export function useStorage() {
         
         if (!snap.empty) {
           const cloudCats = snap.docs.map(d => ({ ...d.data() as Category, id: d.id }));
-          setCategories(cloudCats);
+          // Merge defaults with cloud categories
+          setCategories(prev => {
+            const merged = [...DEFAULT_CATEGORIES];
+            cloudCats.forEach(cc => {
+              const idx = merged.findIndex(m => m.id === cc.id);
+              if (idx > -1) merged[idx] = cc;
+              else merged.push(cc);
+            });
+            return merged;
+          });
           safeSetItem(`hub_user_${user.uid}_categories`, JSON.stringify(cloudCats));
         }
       }, (err) => {
@@ -320,7 +360,16 @@ export function useStorage() {
         
         if (!snap.empty) {
           const cloudStatuses = snap.docs.map(d => ({ ...d.data() as Status, id: d.id }));
-          setStatuses(cloudStatuses);
+          // Merge defaults with cloud statuses
+          setStatuses(prev => {
+            const merged = [...DEFAULT_STATUSES];
+            cloudStatuses.forEach(cs => {
+              const idx = merged.findIndex(m => m.id === cs.id);
+              if (idx > -1) merged[idx] = cs;
+              else merged.push(cs);
+            });
+            return merged;
+          });
           safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(cloudStatuses));
         }
       }, (err) => {
