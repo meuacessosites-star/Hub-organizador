@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Tag, Category, Platform, Status, Profile, Purchase } from '../types';
+import { Tag, Category, Platform, Status, Profile, Purchase, ProfilePreset } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { db, auth } from '../firebase';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
@@ -32,6 +32,12 @@ const DEFAULT_STATUSES: Status[] = [
 ];
 
 const DEFAULT_PLATFORMS: Platform[] = [];
+
+const DEFAULT_PROFILE_PRESETS: ProfilePreset[] = [
+  { id: 'preset-pessoal', name: 'Pessoal', avatar: { type: 'color', value: 'PE', bgColor: '#6366f1' } },
+  { id: 'preset-trabalho', name: 'Trabalho', avatar: { type: 'color', value: 'TR', bgColor: '#f59e0b' } },
+  { id: 'preset-familia', name: 'Família', avatar: { type: 'color', value: 'FA', bgColor: '#10b981' } },
+];
 
 const DEMO_TAGS: Tag[] = [
   { id: 'tag-1', name: 'Importante', emoji: '⭐', color: '#f59e0b' },
@@ -132,6 +138,8 @@ export function useStorage() {
   
   const [statuses, setStatuses] = useState<Status[]>(DEFAULT_STATUSES);
 
+  const [profilePresets, setProfilePresets] = useState<ProfilePreset[]>(DEFAULT_PROFILE_PRESETS);
+
   const [isDemoActive, setIsDemoActive] = useState(false);
   const isDemoActiveRef = useRef(isDemoActive);
   useEffect(() => { isDemoActiveRef.current = isDemoActive; }, [isDemoActive]);
@@ -141,6 +149,7 @@ export function useStorage() {
     categories: Category[];
     statuses: Status[];
     tags: Tag[];
+    profilePresets: ProfilePreset[];
   } | null>(null);
 
   const setDemoActive = useCallback((active: boolean) => {
@@ -151,7 +160,8 @@ export function useStorage() {
         platforms: [...platformsRef.current],
         categories: [...categoriesRef.current],
         statuses: [...statusesRef.current],
-        tags: [...tagsRef.current]
+        tags: [...tagsRef.current],
+        profilePresets: [...profilePresetsRef.current]
       };
       setTags(DEMO_TAGS);
       setCategories(DEMO_CATEGORIES);
@@ -166,12 +176,14 @@ export function useStorage() {
         setCategories(realDataRef.current.categories);
         setStatuses(realDataRef.current.statuses);
         setPlatforms(realDataRef.current.platforms);
+        setProfilePresets(realDataRef.current.profilePresets);
         platformsRef.current = realDataRef.current.platforms;
       } else {
         setTags(DEFAULT_TAGS);
         setCategories(DEFAULT_CATEGORIES);
         setStatuses(DEFAULT_STATUSES);
         setPlatforms([]);
+        setProfilePresets(DEFAULT_PROFILE_PRESETS);
         platformsRef.current = [];
       }
       setIsDemoActive(false);
@@ -187,11 +199,13 @@ export function useStorage() {
   const categoriesRef = useRef<Category[]>(DEFAULT_CATEGORIES);
   const platformsRef = useRef<Platform[]>([]);
   const statusesRef = useRef<Status[]>(DEFAULT_STATUSES);
+  const profilePresetsRef = useRef<ProfilePreset[]>(DEFAULT_PROFILE_PRESETS);
 
   useEffect(() => { tagsRef.current = tags; }, [tags]);
   useEffect(() => { categoriesRef.current = categories; }, [categories]);
   useEffect(() => { platformsRef.current = platforms; }, [platforms]);
   useEffect(() => { statusesRef.current = statuses; }, [statuses]);
+  useEffect(() => { profilePresetsRef.current = profilePresets; }, [profilePresets]);
 
   // Sync from Firebase & Cleanup on logout
   useEffect(() => {
@@ -205,6 +219,7 @@ export function useStorage() {
       setCategories(DEFAULT_CATEGORIES);
       setPlatforms([]);
       setStatuses(DEFAULT_STATUSES);
+      setProfilePresets(DEFAULT_PROFILE_PRESETS);
       lastTagsRef.current = null;
       lastCategoriesRef.current = null;
       lastPlatformsRef.current = null;
@@ -225,7 +240,8 @@ export function useStorage() {
         `hub_user_${user.uid}_tags`, 
         `hub_user_${user.uid}_categories`, 
         `hub_user_${user.uid}_platforms`, 
-        `hub_user_${user.uid}_statuses`
+        `hub_user_${user.uid}_statuses`,
+        `hub_user_${user.uid}_profile_presets`
       ];
       const legacyKeys = ['hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses'];
       
@@ -244,6 +260,7 @@ export function useStorage() {
     const savedCats = localStorage.getItem(`hub_user_${user.uid}_categories`);
     const savedPlats = localStorage.getItem(`hub_user_${user.uid}_platforms`);
     const savedStatuses = localStorage.getItem(`hub_user_${user.uid}_statuses`);
+    const savedPresets = localStorage.getItem(`hub_user_${user.uid}_profile_presets`);
 
     const localTags = safeParse(savedTags, DEFAULT_TAGS);
     const localCats = safeParse(savedCats, DEFAULT_CATEGORIES);
@@ -252,6 +269,7 @@ export function useStorage() {
       ownerId: user.uid
     }));
     const localStatuses = safeParse(savedStatuses, DEFAULT_STATUSES);
+    const localPresets = safeParse(savedPresets, DEFAULT_PROFILE_PRESETS);
 
     // Initial merge of defaults with local storage to avoid flickering
     setTags(() => {
@@ -280,6 +298,16 @@ export function useStorage() {
         const idx = merged.findIndex(m => m.id === ls.id);
         if (idx !== -1) merged[idx] = ls;
         else merged.push(ls);
+      });
+      return merged;
+    });
+
+    setProfilePresets(() => {
+      const merged = [...DEFAULT_PROFILE_PRESETS];
+      localPresets.forEach(lp => {
+        const idx = merged.findIndex(m => m.id === lp.id);
+        if (idx !== -1) merged[idx] = lp;
+        else merged.push(lp);
       });
       return merged;
     });
@@ -386,6 +414,31 @@ export function useStorage() {
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/statuses`);
       }));
+
+      // Sync profile presets with Firestore
+      const presetRef = collection(db, 'users', user.uid, 'profilePresets');
+      unsubs.push(onSnapshot(presetRef, { includeMetadataChanges: true }, (snap) => {
+        if (isClearingRef.current || isDemoActive) return;
+        if (snap.metadata.hasPendingWrites) return;
+        
+        if (!snap.empty) {
+          const cloudPresets = snap.docs.map(d => ({ ...d.data() as ProfilePreset, id: d.id }));
+          setProfilePresets(() => {
+            const merged = [...DEFAULT_PROFILE_PRESETS];
+            cloudPresets.forEach(cp => {
+              const idx = merged.findIndex(m => m.id === cp.id);
+              if (idx !== -1) merged[idx] = cp;
+              else merged.push(cp);
+            });
+            return merged;
+          });
+          safeSetItem(`hub_user_${user.uid}_profile_presets`, JSON.stringify(cloudPresets));
+        } else {
+          setProfilePresets(DEFAULT_PROFILE_PRESETS);
+        }
+      }, (err) => {
+        handleFirestoreError(err, OperationType.GET, `users/${user.uid}/profilePresets`);
+      }));
     }
 
     return () => unsubs.forEach(unsub => unsub());
@@ -418,6 +471,7 @@ export function useStorage() {
         for (const t of tagsRef.current) await fbSet('tags', t.id, t);
         for (const c of categoriesRef.current) if (c.isCustom) await fbSet('categories', c.id, c);
         for (const s of statusesRef.current) if (s.isCustom) await fbSet('statuses', s.id, s);
+        for (const p of profilePresetsRef.current) await fbSet('profilePresets', p.id, p);
       }
     };
 
@@ -486,6 +540,21 @@ export function useStorage() {
     }, 500);
     return () => clearTimeout(handler);
   }, [statuses, user, authLoading, isDemoActive]);
+
+  const lastPresetsRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (authLoading || !user || isDemoActive) return; 
+    const handler = setTimeout(() => {
+      const key = `hub_user_${user.uid}_profile_presets`;
+      const value = JSON.stringify(profilePresets);
+      if (lastPresetsRef.current !== value) {
+        if (safeSetItem(key, value)) {
+          lastPresetsRef.current = value;
+        }
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [profilePresets, user, authLoading, isDemoActive]);
 
   // Firestore DB Helpers
   const fbSet = useCallback(async (collectionName: string, id: string, data: any) => {
@@ -773,6 +842,30 @@ export function useStorage() {
     fbDelete('statuses', id);
   }, [fbDelete]);
 
+  // Profile Presets CRUD
+  const addProfilePreset = useCallback((preset: Omit<ProfilePreset, 'id'>) => {
+    const randomSuffix = Math.random().toString(36).substring(2, 9);
+    const newPreset: ProfilePreset = { ...preset, id: `preset-${Date.now()}-${randomSuffix}`, ownerId: user?.uid };
+    setProfilePresets((prev) => [...prev, newPreset]);
+    fbSet('profilePresets', newPreset.id, newPreset);
+    return newPreset;
+  }, [fbSet, user?.uid]);
+
+  const updateProfilePreset = useCallback((id: string, updated: Partial<ProfilePreset>) => {
+    const currentPresets = profilePresetsRef.current;
+    const preset = currentPresets.find(p => p.id === id);
+    if (!preset) return;
+
+    const newPreset = { ...preset, ...updated };
+    setProfilePresets((prev) => prev.map((p) => (p.id === id ? newPreset : p)));
+    fbSet('profilePresets', id, newPreset);
+  }, [fbSet]);
+
+  const deleteProfilePreset = useCallback((id: string) => {
+    setProfilePresets((prev) => prev.filter((p) => p.id !== id));
+    fbDelete('profilePresets', id);
+  }, [fbDelete]);
+
   const clearAllData = useCallback(async () => {
     if (!user) return;
 
@@ -783,23 +876,27 @@ export function useStorage() {
     const userCats = categoriesRef.current;
     const userPlats = platformsRef.current;
     const userStatuses = statusesRef.current;
+    const userPresets = profilePresetsRef.current;
 
     setTags(DEFAULT_TAGS);
     setCategories(DEFAULT_CATEGORIES);
     setPlatforms([]);
     setStatuses(DEFAULT_STATUSES);
+    setProfilePresets(DEFAULT_PROFILE_PRESETS);
 
     // Update refs immediately to avoid stale data backup
     tagsRef.current = DEFAULT_TAGS;
     categoriesRef.current = DEFAULT_CATEGORIES;
     platformsRef.current = [];
     statusesRef.current = DEFAULT_STATUSES;
+    profilePresetsRef.current = DEFAULT_PROFILE_PRESETS;
 
     // 2. Clear localStorage IMMEDIATELY
     const keys = [
       'hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses',
       `hub_user_${user.uid}_tags`, `hub_user_${user.uid}_categories`,
-      `hub_user_${user.uid}_platforms`, `hub_user_${user.uid}_statuses`
+      `hub_user_${user.uid}_platforms`, `hub_user_${user.uid}_statuses`,
+      `hub_user_${user.uid}_profile_presets`
     ];
     keys.forEach(k => localStorage.removeItem(k));
     
@@ -808,6 +905,7 @@ export function useStorage() {
     lastCategoriesRef.current = null;
     lastPlatformsRef.current = null;
     lastStatusesRef.current = null;
+    lastPresetsRef.current = null;
 
     try {
       // 3. Delete everything from Firestore
@@ -818,6 +916,7 @@ export function useStorage() {
         userCats.filter(c => c.isCustom).forEach(c => deletePromises.push(fbDelete('categories', c.id)));
         userPlats.forEach(p => deletePromises.push(fbDelete('platforms', p.id)));
         userStatuses.filter(s => s.isCustom).forEach(s => deletePromises.push(fbDelete('statuses', s.id)));
+        userPresets.forEach(p => deletePromises.push(fbDelete('profilePresets', p.id)));
         
         await Promise.all(deletePromises);
       }
@@ -836,6 +935,7 @@ export function useStorage() {
     addProfile, updateProfile, deleteProfile,
     addPurchase, updatePurchase, deletePurchase,
     statuses, addStatus, updateStatus, deleteStatus,
+    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset,
     clearAllData,
     isDemoActive, setDemoActive,
   }), [
@@ -845,6 +945,7 @@ export function useStorage() {
     addProfile, updateProfile, deleteProfile,
     addPurchase, updatePurchase, deletePurchase,
     statuses, addStatus, updateStatus, deleteStatus,
+    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset,
     clearAllData,
     isDemoActive, setDemoActive
   ]);

@@ -11,6 +11,13 @@ export interface ProfileAvatar {
   bgColor?: string; // Background color for emojis or letters
 }
 
+export interface ProfilePreset {
+  id: string;
+  name: string;
+  avatar: ProfileAvatar;
+  ownerId?: string;
+}
+
 export interface Profile {
   id: string;
   name: string; // Pessoal, Trabalho, Família, Estudos, Freelance, Empresa, or Custom
