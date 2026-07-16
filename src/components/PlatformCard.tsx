@@ -295,6 +295,16 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 <span className="text-[10px] truncate max-w-[140px] font-medium leading-none">
                   {platform.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                 </span>
+                <a
+                  href={safeUrl(platform.url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-0.5 ml-0.5 rounded hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                  title="Acessar plataforma"
+                >
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
               </div>
             )}
             <div className="flex items-center gap-1.5 mt-1">
@@ -700,6 +710,44 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   </div>
                                 )}
 
+
+                                {profile.accessLink && (
+                                  <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/70 dark:border-indigo-900/30 text-indigo-900 dark:text-indigo-300">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      <Globe className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                                      <div className="min-w-0 flex-1">
+                                        <span className="text-[9px] text-indigo-600/70 dark:text-indigo-400/50 block font-medium uppercase tracking-wider leading-none">Link de Acesso</span>
+                                        <span className="text-xs font-semibold block truncate mt-0.5 select-all">{highlightText(profile.accessLink, searchQuery)}</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCopy(profile.id + '-access-link', profile.accessLink || '', e);
+                                        }}
+                                        className="p-1 rounded bg-white dark:bg-[#1a1b26] border border-indigo-200/40 dark:border-indigo-900/40 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-all shadow-sm shrink-0 cursor-pointer"
+                                        title="Copiar link"
+                                      >
+                                        {copiedId === profile.id + '-access-link' ? (
+                                          <Check className="w-3 h-3 text-emerald-500" />
+                                        ) : (
+                                          <Copy className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                      <a
+                                        href={safeUrl(profile.accessLink)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="p-1 rounded bg-white dark:bg-[#1a1b26] border border-indigo-200/40 dark:border-indigo-900/40 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-all shadow-sm shrink-0 cursor-pointer"
+                                        title="Abrir link"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                )}
 
                                 {/* DESCRIPTION / NOTES BLOCK */}
                                 {profile.description && (
