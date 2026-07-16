@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
               }
             }}
             placeholder="Buscar conta..."
-            className={`w-full h-10 pl-10 rounded-lg text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-[#1a1b28] dark:border-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-400 ${
+            className={`w-full h-10 pl-10 rounded-lg text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-[#12131a] dark:border-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-400 ${
               searchQuery.trim() ? 'pr-[110px] sm:pr-[130px]' : 'pr-10 sm:pr-12'
             }`}
           />

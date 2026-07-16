@@ -259,7 +259,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     <div
       id={`platform-card-${platform.id}`}
       data-testid={`platform-card-${platform.id}`}
-      className="bg-white dark:bg-[#23242f] border border-neutral-200 dark:border-white/20 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.7)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.8)] hover:border-neutral-300 dark:hover:border-white/30 group"
+      className="bg-white dark:bg-[#12131a] border border-neutral-200 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.6)] hover:border-neutral-300 dark:hover:border-white/20 group"
     >
       {/* Card Header (always visible) */}
       <div
@@ -268,7 +268,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
       >
         <div className="flex items-center gap-4">
           {/* Logo container - Standardized App Icon Style */}
-          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-[#252630] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-neutral-200 dark:border-white/20 group-hover:scale-105 transition-all duration-500">
+          <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-black flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/5 group-hover:scale-105 transition-all duration-500">
             <img referrerPolicy="no-referrer"
               src={currentLogoUrl}
               alt={platform.name}
@@ -468,9 +468,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                         <div
                           key={profile.id}
                           id={`profile-card-${profile.id}`}
-                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#252632] group/profile shadow-inner transition-all duration-200 ${
+                          className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#1a1b26] group/profile shadow-inner transition-all duration-200 ${
                             isActiveMatch
-                              ? 'ring-2 ring-indigo-500/40 dark:ring-indigo-500/80 shadow-md shadow-indigo-500/20'
+                              ? 'ring-2 ring-indigo-500/40 dark:ring-indigo-500/60 shadow-md shadow-indigo-500/10'
                               : ''
                           }`}
                         >
@@ -541,8 +541,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             }}
                             className={`z-10 relative flex flex-col p-3.5 rounded-xl bg-white border transition-colors duration-150 cursor-grab active:cursor-grabbing select-none shadow-sm ${
                               isActiveMatch
-                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#32344a]'
-                                : 'border-neutral-100 dark:border-transparent dark:bg-[#2a2b38] hover:border-neutral-200 dark:hover:border-white/20'
+                                ? 'border-indigo-500 dark:border-indigo-400 dark:bg-[#222336]'
+                                : 'border-neutral-100 dark:border-transparent dark:bg-[#161722] hover:border-neutral-200 dark:hover:border-white/10'
                             } ${
                               isCollapsed ? 'gap-0' : 'gap-3'
                             }`}
@@ -986,7 +986,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               
                               {/* Tracking Code / Notes */}
                               {purchase.notes && (
-                                <p className="text-[10px] text-neutral-500 dark:text-neutral-400 italic line-clamp-1 truncate mt-1">
+                                <p className="text-[10px] text-neutral-500 dark:text-neutral-300 italic line-clamp-1 truncate mt-1">
                                   {purchase.notes}
                                 </p>
                               )}
@@ -1122,7 +1122,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               <span className="font-semibold font-mono text-indigo-600 dark:text-indigo-400 flex items-center gap-1 flex-wrap">
                                 <span>R$ {purchase.finalPrice.toFixed(2)}</span>
                                 {purchase.quantity && purchase.quantity > 1 && (
-                                  <span className="text-[8px] font-sans text-neutral-400 dark:text-neutral-500 font-bold bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded shrink-0 leading-none">
+                                  <span className="text-[8px] font-sans text-neutral-400 dark:text-neutral-300 font-bold bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded shrink-0 leading-none">
                                     {purchase.quantity} un.
                                   </span>
                                 )}
@@ -1130,7 +1130,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             </div>
                             <div className="text-right">
                               <span className="text-[9px] text-neutral-500 block">Data</span>
-                              <span className="font-mono text-neutral-600 dark:text-neutral-400 flex items-center justify-end gap-1">
+                              <span className="font-mono text-neutral-600 dark:text-neutral-300 flex items-center justify-end gap-1">
                                 <Calendar className="w-2.5 h-2.5 shrink-0" />
                                 {new Date(purchase.date).toLocaleDateString('pt-BR', {
                                   day: '2-digit',

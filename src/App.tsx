@@ -463,7 +463,7 @@ export default function App() {
                 onClick={() => setCurrentView('platforms')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                   currentView === 'platforms'
-                    ? 'bg-white dark:bg-[#1a1b28] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
+                    ? 'bg-white dark:bg-[#12131a] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
                     : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-white'
                 }`}
               >
@@ -479,7 +479,7 @@ export default function App() {
                 onClick={() => setCurrentView('purchases')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                   currentView === 'purchases'
-                    ? 'bg-white dark:bg-[#1a1b28] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15px_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
+                    ? 'bg-white dark:bg-[#12131a] text-indigo-600 dark:text-indigo-400 shadow-sm dark:shadow-[0_0_15_rgba(79,70,229,0.2)] border border-neutral-200 dark:border-indigo-500/30'
                     : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-white'
                 }`}
               >
