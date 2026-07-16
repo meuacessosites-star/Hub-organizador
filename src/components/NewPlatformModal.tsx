@@ -5,6 +5,7 @@ import { resizeImage } from "../utils/imageHelper";
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import { Category, ProfileAvatar, Platform, Profile, ProfilePreset } from '../types';
 import { X, Globe, Link, Eye, EyeOff, Shield, Image as ImageIcon, Smile, Palette, Upload, Check, Trash2, Search, User, Mail, Bookmark, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -199,6 +200,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   const [brightness, setBrightness] = useState(1.0);
   const [selectedEmoji, setSelectedEmoji] = useState('👤');
   const [imageUrl, setImageUrl] = useState('');
+  const [avatarZoom, setAvatarZoom] = useState(1);
+  const [showColorWheel, setShowColorWheel] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
 
   const colorWheelRef = useRef<HTMLDivElement>(null);
@@ -494,6 +497,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
         type: avatarTab,
         value: avatarValue,
         bgColor: selectedColor,
+        zoom: avatarTab === 'image' ? avatarZoom : undefined,
       },
     };
 
@@ -1003,7 +1007,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           {preset.avatar.type === 'emoji' ? (
                             preset.avatar.value
                           ) : preset.avatar.type === 'image' ? (
-                            <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" />
+                            <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                           ) : (
                             preset.name.slice(0, 2).toUpperCase()
                           )}
@@ -1022,7 +1026,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                               else if (preset.avatar.type === 'color') setSelectedColor(preset.avatar.value);
                               
                               if (preset.avatar.type === 'emoji') setSelectedEmoji(preset.avatar.value);
-                              else if (preset.avatar.type === 'image') setImageUrl(preset.avatar.value);
+                              else if (preset.avatar.type === 'image') {
+                                setImageUrl(preset.avatar.value);
+                                setAvatarZoom(preset.avatar.zoom || 1);
+                              }
                               
                               setEmail(preset.email || '');
                               setUsername(preset.username || '');
@@ -1076,6 +1083,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           setDescription('');
                           setAvatarTab('emoji');
                           setSelectedEmoji('👤');
+                          setImageUrl('');
+                          setAvatarZoom(1);
                           addToast('Preencha os dados e salve como novo padrão!', 'info');
                           setTimeout(() => {
                             customNameInputRef.current?.focus();
@@ -1123,7 +1132,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
 
                             const presetData = {
                               name: nameToSave,
-                              avatar: { type: avatarTab, value: avatarValue, bgColor: selectedColor },
+                              avatar: { type: avatarTab, value: avatarValue, bgColor: selectedColor, zoom: avatarTab === 'image' ? avatarZoom : undefined },
                               email, username, password, accessLink, description
                             };
 
@@ -1184,7 +1193,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                             else if (preset.avatar.type === 'color') setSelectedColor(preset.avatar.value);
                             
                             if (preset.avatar.type === 'emoji') setSelectedEmoji(preset.avatar.value);
-                            else if (preset.avatar.type === 'image') setImageUrl(preset.avatar.value);
+                            else if (preset.avatar.type === 'image') {
+                              setImageUrl(preset.avatar.value);
+                              setAvatarZoom(preset.avatar.zoom || 1);
+                            }
 
                             // Apply extra fields
                             if (preset.email) setEmail(preset.email);
@@ -1211,7 +1223,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                             {preset.avatar.type === 'emoji' ? (
                               preset.avatar.value
                             ) : preset.avatar.type === 'image' ? (
-                              <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" />
+                              <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-contain" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                             ) : (
                               preset.name.slice(0, 2).toUpperCase()
                             )}
@@ -1523,19 +1535,92 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
 
                   {/* CUSTOM IMAGE SELECTOR */}
                   {avatarTab === 'image' && (
-                    <div className="flex flex-col items-center gap-3 w-full select-none">
-                      <div className="w-14 h-14 rounded-full border border-neutral-300 overflow-hidden flex items-center justify-center bg-neutral-200 mb-1 dark:border-neutral-700 dark:bg-neutral-800">
+                    <div className="flex flex-col items-center gap-4 w-full select-none">
+                      <div 
+                        className="w-16 h-16 rounded-full border-2 border-indigo-500/20 overflow-hidden flex items-center justify-center shadow-lg transition-colors"
+                        style={{ backgroundColor: selectedColor }}
+                      >
                         {imageUrl ? (
-                          <img referrerPolicy="no-referrer" src={imageUrl} alt="Avatar preview" className="w-full h-full object-cover" />
+                          <img 
+                            referrerPolicy="no-referrer" 
+                            src={imageUrl} 
+                            alt="Avatar preview" 
+                            className="w-full h-full object-contain transition-transform duration-200"
+                            style={{ transform: `scale(${avatarZoom})` }} 
+                          />
                         ) : (
                           <ImageIcon className="w-6 h-6 text-neutral-500" />
                         )}
                       </div>
 
-                      {/* File picker input */}
-                      <div className="flex flex-col items-center gap-2">
-                        <label className="cursor-pointer px-4 py-2 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 font-semibold text-xs transition-all border border-indigo-500/20">
-                          Escolher arquivo de imagem
+                      {imageUrl && (
+                        <div className="w-full max-w-[240px] flex flex-col gap-3 px-2">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center px-0.5">
+                              <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Ajustar Zoom</span>
+                              <span className="text-[10px] font-mono font-bold text-indigo-500">{Math.round(avatarZoom * 100)}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0.2"
+                              max="5"
+                              step="0.01"
+                              value={avatarZoom}
+                              onChange={(e) => setAvatarZoom(parseFloat(e.target.value))}
+                              className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-0.5">Cor de Fundo</span>
+                            <div className="flex flex-wrap justify-center gap-1.5 relative">
+                              {['#7c5cfc', '#ff5c5c', '#5cff9d', '#5cd6ff', '#ffb85c', '#ff5cd6', '#333333', '#ffffff'].map(color => (
+                                <button
+                                  key={color}
+                                  type="button"
+                                  onClick={() => setSelectedColor(color)}
+                                  className={`w-6 h-6 rounded-full border transition-all cursor-pointer ${
+                                    selectedColor === color ? 'border-indigo-500 scale-110 shadow-sm' : 'border-neutral-300 dark:border-neutral-700 hover:scale-105'
+                                  }`}
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                              
+                              <button
+                                type="button"
+                                onClick={() => setShowColorWheel(!showColorWheel)}
+                                className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                                  showColorWheel ? 'border-indigo-500 scale-110' : 'border-neutral-300 dark:border-neutral-700'
+                                }`}
+                                style={{ background: 'conic-gradient(red, yellow, green, cyan, blue, magenta, red)' }}
+                                title="Cor personalizada"
+                              >
+                                <Palette className="w-3 h-3 text-white drop-shadow-sm" />
+                              </button>
+
+                              {showColorWheel && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-white dark:bg-[#1a1b26] rounded-xl shadow-2xl border border-neutral-200 dark:border-[#2a2d40] z-50">
+                                  <HexColorPicker color={selectedColor} onChange={setSelectedColor} />
+                                  <div className="mt-2 flex gap-2">
+                                    <input 
+                                      type="text" 
+                                      value={selectedColor} 
+                                      onChange={(e) => setSelectedColor(e.target.value)}
+                                      className="flex-1 px-2 py-1 text-[10px] font-mono border rounded dark:bg-neutral-900 dark:border-neutral-700"
+                                    />
+                                    <button onClick={() => setShowColorWheel(false)} className="px-2 py-1 text-[10px] bg-indigo-600 text-white rounded cursor-pointer">OK</button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col items-center gap-2 mt-1">
+                        <label className="cursor-pointer px-4 py-2 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 font-semibold text-xs transition-all border border-indigo-500/20 flex items-center gap-2">
+                          <Upload className="w-3.5 h-3.5" />
+                          {imageUrl ? 'Trocar imagem' : 'Escolher arquivo de imagem'}
                           <input
                             type="file"
                             accept="image/*"

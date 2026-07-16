@@ -9,6 +9,7 @@ export interface ProfileAvatar {
   type: AvatarType;
   value: string; // Hex color, emoji character, or image data URL
   bgColor?: string; // Background color for emojis or letters
+  zoom?: number; // Zoom level for images
 }
 
 export interface ProfilePreset {
