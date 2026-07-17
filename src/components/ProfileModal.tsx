@@ -415,7 +415,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200"
+        className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 max-h-[90dvh] flex flex-col"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
@@ -721,8 +721,17 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
                             const presetData = {
                               name: nameToSave,
-                              avatar: { type: avatarTab, value: avatarValue, bgColor: selectedColor, zoom: avatarTab === 'image' ? avatarZoom : undefined },
-                              email, username, password, accessLink, description
+                              avatar: { 
+                                type: avatarTab, 
+                                value: avatarValue, 
+                                bgColor: selectedColor, 
+                                zoom: avatarTab === 'image' ? avatarZoom : undefined 
+                              },
+                              email, 
+                              username, 
+                              password, 
+                              accessLink, 
+                              description
                             };
 
                             if (editingPresetId) {
