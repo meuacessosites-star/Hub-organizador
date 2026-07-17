@@ -147,6 +147,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [imageUrl, setImageUrl] = useState('');
   const [avatarZoom, setAvatarZoom] = useState(1);
   const [showColorWheel, setShowColorWheel] = useState(false);
+  const [showAllPresets, setShowAllPresets] = useState(false);
 
   // UI state
   const [isEditingInView, setIsEditingInView] = useState(!isEditMode || startInEditMode);
@@ -173,6 +174,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   // Load profile data if in edit mode
   useEffect(() => {
     setShowColorWheel(false); // Reset color wheel state
+    setShowAllPresets(false);
     if (profile) {
       if (isEditMode) {
         setIsEditingInView(startInEditMode);
@@ -733,6 +735,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             setEditingPresetId(null);
                             setIsCustomProfile(false);
                             setCustomProfileName('');
+                            setImageUrl('');
+                            setAvatarZoom(1);
                           }}
                           className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer border flex items-center justify-center gap-2 ${
                             editingPresetId 
@@ -794,8 +798,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-2 pt-0.5">
-                    {profilePresets.map((preset) => {
+                  <div className="flex flex-wrap gap-2 pt-0.5 transition-all duration-300">
+                    {(showAllPresets ? profilePresets : profilePresets.slice(0, 8)).map((preset) => {
                       const isSel = profileName === preset.name && !isCustomProfile;
                       return (
                         <button
@@ -846,6 +850,17 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         </button>
                       );
                     })}
+
+                    {profilePresets.length > 8 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllPresets(!showAllPresets)}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors uppercase tracking-wider cursor-pointer bg-indigo-500/5 hover:bg-indigo-500/10"
+                      >
+                        {showAllPresets ? 'Ver menos' : `+${profilePresets.length - 8} outros`}
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => setIsCustomProfile(true)}
