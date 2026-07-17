@@ -1155,9 +1155,6 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                             }
                             setEditingPresetId(null);
                             setIsCustomProfile(false);
-                            setCustomProfileName('');
-                            setImageUrl('');
-                            setAvatarZoom(1);
                           }}
                           className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer border flex items-center justify-center gap-2 ${
                             editingPresetId 

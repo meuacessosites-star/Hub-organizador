@@ -346,6 +346,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                       src={profile.avatar.value}
                       alt={profile.name}
                       className="w-full h-full object-cover rounded-full"
+                      style={{ transform: `scale(${profile.avatar.zoom || 1})` }}
                     />
                   ) : (
                     profile.name.slice(0, 2).toUpperCase()
@@ -537,6 +538,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                       src={profile.avatar.value}
                                       alt={profile.name}
                                       className="w-full h-full object-cover rounded-full"
+                                      style={{ transform: `scale(${profile.avatar.zoom || 1})` }}
                                     />
                                   ) : (
                                     profile.name.slice(0, 2).toUpperCase()

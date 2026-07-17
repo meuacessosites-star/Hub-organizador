@@ -624,7 +624,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           {preset.avatar.type === 'emoji' ? (
                             preset.avatar.value
                           ) : preset.avatar.type === 'image' ? (
-                            <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" />
+                            <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                           ) : (
                             preset.name.slice(0, 2).toUpperCase()
                           )}
@@ -743,9 +743,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             }
                             setEditingPresetId(null);
                             setIsCustomProfile(false);
-                            setCustomProfileName('');
-                            setImageUrl('');
-                            setAvatarZoom(1);
                           }}
                           className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer border flex items-center justify-center gap-2 ${
                             editingPresetId 
@@ -850,7 +847,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             {preset.avatar.type === 'emoji' ? (
                               preset.avatar.value
                             ) : preset.avatar.type === 'image' ? (
-                              <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" />
+                              <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                             ) : (
                               preset.name.slice(0, 2).toUpperCase()
                             )}

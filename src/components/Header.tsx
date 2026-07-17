@@ -42,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (userProfile?.avatar) {
       const { type, value, bgColor } = userProfile.avatar;
       if (type === 'image' && value) {
-        return <img referrerPolicy="no-referrer" src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" />;
+        return <img referrerPolicy="no-referrer" src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${userProfile.avatar.zoom || 1})` }} />;
       }
       if (type === 'emoji') {
         return (
