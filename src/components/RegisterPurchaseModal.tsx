@@ -304,12 +304,26 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     if (!url) return '';
     const trimmed = url.trim();
     if (!trimmed) return '';
-    if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('https://corsproxy.io/')) {
+    if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
       return trimmed;
     }
+
+    if (trimmed.startsWith('https://corsproxy.io/?')) {
+      const extracted = decodeURIComponent(trimmed.replace('https://corsproxy.io/?', ''));
+      if (extracted && (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash'))) {
+        return extracted;
+      }
+      return trimmed;
+    }
+
     if (trimmed.startsWith('/api/proxy-image?url=')) {
       const extracted = decodeURIComponent(trimmed.replace('/api/proxy-image?url=', ''));
-      if (extracted) return `https://corsproxy.io/?${encodeURIComponent(extracted)}`;
+      if (extracted) {
+        if (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash')) {
+          return extracted;
+        }
+        return `https://wsrv.nl/?url=${encodeURIComponent(extracted)}`;
+      }
       return trimmed;
     }
 
@@ -323,7 +337,22 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       }
     }
 
-    return `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
+    // Direct URLs for Amazon, Unsplash, and standard images (no proxy needed in <img> tags)
+    if (
+      rawUrl.includes('amazon') ||
+      rawUrl.includes('media-amazon') ||
+      rawUrl.includes('ssl-images-amazon') ||
+      rawUrl.includes('unsplash.com')
+    ) {
+      return rawUrl;
+    }
+
+    // Proxy for Shopee CDN images
+    if (rawUrl.includes('susercontent.com') || rawUrl.includes('shopee')) {
+      return `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}`;
+    }
+
+    return rawUrl;
   };
 
   const getProxiedImageUrl = (url: string) => {
@@ -332,6 +361,25 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget;
+    const currentSrc = target.src || '';
+
+    if (currentSrc.includes('corsproxy.io/?')) {
+      const raw = decodeURIComponent(currentSrc.split('corsproxy.io/?')[1] || '');
+      if (raw && raw !== currentSrc) {
+        target.src = raw;
+        return;
+      }
+    } else if (currentSrc.includes('wsrv.nl/?url=')) {
+      const raw = decodeURIComponent(currentSrc.split('wsrv.nl/?url=')[1] || '');
+      if (raw && raw !== currentSrc) {
+        target.src = raw;
+        return;
+      }
+    } else if (currentSrc.startsWith('http') && !currentSrc.includes('wsrv.nl') && !currentSrc.includes('unsplash.com')) {
+      target.src = `https://wsrv.nl/?url=${encodeURIComponent(currentSrc)}`;
+      return;
+    }
+
     target.style.opacity = '0.3';
   };
   

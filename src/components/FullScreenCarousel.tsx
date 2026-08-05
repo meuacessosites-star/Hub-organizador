@@ -37,15 +37,22 @@ export const FullScreenCarousel: React.FC<FullScreenCarouselProps> = ({ images, 
             const currentRaw = images[currentIndex] || '';
             if (!currentRaw) return null;
             let rawUrl = currentRaw.trim();
-            if (
-              rawUrl.startsWith('data:') ||
-              rawUrl.startsWith('blob:') ||
-              rawUrl.startsWith('https://corsproxy.io/')
-            ) {
+            if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:')) {
               // use as is
+            } else if (rawUrl.startsWith('https://corsproxy.io/?')) {
+              const extracted = decodeURIComponent(rawUrl.replace('https://corsproxy.io/?', ''));
+              if (extracted && (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash'))) {
+                rawUrl = extracted;
+              }
             } else if (rawUrl.startsWith('/api/proxy-image?url=')) {
               const extracted = decodeURIComponent(rawUrl.replace('/api/proxy-image?url=', ''));
-              rawUrl = `https://corsproxy.io/?${encodeURIComponent(extracted || rawUrl)}`;
+              if (extracted) {
+                if (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash')) {
+                  rawUrl = extracted;
+                } else {
+                  rawUrl = `https://wsrv.nl/?url=${encodeURIComponent(extracted)}`;
+                }
+              }
             } else {
               if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
                 if (rawUrl.startsWith('//')) {
@@ -55,7 +62,16 @@ export const FullScreenCarousel: React.FC<FullScreenCarouselProps> = ({ images, 
                   rawUrl = `https://down-br.img.susercontent.com/file/${cleanHash}`;
                 }
               }
-              rawUrl = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
+
+              if (
+                !rawUrl.includes('amazon') &&
+                !rawUrl.includes('media-amazon') &&
+                !rawUrl.includes('ssl-images-amazon') &&
+                !rawUrl.includes('unsplash.com') &&
+                (rawUrl.includes('susercontent.com') || rawUrl.includes('shopee'))
+              ) {
+                rawUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}`;
+              }
             }
 
             return (
