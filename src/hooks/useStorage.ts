@@ -385,24 +385,14 @@ export function useStorage() {
             const data = d.data() as Platform;
             return { ...data, id: d.id, ownerId: user.uid };
           });
-          
-          // Merge with any local platforms that haven't synced to cloud yet
-          const cloudIds = new Set(cloudPlats.map(p => p.id));
-          const localOnlyPlats = platformsRef.current.filter(p => !cloudIds.has(p.id));
-          const mergedPlats = [...cloudPlats, ...localOnlyPlats];
 
-          setPlatforms(mergedPlats);
-          platformsRef.current = mergedPlats;
-          safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(mergedPlats));
-
-          // Sync local-only platforms up to cloud
-          localOnlyPlats.forEach(p => {
-            fbSet('platforms', p.id, { ...p, ownerId: user.uid });
-          });
+          setPlatforms(cloudPlats);
+          platformsRef.current = cloudPlats;
+          safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
         } else {
-          // If cloud is empty, check if we have local platforms before wiping
-          if (platformsRef.current.length > 0) {
-            console.log(`useStorage: Cloud platforms empty, syncing ${platformsRef.current.length} local platforms to Firestore`);
+          // If cloud is empty and initial backup was already done, set empty
+          if (platformsRef.current.length > 0 && !hasAttemptedInitialBackup.current) {
+            console.log(`useStorage: Cloud platforms empty on first sync, pushing ${platformsRef.current.length} local platforms to Firestore`);
             platformsRef.current.forEach(p => {
               fbSet('platforms', p.id, { ...p, ownerId: user.uid });
             });
@@ -508,77 +498,62 @@ export function useStorage() {
   // Sync to local storage for offline / instant render when state updates
   const lastTagsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING OR DEMO ACTIVE
-    const handler = setTimeout(() => {
-      const key = `hub_user_${user.uid}_tags`;
-      const value = JSON.stringify(tags);
-      if (lastTagsRef.current !== value) {
-        if (safeSetItem(key, value)) {
-          lastTagsRef.current = value;
-        }
+    if (authLoading || !user || isDemoActive) return;
+    const key = `hub_user_${user.uid}_tags`;
+    const value = JSON.stringify(tags);
+    if (lastTagsRef.current !== value) {
+      if (safeSetItem(key, value)) {
+        lastTagsRef.current = value;
       }
-    }, 500);
-    return () => clearTimeout(handler);
+    }
   }, [tags, user, authLoading, isDemoActive]);
 
   const lastCategoriesRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING OR DEMO ACTIVE
-    const handler = setTimeout(() => {
-      const key = `hub_user_${user.uid}_categories`;
-      const value = JSON.stringify(categories);
-      if (lastCategoriesRef.current !== value) {
-        if (safeSetItem(key, value)) {
-          lastCategoriesRef.current = value;
-        }
+    if (authLoading || !user || isDemoActive) return;
+    const key = `hub_user_${user.uid}_categories`;
+    const value = JSON.stringify(categories);
+    if (lastCategoriesRef.current !== value) {
+      if (safeSetItem(key, value)) {
+        lastCategoriesRef.current = value;
       }
-    }, 500);
-    return () => clearTimeout(handler);
+    }
   }, [categories, user, authLoading, isDemoActive]);
 
   const lastPlatformsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING OR DEMO ACTIVE
-    const handler = setTimeout(() => {
-      const key = `hub_user_${user.uid}_platforms`;
-      const value = JSON.stringify(platforms);
-      if (lastPlatformsRef.current !== value) {
-        if (safeSetItem(key, value)) {
-          lastPlatformsRef.current = value;
-        }
+    if (authLoading || !user || isDemoActive) return;
+    const key = `hub_user_${user.uid}_platforms`;
+    const value = JSON.stringify(platforms);
+    if (lastPlatformsRef.current !== value) {
+      if (safeSetItem(key, value)) {
+        lastPlatformsRef.current = value;
       }
-    }, 500);
-    return () => clearTimeout(handler);
+    }
   }, [platforms, user, authLoading, isDemoActive]);
 
   const lastStatusesRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return; // DO NOT SAVE IF LOGGED OUT OR AUTH IS LOADING OR DEMO ACTIVE
-    const handler = setTimeout(() => {
-      const key = `hub_user_${user.uid}_statuses`;
-      const value = JSON.stringify(statuses);
-      if (lastStatusesRef.current !== value) {
-        if (safeSetItem(key, value)) {
-          lastStatusesRef.current = value;
-        }
+    if (authLoading || !user || isDemoActive) return;
+    const key = `hub_user_${user.uid}_statuses`;
+    const value = JSON.stringify(statuses);
+    if (lastStatusesRef.current !== value) {
+      if (safeSetItem(key, value)) {
+        lastStatusesRef.current = value;
       }
-    }, 500);
-    return () => clearTimeout(handler);
+    }
   }, [statuses, user, authLoading, isDemoActive]);
 
   const lastPresetsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return; 
-    const handler = setTimeout(() => {
-      const key = `hub_user_${user.uid}_profile_presets`;
-      const value = JSON.stringify(profilePresets);
-      if (lastPresetsRef.current !== value) {
-        if (safeSetItem(key, value)) {
-          lastPresetsRef.current = value;
-        }
+    if (authLoading || !user || isDemoActive) return;
+    const key = `hub_user_${user.uid}_profile_presets`;
+    const value = JSON.stringify(profilePresets);
+    if (lastPresetsRef.current !== value) {
+      if (safeSetItem(key, value)) {
+        lastPresetsRef.current = value;
       }
-    }, 500);
-    return () => clearTimeout(handler);
+    }
   }, [profilePresets, user, authLoading, isDemoActive]);
 
   // Sanitize data before sending to Firestore to strip out any `undefined` fields that cause setDoc to fail

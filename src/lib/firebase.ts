@@ -1,22 +1,39 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { initializeFirestore } from "firebase/firestore";
+import firebaseConfigJson from "../../firebase-applet-config.json";
 
-export const firebaseConfig = {
-  apiKey: "AIzaSyBgqyIURrxENw7swhs50tksKnEPEA-ytXI",
-  authDomain: "gen-lang-client-0404933506.firebaseapp.com",
-  projectId: "gen-lang-client-0404933506",
-  storageBucket: "gen-lang-client-0404933506.firebasestorage.app",
-  messagingSenderId: "813562009552",
-  appId: "1:813562009552:web:4a0b37dbebaac50bef8bd5"
+// Helper to safely get environment variables in both Vite and Node environments
+const getEnvVar = (key: string): string | undefined => {
+  try {
+    const meta = import.meta as any;
+    if (typeof meta !== 'undefined' && meta.env && meta.env[key]) {
+      return meta.env[key];
+    }
+  } catch {}
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+      return process.env[key];
+    }
+  } catch {}
+  return undefined;
 };
 
-export const TARGET_DATABASE_ID = "ai-studio-vitrinedeofertas-fe9194d9-264f-425d-ab2f-b0df2472505f";
+export const firebaseConfig = {
+  apiKey: getEnvVar("VITE_FIREBASE_API_KEY") || firebaseConfigJson.apiKey,
+  authDomain: getEnvVar("VITE_FIREBASE_AUTH_DOMAIN") || firebaseConfigJson.authDomain,
+  projectId: getEnvVar("VITE_FIREBASE_PROJECT_ID") || firebaseConfigJson.projectId,
+  storageBucket: getEnvVar("VITE_FIREBASE_STORAGE_BUCKET") || firebaseConfigJson.storageBucket,
+  messagingSenderId: getEnvVar("VITE_FIREBASE_MESSAGING_SENDER_ID") || firebaseConfigJson.messagingSenderId,
+  appId: getEnvVar("VITE_FIREBASE_APP_ID") || firebaseConfigJson.appId
+};
+
+export const TARGET_DATABASE_ID = getEnvVar("VITE_FIREBASE_DATABASE_ID") || firebaseConfigJson.firestoreDatabaseId || "(default)";
 
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Force Firestore connection exclusively to the central database ID: ai-studio-vitrinedeofertas-fe9194d9-264f-425d-ab2f-b0df2472505f
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
 }, TARGET_DATABASE_ID);
+

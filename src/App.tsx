@@ -61,9 +61,7 @@ export default function App() {
     setDemoActive,
   } = useStorage();
 
-  const [isTutorialActive, setIsTutorialActive] = useState(() => {
-    return safeStorage.getItem('hub_onboarding_seen') !== 'true';
-  });
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
 
   const [selectedCategory, setSelectedCategory] = useState('todas');
   const [searchQuery, setSearchQuery] = useState('');

@@ -40,16 +40,21 @@ export const LoginPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/invalid-credential') {
+      const code = err?.code || '';
+      const msg = err?.message || '';
+
+      if (code === 'auth/api-key-not-valid' || msg.includes('api-key-not-valid')) {
+        setError('Chave de API do Firebase (apiKey) está inválida ou não foi configurada no servidor/Vercel. Verifique as variáveis de ambiente (VITE_FIREBASE_API_KEY) ou entre no "Modo Visitante" abaixo.');
+      } else if (code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
-      } else if (err.code === 'auth/user-not-found') {
+      } else if (code === 'auth/user-not-found') {
         setError('Usuário não encontrado.');
-      } else if (err.code === 'auth/email-already-in-use') {
+      } else if (code === 'auth/email-already-in-use') {
         setError('Este email já está em uso por outra conta.');
-      } else if (err.code === 'auth/weak-password') {
+      } else if (code === 'auth/weak-password') {
         setError('A senha deve ter pelo menos 6 caracteres.');
       } else {
-        setError(err.message);
+        setError(msg || 'Erro de autenticação.');
       }
     }
   };

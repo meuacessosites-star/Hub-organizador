@@ -352,7 +352,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         if (displayName !== user.displayName) {
           await firebaseUpdateProfile(user, { displayName });
         }
-        await setDoc(doc(db, 'usuarios', user.uid), { ...newProfile, origem: 'hub', origem_app: 'hub' }, { merge: true });
+        await setDoc(doc(db, 'usuarios', user.uid), { 
+          ...newProfile, 
+          email: user.email || '',
+          photoURL: user.photoURL || '',
+          uid: user.uid,
+          origem: 'Hub Organizador', 
+          origem_app: 'Hub Organizador',
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
         await setDoc(doc(db, 'users', user.uid), newProfile, { merge: true });
       } else {
         localStorage.setItem('hub_guest_profile', JSON.stringify(newProfile));

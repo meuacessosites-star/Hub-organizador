@@ -105,17 +105,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const syncUserToUsuariosCollection = async (u: User) => {
       try {
         const userDocRef = doc(db, 'usuarios', u.uid);
+        const nowIso = new Date().toISOString();
         await setDoc(userDocRef, {
           uid: u.uid,
           email: u.email || '',
-          displayName: u.displayName || '',
+          displayName: u.displayName || u.email?.split('@')[0] || '',
           photoURL: u.photoURL || '',
-          origem: 'hub',
-          origem_app: 'hub',
+          origem: 'Hub Organizador',
+          origem_app: 'Hub Organizador',
+          lastLogin: nowIso,
           lastLoginAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+          updatedAt: nowIso
         }, { merge: true });
-        console.log(`[Usuarios Sync] Sucesso ao atualizar usuário ${u.uid} na coleção 'usuarios' com origem: 'hub' e origem_app: 'hub'`);
+        console.log(`[Usuarios Sync] Sucesso ao atualizar usuário ${u.uid} na coleção 'usuarios' com origem_app: 'Hub Organizador'`);
       } catch (error) {
         console.error(`[Usuarios Sync Error] Falha ao atualizar documento em 'usuarios':`, error);
       }
@@ -159,11 +161,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       })
       .catch((err) => {
-        console.error('AuthContext: getRedirectResult error:', err);
-        if (err?.code === 'auth/unauthorized-domain') {
+        console.warn('AuthContext: getRedirectResult warning:', err);
+        const code = err?.code;
+        const msg = err?.message || '';
+        if (code === 'auth/unauthorized-domain') {
           setAuthError('Domínio não autorizado. Verifique se ' + window.location.hostname + ' está na lista de "Domínios Autorizados" no Firebase.');
-        } else {
-          setAuthError(err.message);
+        } else if (code === 'auth/api-key-not-valid' || msg.includes('api-key-not-valid')) {
+          // Do not display passive startup api-key error on screen automatically; log warning only
+          console.warn('Firebase API key is invalid or not yet configured.');
+        } else if (code && code !== 'auth/null-user') {
+          setAuthError(msg);
         }
       });
 
@@ -180,32 +187,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    console.log('AuthContext: starting signInWithGoogle using signInWithRedirect');
+    console.log('AuthContext: starting signInWithGoogle');
     setLoading(true);
     setAuthError(null);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({
-        prompt: 'select_account'
-      });
-      await signInWithRedirect(auth, provider);
-    } catch (err: any) {
-      setLoading(false);
-      console.error('AuthContext: Google Sign-In Error:', err);
-      
-      const errorCode = err?.code;
-      const errorMessage = err?.message;
-
-      let finalError = `Erro (${errorCode || 'unknown'}): ${errorMessage || 'Falha ao entrar com Google'}`;
-
-      if (errorCode === 'auth/operation-not-allowed') {
-        finalError = 'O login com Google não está ativado no Console do Firebase. Ative-o em Authentication > Sign-in method.';
-      } else if (errorCode === 'auth/unauthorized-domain') {
-        finalError = 'Domínio não autorizado. Adicione ' + window.location.hostname + ' aos "Domínios Autorizados" no Console do Firebase.';
-      } else if (errorCode === 'auth/internal-error') {
-        finalError = 'Erro interno do Firebase. Tente recarregar a página.';
+      // Try popup first (faster and better user experience for web)
+      const result = await signInWithPopup(auth, provider);
+      if (result && result.user) {
+        setAuthError(null);
+        setLoading(false);
+        return;
       }
+    } catch (popupErr: any) {
+      console.warn('AuthContext: signInWithPopup failed or blocked, attempting signInWithRedirect:', popupErr);
       
+      const code = popupErr?.code;
+      const msg = popupErr?.message || '';
+
+      // If error is related to popup blocked or closed, try redirect
+      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        try {
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectErr: any) {
+          console.error('AuthContext: signInWithRedirect Error:', redirectErr);
+        }
+      }
+
+      setLoading(false);
+      let finalError = `Erro ao entrar com Google: ${msg}`;
+
+      if (code === 'auth/api-key-not-valid' || msg.includes('api-key-not-valid')) {
+        finalError = 'A chave de API do Firebase precisa ser ativada para login com Google. No Console do Firebase, certifique-se que o login do Google está ativo e o domínio ' + window.location.hostname + ' está em Domínios Autorizados.';
+      } else if (code === 'auth/operation-not-allowed') {
+        finalError = 'O login com Google não está ativado no Console do Firebase. Ative em Authentication > Sign-in method.';
+      } else if (code === 'auth/unauthorized-domain') {
+        finalError = 'Domínio não autorizado. Adicione ' + window.location.hostname + ' aos "Domínios Autorizados" em Authentication > Configurações no Console do Firebase.';
+      } else if (code === 'auth/popup-closed-by-user') {
+        finalError = 'A janela de login do Google foi fechada antes de concluir.';
+      }
+
       setAuthError(finalError);
       throw new Error(finalError);
     }

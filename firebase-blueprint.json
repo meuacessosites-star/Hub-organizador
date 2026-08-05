@@ -1,5 +1,21 @@
 {
   "entities": {
+    "Usuario": {
+      "title": "Usuario",
+      "description": "Dados do perfil de usuario e origem do app",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "origem_app": { "type": "string" },
+        "origem": { "type": "string" },
+        "lastLogin": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "origem_app"]
+    },
     "User": {
       "title": "User",
       "description": "User profile data",
@@ -73,6 +89,10 @@
     }
   },
   "firestore": {
+    "/usuarios/{userId}": {
+      "schema": "Usuario",
+      "description": "Colecao principal de usuarios com registro de origem do app"
+    },
     "/users/{userId}": {
       "schema": "User",
       "description": "Main user document"
