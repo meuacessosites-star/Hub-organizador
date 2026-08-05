@@ -13,6 +13,7 @@ import { getLogoUrl, getDomainFromInput, getInitials, getPlatformColor, getPlatf
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { CategoryIcon } from './CategoryIcon';
+import { SmartImage } from './SmartImage';
 import { safeParse, safeSetItem } from '../lib/utils';
 import { useStorage } from '../hooks/useStorage';
 
@@ -660,13 +661,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                   {/* Large Logo Preview */}
                   <div className="w-16 h-16 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative dark:bg-[#0d0d0d] dark:border-white/[0.08]">
                     {finalLogoUrlPreview && logoPreviewErrorCount < 2 ? (
-                       <img referrerPolicy="no-referrer"
+                       <SmartImage
                          src={finalLogoUrlPreview}
                          alt="Logo Preview"
                          className="w-full h-full object-cover p-0"
-                         onError={() => {
-                           setLogoPreviewErrorCount(prev => prev + 1);
-                         }}
                        />
                     ) : (
                       <div
@@ -783,13 +781,10 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                                     }`}
                                   >
                                     {preset.logoUrl ? (
-                                      <img referrerPolicy="no-referrer"
+                                      <SmartImage
                                         src={preset.logoUrl}
                                         alt={preset.name}
                                         className="w-5 h-5 object-contain rounded"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).src = '';
-                                        }}
                                       />
                                     ) : (
                                       <div
@@ -840,7 +835,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                                     : 'border-neutral-200 bg-white text-neutral-700 dark:border-[#2a2d40] dark:bg-[#13141c]/40 dark:text-neutral-400'
                                 }`}
                               >
-                                <img referrerPolicy="no-referrer"
+                                <SmartImage
                                   src={presetLogoUrl}
                                   alt={preset.name}
                                   className="w-5 h-5 object-contain rounded"
@@ -1010,7 +1005,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           {preset.avatar.type === 'emoji' ? (
                             preset.avatar.value
                           ) : preset.avatar.type === 'image' ? (
-                            <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+                            <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                           ) : (
                             preset.name.slice(0, 2).toUpperCase()
                           )}
@@ -1234,7 +1229,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                             {preset.avatar.type === 'emoji' ? (
                               preset.avatar.value
                             ) : preset.avatar.type === 'image' ? (
-                              <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-contain" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+                              <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-contain" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                             ) : (
                               preset.name.slice(0, 2).toUpperCase()
                             )}
@@ -1563,8 +1558,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                         style={{ backgroundColor: selectedColor }}
                       >
                         {imageUrl ? (
-                          <img 
-                            referrerPolicy="no-referrer" 
+                          <SmartImage 
                             src={imageUrl} 
                             alt="Avatar preview" 
                             className="w-full h-full object-cover transition-transform duration-200"

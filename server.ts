@@ -418,6 +418,31 @@ async function startServer() {
     return trimmed;
   }
 
+  function getRefererForUrl(urlStr: string): string {
+    const lower = (urlStr || '').toLowerCase();
+    if (lower.includes('mlstatic.com') || lower.includes('mercadolivre') || lower.includes('mercadolibre')) {
+      return 'https://www.mercadolivre.com.br/';
+    }
+    if (lower.includes('amazon') || lower.includes('amzn') || lower.includes('a.co')) {
+      return 'https://www.amazon.com.br/';
+    }
+    if (lower.includes('shopee') || lower.includes('susercontent.com')) {
+      return 'https://shopee.com.br/';
+    }
+    if (lower.includes('aliexpress')) {
+      return 'https://pt.aliexpress.com/';
+    }
+    if (lower.includes('shein')) {
+      return 'https://br.shein.com/';
+    }
+    try {
+      const parsed = new URL(urlStr);
+      return `${parsed.protocol}//${parsed.hostname}/`;
+    } catch (e) {
+      return 'https://www.google.com/';
+    }
+  }
+
   async function downloadImageAsBase64(imageUrl: string): Promise<string | null> {
     if (!imageUrl || typeof imageUrl !== 'string') return null;
     if (imageUrl.startsWith('data:')) return imageUrl;
@@ -426,14 +451,31 @@ async function startServer() {
     if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
       targetUrl = formatShopeeImageUrl(targetUrl);
     }
+    if (targetUrl.startsWith('http://')) {
+      targetUrl = targetUrl.replace(/^http:\/\//i, 'https://');
+    }
 
+    const referer = getRefererForUrl(targetUrl);
     const headers: Record<string, string> = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-      'Referer': 'https://shopee.com.br/',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Referer': referer,
       'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
     };
 
     const urlsToTry: string[] = [targetUrl];
+    if (targetUrl.includes('mlstatic.com')) {
+      if (/-[IVDEC]\.(jpg|png|webp|gif)$/i.test(targetUrl)) {
+        urlsToTry.push(targetUrl.replace(/-[IVDEC]\.(jpg|png|webp|gif)$/i, '-O.jpg'));
+        urlsToTry.push(targetUrl.replace(/-[IVDEC]\.(jpg|png|webp|gif)$/i, '-F.jpg'));
+      } else if (/-O\.(jpg|png|webp|gif)$/i.test(targetUrl)) {
+        urlsToTry.push(targetUrl.replace(/-O\.(jpg|png|webp|gif)$/i, '-F.jpg'));
+      }
+      if (targetUrl.includes('/D_NQ_NP_2X_')) {
+        urlsToTry.push(targetUrl.replace('/D_NQ_NP_2X_', '/D_NQ_NP_'));
+      } else if (targetUrl.includes('/D_NQ_NP_')) {
+        urlsToTry.push(targetUrl.replace('/D_NQ_NP_', '/D_NQ_NP_2X_'));
+      }
+    }
     const match = targetUrl.match(/\/file\/([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
       const hash = match[1];
@@ -489,14 +531,31 @@ async function startServer() {
       if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
         targetUrl = formatShopeeImageUrl(targetUrl);
       }
+      if (targetUrl.startsWith('http://')) {
+        targetUrl = targetUrl.replace(/^http:\/\//i, 'https://');
+      }
 
+      const referer = getRefererForUrl(targetUrl);
       const headers: Record<string, string> = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://shopee.com.br/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Referer': referer,
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
       };
 
       const urlsToTry: string[] = [targetUrl];
+      if (targetUrl.includes('mlstatic.com')) {
+        if (/-[IVDEC]\.(jpg|png|webp|gif)$/i.test(targetUrl)) {
+          urlsToTry.push(targetUrl.replace(/-[IVDEC]\.(jpg|png|webp|gif)$/i, '-O.jpg'));
+          urlsToTry.push(targetUrl.replace(/-[IVDEC]\.(jpg|png|webp|gif)$/i, '-F.jpg'));
+        } else if (/-O\.(jpg|png|webp|gif)$/i.test(targetUrl)) {
+          urlsToTry.push(targetUrl.replace(/-O\.(jpg|png|webp|gif)$/i, '-F.jpg'));
+        }
+        if (targetUrl.includes('/D_NQ_NP_2X_')) {
+          urlsToTry.push(targetUrl.replace('/D_NQ_NP_2X_', '/D_NQ_NP_'));
+        } else if (targetUrl.includes('/D_NQ_NP_')) {
+          urlsToTry.push(targetUrl.replace('/D_NQ_NP_', '/D_NQ_NP_2X_'));
+        }
+      }
       const match = targetUrl.match(/\/file\/([a-zA-Z0-9_-]+)/);
       if (match && match[1]) {
         const hash = match[1];
@@ -517,8 +576,8 @@ async function startServer() {
           if (response.ok) break;
 
           const fallbackHeaders = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-            'Referer': 'https://shopee.com.br/'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Referer': referer
           };
           response = await fetch(currentUrl, { headers: fallbackHeaders, signal: AbortSignal.timeout(6000) });
           if (response.ok) break;
@@ -534,6 +593,18 @@ async function startServer() {
         const arrayBuffer = await response.arrayBuffer();
         return res.send(Buffer.from(arrayBuffer));
       }
+
+      try {
+        const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+        const corsResp = await fetch(corsProxyUrl, { signal: AbortSignal.timeout(6000) });
+        if (corsResp.ok) {
+          const contentType = corsResp.headers.get('content-type') || 'image/jpeg';
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          const arrayBuffer = await corsResp.arrayBuffer();
+          return res.send(Buffer.from(arrayBuffer));
+        }
+      } catch (e) {}
 
       // Serve a sleek SVG placeholder if image is unavailable or 404
       const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" fill="none">
@@ -867,6 +938,82 @@ async function startServer() {
     return null;
   }
 
+  function extractMercadoLivreId(urlStr: string): string | null {
+    try {
+      const cleanUrl = urlStr.trim();
+      const match = cleanUrl.match(/(MLB|MLA|MLM|MCO|MLU|MLC|MPE|MVE)[-]?(\d{7,14})/i);
+      if (match && match[1] && match[2]) {
+        return `${match[1].toUpperCase()}${match[2]}`;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  async function fetchMercadoLivreProductWithApi(urlStr: string): Promise<{ titulo: string; imagem: string | null; imagens: string[] } | null> {
+    const mlbId = extractMercadoLivreId(urlStr);
+    if (!mlbId) return null;
+
+    const endpointsToTry = [
+      `https://api.mercadolibre.com/items/${mlbId}`,
+      `https://api.mercadolibre.com/products/${mlbId}`
+    ];
+
+    for (const apiUrl of endpointsToTry) {
+      try {
+        const resp = await fetch(apiUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'application/json'
+          },
+          signal: AbortSignal.timeout(6000)
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && (data.title || data.name || data.id)) {
+            const title = (data.title || data.name || '').trim() || `Produto Mercado Livre (${mlbId})`;
+            let rawImages: string[] = [];
+
+            if (data.pictures && Array.isArray(data.pictures)) {
+              data.pictures.forEach((p: any) => {
+                let raw = p.secure_url || p.url;
+                if (raw) {
+                  if (raw.startsWith('http://')) raw = raw.replace(/^http:\/\//i, 'https://');
+                  const highRes = raw.replace(/-[IVDEC]\.(jpg|png|webp|gif)/i, '-O.jpg');
+                  if (!rawImages.includes(highRes)) rawImages.push(highRes);
+                }
+              });
+            }
+
+            if (rawImages.length === 0 && (data.secure_thumbnail || data.thumbnail)) {
+              let raw = data.secure_thumbnail || data.thumbnail;
+              if (raw) {
+                if (raw.startsWith('http://')) raw = raw.replace(/^http:\/\//i, 'https://');
+                const highRes = raw.replace(/-[IVDEC]\.(jpg|png|webp|gif)/i, '-O.jpg');
+                rawImages.push(highRes);
+              }
+            }
+
+            // Convert images to Base64 so frontend renders directly without proxy issues
+            const base64Images = await Promise.all(
+              rawImages.map(async (img) => (await downloadImageAsBase64(img)) || img)
+            );
+
+            return {
+              titulo: title,
+              imagem: base64Images.length > 0 ? base64Images[0] : null,
+              imagens: base64Images
+            };
+          }
+        }
+      } catch (err) {
+        console.error(`[Mercado Livre API] Error fetching ${apiUrl}:`, err);
+      }
+    }
+
+    return null;
+  }
+
   apiRouter.post("/fetch-metadata", async (req, res) => {
     try {
       const { url, apiKey, partnerId, secret, accessToken } = req.body;
@@ -890,6 +1037,30 @@ async function startServer() {
       console.log(`[Metadata Scraper] Resolved URL from redirect engine: ${resolvedUrlFromRedirects}`);
 
       const checkUrl = resolvedUrlFromRedirects || url;
+
+      const isMercadoLivre = checkUrl.toLowerCase().includes('mercadolivre') || 
+                             checkUrl.toLowerCase().includes('mercadolibre') || 
+                             checkUrl.toLowerCase().includes('mlstatic') ||
+                             checkUrl.toLowerCase().includes('mlb.link') ||
+                             url.toLowerCase().includes('mercadolivre') || 
+                             url.toLowerCase().includes('mercadolibre') ||
+                             url.toLowerCase().includes('mlb.link');
+
+      if (isMercadoLivre) {
+        console.log(`[Metadata Scraper] Target is Mercado Livre. Attempting official Mercado Livre API first...`);
+        const mlData = await fetchMercadoLivreProductWithApi(checkUrl) || await fetchMercadoLivreProductWithApi(url);
+        if (mlData && (mlData.titulo || (mlData.imagens && mlData.imagens.length > 0))) {
+          console.log(`[Metadata Scraper] Mercado Livre API success! Returning title and ${mlData.imagens.length} high-res images...`);
+          return res.json({
+            titulo: mlData.titulo,
+            imagem: mlData.imagem || (mlData.imagens.length > 0 ? mlData.imagens[0] : null),
+            imagens: mlData.imagens,
+            isMercadoLivre: true,
+            resolvedUrl: checkUrl
+          });
+        }
+        console.log(`[Metadata Scraper] Mercado Livre API did not return data. Continuing with scraping fallback...`);
+      }
 
       const isShopee = checkUrl.toLowerCase().includes('shopee.com') || 
                        checkUrl.toLowerCase().includes('shopee.com.br') || 
@@ -1002,7 +1173,11 @@ async function startServer() {
           lowerImg.includes('placeholder') || 
           lowerImg.includes('no-image') || 
           lowerImg.includes('not-found') ||
-          lowerImg.includes('transparent') ||
+          lowerImg.includes('transparent.gif') ||
+          lowerImg.includes('transparent.png') ||
+          lowerImg.includes('1x1') ||
+          lowerImg.includes('cleardot') ||
+          lowerImg.includes('blank.gif') ||
           lowerImg.includes('rating') ||
           lowerImg.includes('stars') ||
           lowerImg.includes('ad-') ||
@@ -1074,9 +1249,9 @@ async function startServer() {
 
       const isAliExpress = checkUrl.toLowerCase().includes('aliexpress') || url.toLowerCase().includes('aliexpress');
       const isShein = checkUrl.toLowerCase().includes('shein') || url.toLowerCase().includes('shein');
-      const isMercadoLivre = checkUrl.toLowerCase().includes('mercadolivre') || url.toLowerCase().includes('mercadolivre') || checkUrl.toLowerCase().includes('mlb.link') || url.toLowerCase().includes('mlb.link');
+      const isMercadoLivreSite = checkUrl.toLowerCase().includes('mercadolivre') || url.toLowerCase().includes('mercadolivre') || checkUrl.toLowerCase().includes('mlb.link') || url.toLowerCase().includes('mlb.link');
       const isMagalu = checkUrl.toLowerCase().includes('maga.lu') || url.toLowerCase().includes('maga.lu') || checkUrl.toLowerCase().includes('magazineluiza') || url.toLowerCase().includes('magazineluiza');
-      const isProtected = isShopee || isAliExpress || isShein || isMercadoLivre || isMagalu;
+      const isProtected = isShopee || isAliExpress || isShein || isMercadoLivreSite || isMagalu;
 
       // 2. Gemini fallback if scraping is incomplete, blocked, or generic for standard/protected sites
       const needsGeminiFallback = !scrapedTitle || isBlockedOrGeneric(scrapedTitle) || !scrapedImage || scrapedImages.length === 0 || isProtected;
@@ -1282,6 +1457,82 @@ Retorne APENAS um objeto JSON válido seguindo exatamente este esquema:
     } catch (error: any) {
       console.error("fetch-metadata error:", error);
       res.status(500).json({ error: error.message || "Erro ao processar o link" });
+    }
+  });
+
+  // Dedicated endpoint to extract Shopee product images using backend API keys securely
+  apiRouter.all("/shopee/extract-image", async (req, res) => {
+    try {
+      const url = req.body?.url || req.query?.url;
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ 
+          error: "URL da Shopee é obrigatória", 
+          usage: "Envie { 'url': 'https://shopee.com.br/...' } via POST ou ?url=... via GET" 
+        });
+      }
+
+      console.log(`[/api/shopee/extract-image] Recebida solicitação para extrair imagem da Shopee: ${url}`);
+
+      // Optional custom credentials passed in headers or body
+      const customCreds = {
+        apiKey: req.body?.apiKey || (req.headers['x-shopee-api-key'] as string),
+        partnerId: req.body?.partnerId || (req.headers['x-shopee-partner-id'] as string),
+        secret: req.body?.secret || (req.headers['x-shopee-secret'] as string),
+        accessToken: req.body?.accessToken || (req.headers['x-shopee-access-token'] as string)
+      };
+
+      // Extract metadata using Shopee API or fallback engine
+      const shopeeData = await fetchShopeeProductWithApi(url, customCreds);
+
+      if (shopeeData) {
+        let mainImg = shopeeData.imagem || (shopeeData.imagens.length > 0 ? shopeeData.imagens[0] : null);
+        let imgList = shopeeData.imagens || [];
+
+        if (mainImg) {
+          const b64 = await downloadImageAsBase64(mainImg);
+          if (b64) mainImg = b64;
+        }
+
+        if (imgList.length > 0) {
+          const b64s = await Promise.all(imgList.map(async (i) => (await downloadImageAsBase64(i)) || i));
+          imgList = b64s.filter(Boolean);
+        }
+
+        return res.json({
+          success: true,
+          title: shopeeData.titulo,
+          imageUrl: mainImg,
+          images: imgList,
+          originalUrl: url
+        });
+      }
+
+      // Fallback: try resolving redirects and downloading from CDN
+      const resolved = await resolveRedirects(url);
+      const match = resolved.match(/\/file\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        const hash = match[1];
+        const cdnUrl = `https://down-br.img.susercontent.com/file/${hash}`;
+        const b64 = await downloadImageAsBase64(cdnUrl);
+
+        return res.json({
+          success: true,
+          title: parseTitleFromUrl(resolved) || "Produto Shopee",
+          imageUrl: b64 || cdnUrl,
+          images: [b64 || cdnUrl],
+          originalUrl: url,
+          resolvedUrl: resolved
+        });
+      }
+
+      return res.status(404).json({
+        success: false,
+        error: "Não foi possível extrair a imagem do link fornecido. Verifique se o link da Shopee é válido."
+      });
+
+    } catch (error: any) {
+      console.error("[/api/shopee/extract-image] Error:", error);
+      res.status(500).json({ error: error.message || "Erro interno ao extrair imagem da Shopee" });
     }
   });
 

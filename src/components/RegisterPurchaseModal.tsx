@@ -5,6 +5,7 @@ import { X, ShoppingBag, Link, CreditCard, Receipt, AlignLeft, Trash2, Image as 
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { FullScreenCarousel } from './FullScreenCarousel';
+import { SmartImage } from './SmartImage';
 
 // Color wheel helpers
 const hexToHsv = (hex: string): { h: number; s: number; v: number } => {
@@ -163,13 +164,6 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       };
     }
 
-    if (lower.includes("mercadolivre.com") || lower.includes("mercadolivre.com.br") || lower.includes("mlb.link")) {
-      return {
-        title: "Aviso: Restrição de Imagens do Mercado Livre",
-        body: "O Mercado Livre utiliza proteções ativas da Cloudflare e bloqueio de imagens externas (hotlinking) em links encurtados ou compartilhados diretamente de aplicativos móveis. Se a imagem do produto não carregar ou ficar preta, salve a foto do produto diretamente de sua fonte e faça o upload manual clicando em \"Enviar\"."
-      };
-    }
-
     if (lower.includes("aliexpress") || lower.includes("a.aliexpress.com")) {
       return {
         title: "Aviso: Proteção de Imagem do AliExpress",
@@ -226,12 +220,52 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     return { asin: null, imageUrl: null };
   };
 
+  const extractMercadoLivreDetails = (urlStr: string): { mlbId: string | null; imageUrl: string | null } => {
+    try {
+      const url = new URL(urlStr.startsWith('http') ? urlStr : `https://${urlStr}`);
+      const pathname = url.pathname;
+      const match = (pathname + url.search).match(/(MLB|MLA|MLM|MCO|MLU|MLC|MPE|MVE)[-]?(\d{7,14})/i);
+      if (match && match[1] && match[2]) {
+        const mlbId = `${match[1].toUpperCase()}${match[2]}`;
+        return {
+          mlbId,
+          imageUrl: null
+        };
+      }
+    } catch (e) {}
+    return { mlbId: null, imageUrl: null };
+  };
+
   const extractNameFromUrl = (url: string): string => {
     if (!url) return '';
     try {
       const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
       const host = parsed.hostname.toLowerCase();
       const pathname = parsed.pathname;
+
+      // Special handling for Mercado Livre URLs
+      if (host.includes('mercadolivre') || host.includes('mercadolibre') || host.includes('mlstatic')) {
+        let mlSlug = '';
+        const mlbMatch = pathname.match(/\/(MLB-?\d+)-([^/]+)/i);
+        if (mlbMatch && mlbMatch[2]) {
+          mlSlug = mlbMatch[2];
+        } else {
+          const segments = pathname.split('/').filter(Boolean);
+          const candidates = segments.filter(s => !s.startsWith('MLB') && s !== 'p' && s !== 'up' && s.length > 3);
+          if (candidates.length > 0) mlSlug = candidates[0];
+        }
+
+        if (mlSlug) {
+          let clean = decodeURIComponent(mlSlug)
+            .replace(/_JM$/i, '')
+            .replace(/[-_]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (clean.length > 2) {
+            return clean.charAt(0).toUpperCase() + clean.slice(1);
+          }
+        }
+      }
 
       // Special handling for Amazon URLs (amazon.com, amazon.com.br, amzn.to, a.co)
       if (host.includes('amazon') || host.includes('amzn') || host.includes('a.co')) {
@@ -308,21 +342,14 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       return trimmed;
     }
 
+    if (trimmed.startsWith('/api/proxy-image?url=')) {
+      return trimmed;
+    }
+
     if (trimmed.startsWith('https://corsproxy.io/?')) {
       const extracted = decodeURIComponent(trimmed.replace('https://corsproxy.io/?', ''));
       if (extracted && (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash'))) {
         return extracted;
-      }
-      return trimmed;
-    }
-
-    if (trimmed.startsWith('/api/proxy-image?url=')) {
-      const extracted = decodeURIComponent(trimmed.replace('/api/proxy-image?url=', ''));
-      if (extracted) {
-        if (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash')) {
-          return extracted;
-        }
-        return `https://wsrv.nl/?url=${encodeURIComponent(extracted)}`;
       }
       return trimmed;
     }
@@ -337,7 +364,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       }
     }
 
-    // Direct URLs for Amazon, Unsplash, and standard images (no proxy needed in <img> tags)
+    // Direct URLs for Amazon, Unsplash, and standard images
     if (
       rawUrl.includes('amazon') ||
       rawUrl.includes('media-amazon') ||
@@ -347,9 +374,15 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       return rawUrl;
     }
 
-    // Proxy for Shopee CDN images
-    if (rawUrl.includes('susercontent.com') || rawUrl.includes('shopee')) {
-      return `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}`;
+    // Proxy for Shopee and Mercado Livre CDN images
+    if (
+      rawUrl.includes('susercontent.com') ||
+      rawUrl.includes('shopee') ||
+      rawUrl.includes('mlstatic.com') ||
+      rawUrl.includes('mercadolivre') ||
+      rawUrl.includes('mercadolibre')
+    ) {
+      return `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
     }
 
     return rawUrl;
@@ -363,20 +396,26 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     const target = e.currentTarget;
     const currentSrc = target.src || '';
 
-    if (currentSrc.includes('corsproxy.io/?')) {
+    if (currentSrc.includes('/api/proxy-image?url=')) {
+      const raw = decodeURIComponent(currentSrc.split('/api/proxy-image?url=')[1] || '');
+      if (raw) {
+        target.src = `https://corsproxy.io/?${encodeURIComponent(raw)}`;
+        return;
+      }
+    } else if (currentSrc.includes('corsproxy.io/?')) {
       const raw = decodeURIComponent(currentSrc.split('corsproxy.io/?')[1] || '');
-      if (raw && raw !== currentSrc) {
-        target.src = raw;
+      if (raw) {
+        target.src = `https://wsrv.nl/?url=${encodeURIComponent(raw)}`;
         return;
       }
     } else if (currentSrc.includes('wsrv.nl/?url=')) {
       const raw = decodeURIComponent(currentSrc.split('wsrv.nl/?url=')[1] || '');
-      if (raw && raw !== currentSrc) {
+      if (raw) {
         target.src = raw;
         return;
       }
-    } else if (currentSrc.startsWith('http') && !currentSrc.includes('wsrv.nl') && !currentSrc.includes('unsplash.com')) {
-      target.src = `https://wsrv.nl/?url=${encodeURIComponent(currentSrc)}`;
+    } else if (currentSrc.startsWith('http') && !currentSrc.startsWith('data:')) {
+      target.src = `/api/proxy-image?url=${encodeURIComponent(currentSrc)}`;
       return;
     }
 
@@ -715,29 +754,72 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       }
     } else {
       // Fallback para Vercel static SPA ou quando a API backend não está presente
+      const mlDetails = extractMercadoLivreDetails(productLink);
       const amazonDetails = extractAmazonAsinAndImage(productLink);
       const extractedTitle = extractNameFromUrl(productLink) || "Produto Importado";
       if (!productName.trim()) {
         setProductName(extractedTitle);
       }
 
-      if (amazonDetails.imageUrl) {
-        setProductImages([amazonDetails.imageUrl]);
-        addToast("Título e imagem real da Amazon extraídos com sucesso! ✨", "success");
-      } else {
-        const queryTerm = extractedTitle
-          .toLowerCase()
-          .replace(/comprar|preço|oferta|promoção|shopee|amazon|mercado livre|frete grátis/gi, '')
-          .replace(/[^\w\s]/gi, '')
-          .trim()
-          .split(/\s+/)
-          .slice(0, 3)
-          .join(' ') || "product";
+      let mlSuccess = false;
+      if (mlDetails.mlbId) {
+        const endpoints = [
+          `https://api.mercadolibre.com/items/${mlDetails.mlbId}`,
+          `https://api.mercadolibre.com/products/${mlDetails.mlbId}`
+        ];
+        for (const ep of endpoints) {
+          try {
+            const mlRes = await fetch(ep, { signal: AbortSignal.timeout(5000) });
+            if (mlRes.ok) {
+              const mlData = await mlRes.json();
+              if (mlData && (mlData.title || mlData.name)) {
+                const title = mlData.title || mlData.name;
+                if (!productName.trim()) setProductName(title);
+                const mlImgs: string[] = [];
+                if (mlData.pictures && Array.isArray(mlData.pictures)) {
+                  mlData.pictures.forEach((p: any) => {
+                    let url = p.secure_url || p.url || '';
+                    if (url) {
+                      if (url.startsWith('http://')) url = url.replace(/^http:\/\//i, 'https://');
+                      url = url.replace(/-[IVDEC]\.(jpg|png|webp|gif)/i, '-O.jpg');
+                      if (!mlImgs.includes(url)) mlImgs.push(url);
+                    }
+                  });
+                }
+                if (mlImgs.length > 0) {
+                  setProductImages(mlImgs);
+                  addToast(`Título e ${mlImgs.length} imagens reais do Mercado Livre extraídos com sucesso! ✨`, "success");
+                  mlSuccess = true;
+                  break;
+                }
+              }
+            }
+          } catch (e) {}
+        }
+      }
 
-        const unsplashImg = `https://images.unsplash.com/featured/500x500/?${encodeURIComponent(queryTerm)},product`;
+      if (!mlSuccess) {
+        if (amazonDetails.imageUrl) {
+          setProductImages([amazonDetails.imageUrl]);
+          addToast("Título e imagem real da Amazon extraídos com sucesso! ✨", "success");
+        } else if (mlDetails.imageUrl) {
+          setProductImages([mlDetails.imageUrl]);
+          addToast("Título e imagem real do Mercado Livre extraídos com sucesso! ✨", "success");
+        } else {
+          const queryTerm = extractedTitle
+            .toLowerCase()
+            .replace(/comprar|preço|oferta|promoção|shopee|amazon|mercado livre|frete grátis/gi, '')
+            .replace(/[^\w\s]/gi, '')
+            .trim()
+            .split(/\s+/)
+            .slice(0, 3)
+            .join(' ') || "product";
 
-        setProductImages((prev) => (prev.length > 0 ? prev : [unsplashImg]));
-        addToast("Dados do produto preenchidos com sucesso! ✨", "success");
+          const unsplashImg = `https://images.unsplash.com/featured/500x500/?${encodeURIComponent(queryTerm)},product`;
+
+          setProductImages((prev) => (prev.length > 0 ? prev : [unsplashImg]));
+          addToast("Dados do produto preenchidos com sucesso! ✨", "success");
+        }
       }
     }
 
@@ -791,7 +873,6 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         const lowerLink = (item.link || "").toLowerCase();
         return lowerName.includes("aliexpress") || lowerLink.includes("aliexpress") || lowerLink.includes("a.aliexpress") ||
                lowerName.includes("shein") || lowerLink.includes("shein") || lowerLink.includes("shein.top") ||
-               lowerName.includes("mercado") || lowerLink.includes("mercadolivre") || lowerLink.includes("mlb.link") ||
                lowerLink.includes("bit.ly") || lowerLink.includes("tinyurl") || lowerLink.includes("maga.lu");
       });
       if (hasProtected) {
@@ -1430,13 +1511,12 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                     <Upload className="w-8 h-8" />
                     <span className="text-xs font-bold">Trocar por Foto Real</span>
                   </div>
-                  <img
+                  <SmartImage
                     id="exibicao-da-foto"
-                    src={getProxiedImageUrl(productImages[0])}
+                    src={productImages[0]}
                     alt="Preview Principal"
-                    className="w-full h-full object-contain"
-                    referrerPolicy="no-referrer"
-                    onError={handleImageError}
+                    objectFit="contain"
+                    className="w-full h-full"
                   />
                 </div>
               )}
@@ -1447,13 +1527,12 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   {productImages.map((img, idx) => (
                     <div key={`img-gallery-${idx}-${img.substring(0, 10)}`} className="relative aspect-square rounded-lg border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-neutral-100 dark:bg-neutral-800/30 group flex items-center justify-center">
                       <ImageIcon className="absolute w-5 h-5 text-neutral-300 dark:text-neutral-700 z-0" />
-                      <img
-                        referrerPolicy="no-referrer"
-                        src={getProxiedImageUrl(img)}
+                      <SmartImage
+                        src={img}
                         alt="Foto do produto"
-                        onError={handleImageError}
+                        objectFit="contain"
                         onClick={() => setFullScreenCarousel({ images: productImages.map(formatShopeeCdnUrl), initialIndex: idx })}
-                        className="relative z-10 w-full h-full object-contain p-1 bg-transparent cursor-pointer hover:opacity-90 transition-all duration-300"
+                        className="relative z-10 w-full h-full p-1 bg-transparent cursor-pointer hover:opacity-90 transition-all duration-300"
                       />
                       <button
                         type="button"

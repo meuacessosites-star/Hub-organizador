@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SmartImage } from './SmartImage';
 
 interface FullScreenCarouselProps {
   images: string[];
@@ -28,7 +29,7 @@ export const FullScreenCarousel: React.FC<FullScreenCarouselProps> = ({ images, 
       </div>
       
       <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <button className="absolute left-4 text-white p-2" onClick={prev}>
+        <button className="absolute left-4 text-white p-2 z-[60]" onClick={prev}>
           <ChevronLeft className="w-12 h-12" />
         </button>
         
@@ -36,68 +37,32 @@ export const FullScreenCarousel: React.FC<FullScreenCarouselProps> = ({ images, 
           {(() => {
             const currentRaw = images[currentIndex] || '';
             if (!currentRaw) return null;
-            let rawUrl = currentRaw.trim();
-            if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:')) {
-              // use as is
-            } else if (rawUrl.startsWith('https://corsproxy.io/?')) {
-              const extracted = decodeURIComponent(rawUrl.replace('https://corsproxy.io/?', ''));
-              if (extracted && (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash'))) {
-                rawUrl = extracted;
-              }
-            } else if (rawUrl.startsWith('/api/proxy-image?url=')) {
-              const extracted = decodeURIComponent(rawUrl.replace('/api/proxy-image?url=', ''));
-              if (extracted) {
-                if (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash')) {
-                  rawUrl = extracted;
-                } else {
-                  rawUrl = `https://wsrv.nl/?url=${encodeURIComponent(extracted)}`;
-                }
-              }
-            } else {
-              if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
-                if (rawUrl.startsWith('//')) {
-                  rawUrl = `https:${rawUrl}`;
-                } else {
-                  const cleanHash = rawUrl.replace(/^\/?(file\/)?/, '');
-                  rawUrl = `https://down-br.img.susercontent.com/file/${cleanHash}`;
-                }
-              }
-
-              if (
-                !rawUrl.includes('amazon') &&
-                !rawUrl.includes('media-amazon') &&
-                !rawUrl.includes('ssl-images-amazon') &&
-                !rawUrl.includes('unsplash.com') &&
-                (rawUrl.includes('susercontent.com') || rawUrl.includes('shopee'))
-              ) {
-                rawUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}`;
-              }
-            }
 
             return (
-              <motion.img
+              <motion.div
                 key={currentIndex}
-                src={rawUrl}
-                alt="Foto do produto"
-                referrerPolicy="no-referrer"
-                onError={(e: any) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.style.opacity = '0.3';
-                }}
                 initial={{ opacity: 0, x: 100 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                className="max-w-[90vw] max-h-[80vh] object-contain"
-              />
+                className="max-w-[90vw] max-h-[80vh] w-full h-full flex items-center justify-center"
+              >
+                <SmartImage
+                  src={currentRaw}
+                  alt="Foto do produto"
+                  objectFit="contain"
+                  className="max-w-[90vw] max-h-[80vh]"
+                  containerClassName="w-full h-full flex items-center justify-center"
+                />
+              </motion.div>
             );
           })()}
         </AnimatePresence>
         
-        <button className="absolute right-4 text-white p-2" onClick={next}>
+        <button className="absolute right-4 text-white p-2 z-[60]" onClick={next}>
           <ChevronRight className="w-12 h-12" />
         </button>
         
-        <div className="absolute bottom-4 text-white text-lg">
+        <div className="absolute bottom-4 text-white text-lg font-medium">
           {currentIndex + 1} / {images.length}
         </div>
       </div>

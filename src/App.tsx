@@ -171,7 +171,7 @@ export default function App() {
   // Filter platforms by ownership (STRICT SECURITY)
   const userPlatforms = useMemo(() => {
     return platforms.filter((plat) => {
-      return user && plat.ownerId === user.uid;
+      return user && (!plat.ownerId || plat.ownerId === user.uid);
     });
   }, [platforms, user?.uid]);
 

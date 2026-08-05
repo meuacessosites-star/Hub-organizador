@@ -318,6 +318,7 @@ export function useStorage() {
     });
 
     setPlatforms(localPlats);
+    platformsRef.current = localPlats;
 
     const unsubs: (() => void)[] = [];
 
@@ -384,13 +385,33 @@ export function useStorage() {
             const data = d.data() as Platform;
             return { ...data, id: d.id, ownerId: user.uid };
           });
-          setPlatforms(cloudPlats);
-          platformsRef.current = cloudPlats;
-          safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
+          
+          // Merge with any local platforms that haven't synced to cloud yet
+          const cloudIds = new Set(cloudPlats.map(p => p.id));
+          const localOnlyPlats = platformsRef.current.filter(p => !cloudIds.has(p.id));
+          const mergedPlats = [...cloudPlats, ...localOnlyPlats];
+
+          setPlatforms(mergedPlats);
+          platformsRef.current = mergedPlats;
+          safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(mergedPlats));
+
+          // Sync local-only platforms up to cloud
+          localOnlyPlats.forEach(p => {
+            fbSet('platforms', p.id, { ...p, ownerId: user.uid });
+          });
         } else {
-          setPlatforms([]);
-          platformsRef.current = [];
-          safeSetItem(`hub_user_${user.uid}_platforms`, '[]');
+          // If cloud is empty, check if we have local platforms before wiping
+          if (platformsRef.current.length > 0) {
+            console.log(`useStorage: Cloud platforms empty, syncing ${platformsRef.current.length} local platforms to Firestore`);
+            platformsRef.current.forEach(p => {
+              fbSet('platforms', p.id, { ...p, ownerId: user.uid });
+            });
+            safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(platformsRef.current));
+          } else {
+            setPlatforms([]);
+            platformsRef.current = [];
+            safeSetItem(`hub_user_${user.uid}_platforms`, '[]');
+          }
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/platforms`);
@@ -560,6 +581,23 @@ export function useStorage() {
     return () => clearTimeout(handler);
   }, [profilePresets, user, authLoading, isDemoActive]);
 
+  // Sanitize data before sending to Firestore to strip out any `undefined` fields that cause setDoc to fail
+  const sanitizeForFirestore = useCallback((obj: any): any => {
+    if (obj === null || obj === undefined) return null;
+    if (Array.isArray(obj)) return obj.map(sanitizeForFirestore).filter(x => x !== undefined && x !== null);
+    if (typeof obj === 'object' && !(obj instanceof Date)) {
+      const clean: any = {};
+      for (const key of Object.keys(obj)) {
+        const val = obj[key];
+        if (val !== undefined) {
+          clean[key] = sanitizeForFirestore(val);
+        }
+      }
+      return clean;
+    }
+    return obj;
+  }, []);
+
   // Firestore DB Helpers
   const fbSet = useCallback(async (collectionName: string, id: string, data: any) => {
     if (isDemoActive) {
@@ -568,8 +606,9 @@ export function useStorage() {
     }
     if (user && !isGuest) {
       try {
-        console.log(`[Firestore Write Start] Sincronizando com Firestore: coleção='${collectionName}', docId='${id}'`, data);
-        await setDoc(doc(db, 'users', user.uid, collectionName, id), data);
+        const cleanData = sanitizeForFirestore(data);
+        console.log(`[Firestore Write Start] Sincronizando com Firestore: coleção='${collectionName}', docId='${id}'`, cleanData);
+        await setDoc(doc(db, 'users', user.uid, collectionName, id), cleanData);
         console.log(`[Firestore Write Success] Sucesso ao persistir no Firestore: coleção='${collectionName}', docId='${id}'`);
       } catch (err) {
         console.error(`[Firestore Write Error] Falha ao persistir no Firestore: coleção='${collectionName}', docId='${id}'`, err);
@@ -578,7 +617,7 @@ export function useStorage() {
     } else {
       console.log(`[Firestore Write Ignored] Ignorado (usuário visitante/não autenticado): coleção='${collectionName}', docId='${id}'`);
     }
-  }, [isDemoActive, user, isGuest]);
+  }, [isDemoActive, user, isGuest, sanitizeForFirestore]);
 
   const fbDelete = useCallback(async (collectionName: string, id: string) => {
     if (isDemoActive) {

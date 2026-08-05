@@ -8,6 +8,7 @@ import { db } from '../firebase';
 import { useAuth, UserProfileData } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useStorage } from '../hooks/useStorage';
+import { SmartImage } from './SmartImage';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -351,6 +352,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         if (displayName !== user.displayName) {
           await firebaseUpdateProfile(user, { displayName });
         }
+        await setDoc(doc(db, 'usuarios', user.uid), { ...newProfile, origem: 'hub', origem_app: 'hub' }, { merge: true });
         await setDoc(doc(db, 'users', user.uid), newProfile, { merge: true });
       } else {
         localStorage.setItem('hub_guest_profile', JSON.stringify(newProfile));
@@ -390,7 +392,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     if (avatarTab === 'image' && imageUrl) {
       return (
         <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-neutral-100 dark:bg-neutral-900">
-          <img referrerPolicy="no-referrer" src={imageUrl} alt="preview" className="w-full h-full object-contain transition-transform duration-200" style={{ transform: `scale(${avatarZoom})` }} />
+          <SmartImage src={imageUrl} alt="preview" className="w-full h-full object-contain transition-transform duration-200" style={{ transform: `scale(${avatarZoom})` }} />
         </div>
       );
     }
@@ -409,7 +411,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       );
     }
     if (avatarTab === 'google' && user.photoURL) {
-      return <img referrerPolicy="no-referrer" src={user.photoURL} alt="google preview" className="w-full h-full object-cover rounded-full"/>;
+      return <SmartImage src={user.photoURL} alt="google preview" className="w-full h-full object-cover rounded-full"/>;
     }
     
     // Fallback

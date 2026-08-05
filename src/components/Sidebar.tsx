@@ -9,6 +9,7 @@ import { LayoutGrid, Settings2, X, Search, HelpCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from './Logo';
 import { CategoryIcon } from './CategoryIcon';
+import { SmartImage } from './SmartImage';
 
 interface SidebarProps {
   categories: Category[];
@@ -44,7 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (userProfile?.avatar) {
       const { type, value, bgColor } = userProfile.avatar;
       if (type === 'image' && value) {
-        return <img referrerPolicy="no-referrer" src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" />;
+        return <SmartImage src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" />;
       }
       if (type === 'emoji') {
         return (
@@ -61,12 +62,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         );
       }
       if (type === 'google' && user.photoURL) {
-        return <img referrerPolicy="no-referrer" src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
+        return <SmartImage src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
       }
     }
 
     if (user.photoURL) {
-      return <img referrerPolicy="no-referrer" src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
+      return <SmartImage src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
     }
 
     return (

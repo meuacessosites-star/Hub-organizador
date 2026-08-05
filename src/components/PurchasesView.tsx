@@ -27,6 +27,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { getPlatformColor, getInitials, getDomainFromInput, getLogoUrl } from '../utils/logoHelper';
+import { SmartImage } from './SmartImage';
 
 interface PurchasesViewProps {
   platforms: Platform[];
@@ -50,21 +51,14 @@ const formatImageUrl = (url: string) => {
     return trimmed;
   }
 
+  if (trimmed.startsWith('/api/proxy-image?url=')) {
+    return trimmed;
+  }
+
   if (trimmed.startsWith('https://corsproxy.io/?')) {
     const extracted = decodeURIComponent(trimmed.replace('https://corsproxy.io/?', ''));
     if (extracted && (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash'))) {
       return extracted;
-    }
-    return trimmed;
-  }
-
-  if (trimmed.startsWith('/api/proxy-image?url=')) {
-    const extracted = decodeURIComponent(trimmed.replace('/api/proxy-image?url=', ''));
-    if (extracted) {
-      if (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash')) {
-        return extracted;
-      }
-      return `https://wsrv.nl/?url=${encodeURIComponent(extracted)}`;
     }
     return trimmed;
   }
@@ -79,7 +73,7 @@ const formatImageUrl = (url: string) => {
     }
   }
 
-  // Direct URLs for Amazon, Unsplash, and standard images (no proxy needed in <img> tags)
+  // Direct URLs for Amazon, Unsplash, and standard images
   if (
     rawUrl.includes('amazon') ||
     rawUrl.includes('media-amazon') ||
@@ -91,7 +85,7 @@ const formatImageUrl = (url: string) => {
 
   // Proxy for Shopee CDN images
   if (rawUrl.includes('susercontent.com') || rawUrl.includes('shopee')) {
-    return `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}`;
+    return `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
   }
 
   return rawUrl;
@@ -101,20 +95,26 @@ const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
   const target = e.currentTarget;
   const currentSrc = target.src || '';
 
-  if (currentSrc.includes('corsproxy.io/?')) {
+  if (currentSrc.includes('/api/proxy-image?url=')) {
+    const raw = decodeURIComponent(currentSrc.split('/api/proxy-image?url=')[1] || '');
+    if (raw) {
+      target.src = `https://corsproxy.io/?${encodeURIComponent(raw)}`;
+      return;
+    }
+  } else if (currentSrc.includes('corsproxy.io/?')) {
     const raw = decodeURIComponent(currentSrc.split('corsproxy.io/?')[1] || '');
-    if (raw && raw !== currentSrc) {
-      target.src = raw;
+    if (raw) {
+      target.src = `https://wsrv.nl/?url=${encodeURIComponent(raw)}`;
       return;
     }
   } else if (currentSrc.includes('wsrv.nl/?url=')) {
     const raw = decodeURIComponent(currentSrc.split('wsrv.nl/?url=')[1] || '');
-    if (raw && raw !== currentSrc) {
+    if (raw) {
       target.src = raw;
       return;
     }
-  } else if (currentSrc.startsWith('http') && !currentSrc.includes('wsrv.nl') && !currentSrc.includes('unsplash.com')) {
-    target.src = `https://wsrv.nl/?url=${encodeURIComponent(currentSrc)}`;
+  } else if (currentSrc.startsWith('http') && !currentSrc.startsWith('data:')) {
+    target.src = `/api/proxy-image?url=${encodeURIComponent(currentSrc)}`;
     return;
   }
 
@@ -157,16 +157,12 @@ const CardCarousel = ({ images, productName, onOpenFullScreen }: { images: strin
           animate={{ x: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
-          <motion.img
+          <SmartImage
             key={currentIndex}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            src={formatImageUrl(images[currentIndex])}
-            referrerPolicy="no-referrer"
-            onError={handleImgError}
+            src={images[currentIndex]}
             alt={`${productName} - Foto ${currentIndex + 1}`}
-            className="max-w-full max-h-full object-contain select-none shadow-2xl rounded-sm"
+            objectFit="contain"
+            className="max-w-full max-h-full select-none shadow-2xl rounded-sm"
           />
         </motion.div>
       </div>
@@ -187,7 +183,7 @@ const CardCarousel = ({ images, productName, onOpenFullScreen }: { images: strin
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
-              <img referrerPolicy="no-referrer" src={formatImageUrl(img)} onError={handleImgError} alt="Foto do produto" className="w-full h-full object-cover"/>
+              <SmartImage src={img} alt="Foto do produto" className="w-full h-full object-cover"/>
             </button>
           ))}
         </div>
@@ -804,21 +800,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                       <div className="flex items-center gap-3">
                         {/* Logo container - Standardized App Icon Style */}
                         <div className="w-8 h-8 rounded-lg bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-[0_6px_12px_-4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] border border-white/10 transition-transform hover:scale-105 active:scale-95 group">
-                          <img referrerPolicy="no-referrer"
+                          <SmartImage
                             src={getLogoUrl(purchase.platformName, purchase.platformUrl)}
                             alt={purchase.platformName}
                             className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              if (target.parentElement) {
-                                target.parentElement.style.backgroundColor = getPlatformColor(purchase.platformName);
-                                const span = document.createElement('span');
-                                span.className = "text-white font-extrabold text-[9px] tracking-tight";
-                                span.textContent = getInitials(purchase.platformName);
-                                target.parentElement.appendChild(span);
-                              }
-                            }}
                           />
                         </div>
                         <div className="flex flex-col">
@@ -927,7 +912,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                                       className="w-5 h-5 rounded overflow-hidden shrink-0 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/60 shadow-sm cursor-pointer hover:opacity-85 transition-opacity relative group"
                                       title="Ver em tela cheia"
                                     >
-                                      <img referrerPolicy="no-referrer" src={formatImageUrl(item.image)} onError={handleImgError} alt={item.name || "Item"} className="w-full h-full object-cover pointer-events-none"/>
+                                      <SmartImage src={item.image} alt={item.name || "Item"} className="w-full h-full object-cover pointer-events-none"/>
                                       {item.images && item.images.length > 1 && (
                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-[8px] font-extrabold text-white opacity-0 group-hover:opacity-100 transition-opacity">
                                           +{item.images.length}

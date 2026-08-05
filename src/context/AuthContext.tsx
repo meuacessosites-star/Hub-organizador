@@ -12,7 +12,7 @@ import {
   updateProfile, 
   sendPasswordResetEmail 
 } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 import { handleFirestoreError, OperationType } from '../utils/firebaseErrors';
@@ -102,7 +102,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+    const syncUserToUsuariosCollection = async (u: User) => {
+      try {
+        const userDocRef = doc(db, 'usuarios', u.uid);
+        await setDoc(userDocRef, {
+          uid: u.uid,
+          email: u.email || '',
+          displayName: u.displayName || '',
+          photoURL: u.photoURL || '',
+          origem: 'hub',
+          origem_app: 'hub',
+          lastLoginAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        console.log(`[Usuarios Sync] Sucesso ao atualizar usuário ${u.uid} na coleção 'usuarios' com origem: 'hub' e origem_app: 'hub'`);
+      } catch (error) {
+        console.error(`[Usuarios Sync Error] Falha ao atualizar documento em 'usuarios':`, error);
+      }
+    };
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setAuthError(null);
         localStorage.removeItem('hub_guest_mode');
@@ -110,15 +129,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(u);
         setLoading(false);
         
+        // Save or update user document in 'usuarios' collection with origin tags
+        await syncUserToUsuariosCollection(u);
+
         // Listen for profile changes in the background (NON-BLOCKING)
-        unsubscribeProfile = onSnapshot(doc(db, 'users', u.uid), (docSnap) => {
+        unsubscribeProfile = onSnapshot(doc(db, 'usuarios', u.uid), (docSnap) => {
           if (docSnap.exists()) {
             setUserProfile(docSnap.data() as UserProfileData);
           } else {
             setUserProfile(null);
           }
         }, (error) => {
-          handleFirestoreError(error, OperationType.GET, `users/${u.uid}`);
+          handleFirestoreError(error, OperationType.GET, `usuarios/${u.uid}`);
         });
       } else {
         setUserProfile(null);
@@ -129,10 +151,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Handle Redirect Result for Google Sign-In
     getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
+      .then(async (result) => {
+        if (result && result.user) {
           console.log('AuthContext: redirect login successful', result.user.email);
           setAuthError(null);
+          await syncUserToUsuariosCollection(result.user);
         }
       })
       .catch((err) => {
@@ -157,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    console.log('AuthContext: starting signInWithGoogle');
+    console.log('AuthContext: starting signInWithGoogle using signInWithRedirect');
     setLoading(true);
     setAuthError(null);
     try {
@@ -165,24 +188,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       provider.setCustomParameters({
         prompt: 'select_account'
       });
-      
-      try {
-        console.log('AuthContext: calling signInWithPopup');
-        const result = await signInWithPopup(auth, provider);
-        console.log('AuthContext: signInWithPopup successful', result.user.email);
-        setLoading(false);
-      } catch (popupErr: any) {
-        console.warn('AuthContext: signInWithPopup error/blocked, checking fallback:', popupErr);
-        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.message?.includes('popup')) {
-          console.log('AuthContext: popup blocked or closed, falling back to redirect');
-          await signInWithRedirect(auth, provider);
-        } else {
-          throw popupErr;
-        }
-      }
+      await signInWithRedirect(auth, provider);
     } catch (err: any) {
       setLoading(false);
-      console.error('AuthContext: Google Sign-In Error Full Object:', err);
+      console.error('AuthContext: Google Sign-In Error:', err);
       
       const errorCode = err?.code;
       const errorMessage = err?.message;
@@ -193,8 +202,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         finalError = 'O login com Google não está ativado no Console do Firebase. Ative-o em Authentication > Sign-in method.';
       } else if (errorCode === 'auth/unauthorized-domain') {
         finalError = 'Domínio não autorizado. Adicione ' + window.location.hostname + ' aos "Domínios Autorizados" no Console do Firebase.';
-      } else if (errorCode === 'auth/popup-closed-by-user') {
-        finalError = 'A janela de login foi fechada. Tente clicar no botão novamente.';
       } else if (errorCode === 'auth/internal-error') {
         finalError = 'Erro interno do Firebase. Tente recarregar a página.';
       }

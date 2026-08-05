@@ -13,6 +13,7 @@ import { useToast } from '../context/ToastContext';
 import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useStorage } from '../hooks/useStorage';
+import { SmartImage } from './SmartImage';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -456,8 +457,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   {avatarTab === 'emoji' ? (
                     selectedEmoji
                   ) : avatarTab === 'image' && imageUrl ? (
-                    <img 
-                      referrerPolicy="no-referrer" 
+                    <SmartImage 
                       src={imageUrl} 
                       alt="profile" 
                       className="w-full h-full object-cover rounded-full transition-transform duration-200" 
@@ -625,7 +625,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           {preset.avatar.type === 'emoji' ? (
                             preset.avatar.value
                           ) : preset.avatar.type === 'image' ? (
-                            <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+                            <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                           ) : (
                             preset.name.slice(0, 2).toUpperCase()
                           )}
@@ -848,7 +848,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             {preset.avatar.type === 'emoji' ? (
                               preset.avatar.value
                             ) : preset.avatar.type === 'image' ? (
-                              <img referrerPolicy="no-referrer" src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+                              <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                             ) : (
                               preset.name.slice(0, 2).toUpperCase()
                             )}
@@ -1225,8 +1225,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         className="w-16 h-16 rounded-full border-2 border-indigo-500/20 overflow-hidden flex items-center justify-center shadow-lg transition-colors bg-white dark:bg-black"
                       >
                         {imageUrl ? (
-                          <img 
-                            referrerPolicy="no-referrer" 
+                          <SmartImage 
                             src={imageUrl} 
                             alt="Avatar preview" 
                             className="w-full h-full object-cover transition-transform duration-200"

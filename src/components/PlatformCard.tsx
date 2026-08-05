@@ -33,6 +33,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { getInitials, getPlatformColor, getDomainFromInput, getLogoUrl } from '../utils/logoHelper';
+import { SmartImage } from './SmartImage';
 
 const formatImageUrl = (url: string) => {
   if (!url) return '';
@@ -42,21 +43,14 @@ const formatImageUrl = (url: string) => {
     return trimmed;
   }
 
+  if (trimmed.startsWith('/api/proxy-image?url=')) {
+    return trimmed;
+  }
+
   if (trimmed.startsWith('https://corsproxy.io/?')) {
     const extracted = decodeURIComponent(trimmed.replace('https://corsproxy.io/?', ''));
     if (extracted && (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash'))) {
       return extracted;
-    }
-    return trimmed;
-  }
-
-  if (trimmed.startsWith('/api/proxy-image?url=')) {
-    const extracted = decodeURIComponent(trimmed.replace('/api/proxy-image?url=', ''));
-    if (extracted) {
-      if (extracted.includes('amazon') || extracted.includes('media-amazon') || extracted.includes('ssl-images-amazon') || extracted.includes('unsplash')) {
-        return extracted;
-      }
-      return `https://wsrv.nl/?url=${encodeURIComponent(extracted)}`;
     }
     return trimmed;
   }
@@ -71,7 +65,7 @@ const formatImageUrl = (url: string) => {
     }
   }
 
-  // Direct URLs for Amazon, Unsplash, and standard images (no proxy needed in <img> tags)
+  // Direct URLs for Amazon, Unsplash, and standard images
   if (
     rawUrl.includes('amazon') ||
     rawUrl.includes('media-amazon') ||
@@ -83,7 +77,7 @@ const formatImageUrl = (url: string) => {
 
   // Proxy for Shopee CDN images
   if (rawUrl.includes('susercontent.com') || rawUrl.includes('shopee')) {
-    return `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}`;
+    return `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
   }
 
   return rawUrl;
@@ -93,20 +87,26 @@ const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
   const target = e.currentTarget;
   const currentSrc = target.src || '';
 
-  if (currentSrc.includes('corsproxy.io/?')) {
+  if (currentSrc.includes('/api/proxy-image?url=')) {
+    const raw = decodeURIComponent(currentSrc.split('/api/proxy-image?url=')[1] || '');
+    if (raw) {
+      target.src = `https://corsproxy.io/?${encodeURIComponent(raw)}`;
+      return;
+    }
+  } else if (currentSrc.includes('corsproxy.io/?')) {
     const raw = decodeURIComponent(currentSrc.split('corsproxy.io/?')[1] || '');
-    if (raw && raw !== currentSrc) {
-      target.src = raw;
+    if (raw) {
+      target.src = `https://wsrv.nl/?url=${encodeURIComponent(raw)}`;
       return;
     }
   } else if (currentSrc.includes('wsrv.nl/?url=')) {
     const raw = decodeURIComponent(currentSrc.split('wsrv.nl/?url=')[1] || '');
-    if (raw && raw !== currentSrc) {
+    if (raw) {
       target.src = raw;
       return;
     }
-  } else if (currentSrc.startsWith('http') && !currentSrc.includes('wsrv.nl') && !currentSrc.includes('unsplash.com')) {
-    target.src = `https://wsrv.nl/?url=${encodeURIComponent(currentSrc)}`;
+  } else if (currentSrc.startsWith('http') && !currentSrc.startsWith('data:')) {
+    target.src = `/api/proxy-image?url=${encodeURIComponent(currentSrc)}`;
     return;
   }
 
@@ -349,11 +349,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
           {/* Logo container - Standardized App Icon Style (Squircle) */}
           <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
             {currentLogoUrl && !imageError ? (
-              <img referrerPolicy="no-referrer"
+              <SmartImage
                 src={currentLogoUrl}
                 alt={platform.name}
                 className="w-full h-full object-cover pointer-events-none transition-transform duration-700 group-hover:scale-110"
-                onError={handleLogoError}
               />
             ) : (
               <div
@@ -421,7 +420,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                   {profile.avatar.type === 'emoji' ? (
                     profile.avatar.value
                   ) : profile.avatar.type === 'image' ? (
-                    <img referrerPolicy="no-referrer"
+                    <SmartImage
                       src={profile.avatar.value}
                       alt={profile.name}
                       className="w-full h-full object-cover rounded-full"
@@ -613,7 +612,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   {profile.avatar.type === 'emoji' ? (
                                     profile.avatar.value
                                   ) : profile.avatar.type === 'image' ? (
-                                    <img referrerPolicy="no-referrer"
+                                    <SmartImage
                                       src={profile.avatar.value}
                                       alt={profile.name}
                                       className="w-full h-full object-cover rounded-full"
@@ -937,9 +936,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   openFullScreen(purchase.productImages!, 0);
                                 }}
                               >
-                                <img referrerPolicy="no-referrer"
-                                  src={formatImageUrl(purchase.productImages[0])}
-                                  onError={handleImgError}
+                                <SmartImage
+                                  src={purchase.productImages[0]}
                                   alt={purchase.productName}
                                   className="w-full h-full object-cover"
                                 />
@@ -1049,9 +1047,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                       className="w-5 h-5 rounded border border-neutral-200 dark:border-neutral-800 overflow-hidden bg-white dark:bg-neutral-900 shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
                                       title="Ver em tela cheia"
                                     >
-                                      <img referrerPolicy="no-referrer"
-                                        src={formatImageUrl(img)}
-                                        onError={handleImgError}
+                                      <SmartImage
+                                        src={img}
                                         alt=""
                                         className="w-full h-full object-cover pointer-events-none"
                                       />

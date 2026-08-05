@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Search, Sun, Moon, Plus, Menu, ChevronUp, ChevronDown, X, LogIn, LogOut, Loader2, User as UserIcon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { SmartImage } from './SmartImage';
 
 interface HeaderProps {
   searchQuery: string;
@@ -42,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (userProfile?.avatar) {
       const { type, value, bgColor } = userProfile.avatar;
       if (type === 'image' && value) {
-        return <img referrerPolicy="no-referrer" src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${userProfile.avatar.zoom || 1})` }} />;
+        return <SmartImage src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${userProfile.avatar.zoom || 1})` }} />;
       }
       if (type === 'emoji') {
         return (
@@ -59,13 +60,13 @@ export const Header: React.FC<HeaderProps> = ({
         );
       }
       if (type === 'google' && user.photoURL) {
-        return <img referrerPolicy="no-referrer" src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full"/>;
+        return <SmartImage src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full"/>;
       }
     }
     
     // Fallback to Google photo if available
     if (user.photoURL) {
-      return <img referrerPolicy="no-referrer" src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full"/>;
+      return <SmartImage src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full"/>;
     }
 
     // Default fallback
