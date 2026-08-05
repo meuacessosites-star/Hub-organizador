@@ -34,6 +34,32 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { getInitials, getPlatformColor, getDomainFromInput, getLogoUrl } from '../utils/logoHelper';
 
+const formatImageUrl = (url: string) => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('/api/proxy-image')) {
+    return trimmed;
+  }
+
+  let rawUrl = trimmed;
+  if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+    if (rawUrl.startsWith('//')) {
+      rawUrl = `https:${rawUrl}`;
+    } else {
+      const cleanHash = rawUrl.replace(/^\/?(file\/)?/, '');
+      rawUrl = `https://down-br.img.susercontent.com/file/${cleanHash}`;
+    }
+  }
+
+  return `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
+};
+
+const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  const target = e.currentTarget;
+  target.style.opacity = '0.3';
+};
+
 interface PlatformCardProps {
   platform: Platform;
   categoryName: string;
@@ -327,9 +353,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
 
             {/* Profile Avatars indicators */}
             <div className="flex items-center -space-x-2 overflow-hidden">
-              {platform.profiles.map((profile) => (
+              {platform.profiles.map((profile, prIdx) => (
                 <div
-                  key={profile.id}
+                  key={`p-avatar-${platform.id}-${profile.id}-${prIdx}`}
                   title={`${profile.name} (${profile.email || profile.username || ''})`}
                   className="w-7 h-7 rounded-full border-2 border-white dark:border-[#111218] flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase cursor-pointer hover:z-10 transition-transform hover:scale-110"
                   style={{
@@ -434,12 +460,12 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                       </button>
                     </div>
 
-                    {platform.profiles.map((profile) => {
+                    {platform.profiles.map((profile, prIdx) => {
                       const isCollapsed = !!collapsedProfiles[profile.id];
                       const isActiveMatch = profile.id === activeMatchProfileId;
                       return (
                         <div
-                          key={profile.id}
+                          key={`p-card-${platform.id}-${profile.id}-${prIdx}`}
                           id={`profile-card-${profile.id}`}
                           className={`relative overflow-hidden rounded-xl bg-neutral-100/50 dark:bg-[#141414] group/profile shadow-inner transition-all duration-200 ${
                             isActiveMatch
@@ -810,42 +836,11 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                     </div>
                     <div>
                       <h4 className="font-bold text-neutral-800 dark:text-neutral-200 text-xs tracking-tight">
-                        Acompanhe suas Compras & Assinaturas
+                        Nenhuma compra registrada
                       </h4>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 max-w-sm leading-relaxed mx-auto">
-                        Organize e monitore todas as licenças de software, assinaturas ativas de serviços de streaming ou pacotes físicos vinculados às suas contas da {platform.name}.
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 max-w-[240px] leading-relaxed mx-auto">
+                        Organize suas compras, assinaturas e rastreios vinculados às suas contas da {platform.name}.
                       </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3.5 w-full max-w-md text-left mt-1.5 border-t border-neutral-200/50 dark:border-neutral-800/40 pt-3.5 text-[10px] text-neutral-600 dark:text-neutral-400">
-                      <div className="flex gap-2 items-start">
-                        <span className="text-indigo-500 font-bold shrink-0">💳</span>
-                        <div>
-                          <p className="font-bold text-neutral-700 dark:text-neutral-300">Pagamento & Cartão</p>
-                          <p className="text-[9px] leading-snug">Vincule compras aos perfis, controlando banco, parcelas e qual cartão foi usado.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 items-start">
-                        <span className="text-indigo-500 font-bold shrink-0">📦</span>
-                        <div>
-                          <p className="font-bold text-neutral-700 dark:text-neutral-300">Entrega & Rastreio</p>
-                          <p className="text-[9px] leading-snug">Monitore as etapas do envio físico com código de rastreamento e datas.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 items-start">
-                        <span className="text-indigo-500 font-bold shrink-0">🔄</span>
-                        <div>
-                          <p className="font-bold text-neutral-700 dark:text-neutral-300">Assinaturas Ativas</p>
-                          <p className="text-[9px] leading-snug">Monitore renovações mensais ou recorrentes e o valor investido.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 items-start">
-                        <span className="text-indigo-500 font-bold shrink-0">🏷️</span>
-                        <div>
-                          <p className="font-bold text-neutral-700 dark:text-neutral-300">Tags & Anexos</p>
-                          <p className="text-[9px] leading-snug">Adicione fotos de produtos, notas e tags coloridas personalizadas.</p>
-                        </div>
-                      </div>
                     </div>
 
                     <button
@@ -864,7 +859,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                       <span className="font-bold text-indigo-600 dark:text-indigo-400">💡 Dica de Controle:</span> Clique em uma compra para gerenciar fotos de produtos, notas detalhadas e pacotes (bundles), ou clique diretamente no botão de status colorido para avançar a etapa da entrega!
                     </div>
 
-                    {platform.purchases.map((purchase) => {
+                    {platform.purchases.map((purchase, purIdx) => {
                       const buyerProfile = platform.profiles.find(
                         (p) => p.id === purchase.profileId
                       );
@@ -875,7 +870,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
 
                       return (
                         <div
-                          key={purchase.id}
+                          key={`plat-pur-${platform.id}-${purchase.id}-${purIdx}`}
                           onClick={() => onViewPurchase(platform.id, purchase)}
                           className="flex flex-col p-3.5 rounded-xl bg-neutral-50/60 border border-neutral-200/40 hover:border-neutral-300 dark:border-transparent dark:hover:border-neutral-800/40 transition-all duration-150 cursor-pointer dark:bg-[#111219] dark:hover:bg-[#151622] group/p shadow-xs"
                         >
@@ -890,7 +885,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                 }}
                               >
                                 <img referrerPolicy="no-referrer"
-                                  src={purchase.productImages[0]}
+                                  src={formatImageUrl(purchase.productImages[0])}
+                                  onError={handleImgError}
                                   alt={purchase.productName}
                                   className="w-full h-full object-cover"
                                 />
@@ -964,7 +960,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   {purchase.bundleItems.slice(0, 3).map((item, idx) => {
                                     const itemStatus = item.status || 'pedido_feito';
                                     return (
-                                      <span key={item.id || `bi-${purchase.id}-${idx}-${item.name}`} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
+                                      <span key={item.id ? `${item.id}-${idx}` : `bi-${purchase.id}-${idx}-${item.name}`} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
                                         <button
                                           type="button"
                                           onClick={(e) => cycleBundleItemStatus(e, purchase, idx)}
@@ -992,7 +988,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                 <div className="flex gap-1 mt-1.5">
                                   {purchase.productImages.slice(1, 5).map((img, idx) => (
                                     <div 
-                                      key={`p-img-strip-${purchase.id}-${idx}-${img.substring(0, 30)}`} 
+                                      key={`p-img-strip-${purchase.id}-${idx}`} 
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openFullScreen(purchase.productImages!, idx + 1);
@@ -1001,7 +997,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                       title="Ver em tela cheia"
                                     >
                                       <img referrerPolicy="no-referrer"
-                                        src={img}
+                                        src={formatImageUrl(img)}
+                                        onError={handleImgError}
                                         alt=""
                                         className="w-full h-full object-cover pointer-events-none"
                                       />

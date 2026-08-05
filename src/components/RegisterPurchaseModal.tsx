@@ -1,10 +1,5 @@
-import { resizeImage } from "../utils/imageHelper";
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect, useRef } from 'react';
+import { resizeImage } from "../utils/imageHelper";
 import { Platform, Profile, Purchase, PurchaseStatus, Tag, Status, BundleItem } from '../types';
 import { X, ShoppingBag, Link, CreditCard, Receipt, AlignLeft, Trash2, Image as ImageIcon, Upload, Loader2, Sparkles, ExternalLink, Plus, Settings2, Check, Pencil, Palette, Building2, CreditCard as CardIcon, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -135,6 +130,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   const [notes, setNotes] = useState('');
   const [productImages, setProductImages] = useState<string[]>([]);
   const [isPulling, setIsPulling] = useState(false);
+  const [pullingBundleIndices, setPullingBundleIndices] = useState<Set<number>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ productName?: string; originalPrice?: string; finalPrice?: string }>({});
 
@@ -155,6 +151,94 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   const [tagSearch, setTagSearch] = useState('');
   const [fullScreenCarousel, setFullScreenCarousel] = useState<{images: string[]; initialIndex: number} | null>(null);
   const [purchaseType, setPurchaseType] = useState<'single' | 'subscription'>('single');
+
+  const getLinkWarning = (url: string) => {
+    if (!url) return null;
+    const lower = url.toLowerCase();
+    
+    if (lower.includes("shp.ee") || lower.includes("shope.ee")) {
+      return {
+        title: "Links encurtados (shp.ee) não são suportados",
+        body: "Por favor, abra o produto no navegador e copie o link completo da barra de endereço."
+      };
+    }
+
+    if (lower.includes("mercadolivre.com") || lower.includes("mercadolivre.com.br") || lower.includes("mlb.link")) {
+      return {
+        title: "Aviso: Restrição de Imagens do Mercado Livre",
+        body: "O Mercado Livre utiliza proteções ativas da Cloudflare e bloqueio de imagens externas (hotlinking) em links encurtados ou compartilhados diretamente de aplicativos móveis. Se a imagem do produto não carregar ou ficar preta, salve a foto do produto diretamente de sua fonte e faça o upload manual clicando em \"Enviar\"."
+      };
+    }
+
+    if (lower.includes("aliexpress") || lower.includes("a.aliexpress.com")) {
+      return {
+        title: "Aviso: Proteção de Imagem do AliExpress",
+        body: "O AliExpress bloqueia requisições automatizadas fora de seu ecossistema oficial e usa criptografia contra leitura de fotos externas (hotlinking). Se a imagem do produto não puder ser puxada automaticamente, salve o arquivo e envie manualmente clicando em \"Enviar\"."
+      };
+    }
+
+    if (lower.includes("shein.com") || lower.includes("shein.top")) {
+      return {
+        title: "Aviso: Limitação de Imagens da Shein",
+        body: "A Shein possui barreiras rígidas de segurança para impedir o rastreamento e exibição de fotos de produtos fora de seu app ou site oficial. Recomendamos salvar a imagem desejada e fazer o upload manual clicando em \"Enviar\"."
+      };
+    }
+
+    if (lower.includes("maga.lu") || lower.includes("magazineluiza")) {
+      return {
+        title: "Aviso: Link do Magazine Luiza",
+        body: "Links originados de aplicativos móveis (como o encurtador maga.lu) usam tokens temporários de sessão que expiram rapidamente e impedem o rastreamento externo de fotos de produtos. Por favor, envie a imagem manualmente clicando em \"Enviar\"."
+      };
+    }
+
+    // Generic shorteners
+    if (
+      lower.includes("bit.ly") || 
+      lower.includes("tinyurl.com") || 
+      lower.includes("cutt.ly") || 
+      lower.includes("rebrand.ly") || 
+      lower.includes("is.gd") || 
+      lower.includes("t.co") || 
+      lower.includes("lnk.to")
+    ) {
+      return {
+        title: "Link Encurtado Detectado",
+        body: "Links encurtados dificultam o rastreamento direto de metadados e imagens por redirecionarem através de múltiplos servidores intermediários que protegem suas conexões contra robôs de leitura. Se as imagens não forem carregadas automaticamente, faça o upload da foto diretamente clicando em \"Enviar\"."
+      };
+    }
+
+    return null;
+  };
+
+  const formatShopeeCdnUrl = (url: string) => {
+    if (!url) return '';
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('/api/proxy-image')) {
+      return trimmed;
+    }
+
+    let rawUrl = trimmed;
+    if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+      if (rawUrl.startsWith('//')) {
+        rawUrl = `https:${rawUrl}`;
+      } else {
+        const cleanHash = rawUrl.replace(/^\/?(file\/)?/, '');
+        rawUrl = `https://down-br.img.susercontent.com/file/${cleanHash}`;
+      }
+    }
+
+    return `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
+  };
+
+  const getProxiedImageUrl = (url: string) => {
+    return formatShopeeCdnUrl(url);
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.currentTarget;
+    target.style.opacity = '0.3';
+  };
   
   // Tag creation/edit state
   const [isManagingTags, setIsManagingTags] = useState(false);
@@ -165,6 +249,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   const [showColorWheel, setShowColorWheel] = useState(false);
 
   const colorWheelRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isDraggingRef = useRef(false);
 
   // Color wheel generator
@@ -376,6 +461,94 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     }
   };
 
+  const getRootDomain = (url: string) => {
+    try {
+      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+      const hostname = urlObj.hostname.replace('www.', '');
+      const parts = hostname.split('.');
+      if (parts.length >= 2) {
+        // Handle common double extensions like .com.br
+        const isDoubleExtension = ['com', 'org', 'net', 'gov', 'edu'].includes(parts[parts.length - 2]) && parts.length >= 3;
+        if (isDoubleExtension) {
+          return parts.slice(-3).join('.');
+        }
+        return parts.slice(-2).join('.');
+      }
+      return hostname;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const puxarDadosScraper = async () => {
+    if (!productLink || !productLink.includes("http")) {
+      addToast('Por favor, insira um link válido do produto.', 'info');
+      return;
+    }
+
+    const lowerLink = productLink.toLowerCase();
+    if (lowerLink.includes("shp.ee") || lowerLink.includes("shope.ee")) {
+      addToast("Links encurtados (shp.ee) não são suportados. Por favor, abra o produto no navegador e copie o link completo da barra de endereço.", "error");
+      return;
+    }
+
+    setIsPulling(true);
+    
+    try {
+      const shopeeApiKey = localStorage.getItem('shopee_api_key') || '';
+      const response = await fetch("/api/fetch-metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: productLink, apiKey: shopeeApiKey })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao buscar dados do produto");
+      }
+
+      const data = await response.json();
+      
+      if (data.resolvedUrl && data.resolvedUrl !== productLink) {
+        setProductLink(data.resolvedUrl);
+      }
+
+      if (data.titulo && !productName.trim()) {
+        setProductName(data.titulo);
+      }
+
+      const activeLink = data.resolvedUrl || productLink;
+      const lowerLink = activeLink.toLowerCase();
+      const isShopee = lowerLink.includes("shopee") || lowerLink.includes("shope.ee") || lowerLink.includes("shp.ee") || data.isShopee;
+      const isML = lowerLink.includes("mercadolivre") || lowerLink.includes("mlb.link");
+      const isAli = lowerLink.includes("aliexpress") || lowerLink.includes("a.aliexpress");
+      const isShein = lowerLink.includes("shein") || lowerLink.includes("shein.top");
+      const isMagalu = lowerLink.includes("maga.lu") || lowerLink.includes("magazineluiza");
+
+      const isProtected = data.isProtected || isShopee || isML || isAli || isShein || isMagalu;
+
+      if (data.imagens && Array.isArray(data.imagens) && data.imagens.length > 0) {
+        setProductImages(data.imagens);
+        addToast(`Título e ${data.imagens.length} imagens extraídos com sucesso! ✨`, "success");
+      } else if (data.imagem) {
+        setProductImages([data.imagem]);
+        addToast("Título e imagem real extraídos com sucesso! ✨", "success");
+      } else if (isProtected) {
+        setProductImages([]);
+        addToast("Título extraído! Por limitações de segurança da plataforma, adicione a imagem manualmente.", "warning");
+      } else {
+        setProductImages([]);
+        addToast("Título extraído! Por restrições da plataforma, adicione a imagem manualmente.", "warning");
+      }
+
+    } catch (e: any) {
+      console.error("Erro no processamento do link:", e);
+      addToast(e.message || "Não foi possível identificar o link automaticamente.", "error");
+    } finally {
+      setIsPulling(false);
+    }
+  };
+
   const handleAutoPullImage = async () => {
     let itemsToPull = [];
     if (isBundle && bundleItems.length > 0) {
@@ -391,49 +564,49 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
     setIsPulling(true);
     try {
+      // Clear existing images before pulling new ones
+      setProductImages([]);
       const images: string[] = [];
       
       for (let i = 0; i < itemsToPull.length; i++) {
         const item = itemsToPull[i];
         
-        // 1. Unsplash product search endpoint
-        if (item.name.trim()) {
-          const searchTerms = encodeURIComponent(item.name.trim());
-          const randomId = Math.floor(Math.random() * 1000000) + i;
-          const unsplashUrl = `https://images.unsplash.com/featured/500x500/?${searchTerms}&sig=${randomId}`;
-          images.push(unsplashUrl);
+        // Simplesmente gera um placeholder estético baseado no nome ou loja
+        const searchTerm = (item.name || "Product").toLowerCase();
+        let placeholderImg = "https://images.unsplash.com/photo-1555529669-2269763671c0?auto=format&fit=crop&q=80&w=400"; // General
+
+        if (searchTerm.includes("shopee") || item.link?.includes("shopee")) {
+          continue; // Skip generating automatic image for Shopee
+        } else if (searchTerm.includes("amazon") || item.link?.includes("amazon")) {
+          placeholderImg = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400";
+        } else if (searchTerm.includes("mercado") || item.link?.includes("mercadolivre")) {
+          placeholderImg = "https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?auto=format&fit=crop&q=80&w=400";
+        } else if (searchTerm.includes("teclado") || searchTerm.includes("mouse") || searchTerm.includes("gamer") || searchTerm.includes("tech")) {
+          placeholderImg = "https://images.unsplash.com/photo-1587829741301-dc798b83bac1?auto=format&fit=crop&q=80&w=400";
         }
-        
-        // 2. Logo using Clearbit from the domain
-        if (item.link.trim()) {
-          try {
-            const urlObj = new URL(item.link.startsWith('http') ? item.link : `https://${item.link}`);
-            const domain = urlObj.hostname.replace('www.', '');
-            const clearbitUrl = `https://logo.clearbit.com/${domain}`;
-            images.push(clearbitUrl);
-          } catch (e) {
-            // ignore invalid url
-          }
+
+        if (!images.includes(placeholderImg)) {
+          images.push(placeholderImg);
         }
       }
 
-      if (images.length > 0) {
-        setProductImages((prev) => {
-          const updated = [...prev];
-          images.forEach((img) => {
-            if (!updated.includes(img)) {
-              updated.push(img);
-            }
-          });
-          return updated;
-        });
-        addToast('Imagem do produto adicionada automaticamente! 📸', 'success');
-      } else {
-        addToast('Não foi possível identificar imagem automática.', 'error');
+      setProductImages(images);
+      const hasProtected = itemsToPull.some(item => {
+        const lowerName = (item.name || "").toLowerCase();
+        const lowerLink = (item.link || "").toLowerCase();
+        return lowerName.includes("aliexpress") || lowerLink.includes("aliexpress") || lowerLink.includes("a.aliexpress") ||
+               lowerName.includes("shein") || lowerLink.includes("shein") || lowerLink.includes("shein.top") ||
+               lowerName.includes("mercado") || lowerLink.includes("mercadolivre") || lowerLink.includes("mlb.link") ||
+               lowerLink.includes("bit.ly") || lowerLink.includes("tinyurl") || lowerLink.includes("maga.lu");
+      });
+      if (hasProtected) {
+        addToast('Imagens de plataformas protegidas ou links encurtados podem não carregar automaticamente. Por favor, envie uma foto manual se necessário.', 'warning');
+      } else if (images.length > 0) {
+        addToast('Imagens de sugestão adicionadas! ✨', 'info');
       }
     } catch (err) {
       console.error(err);
-      addToast('Erro ao buscar imagem do produto.', 'error');
+      addToast('Erro ao processar imagem do produto.', 'error');
     } finally {
       setIsPulling(false);
     }
@@ -471,42 +644,140 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       return;
     }
 
+    setPullingBundleIndices(prev => new Set(prev).add(index));
     try {
-      let imageUrl = '';
-      
-      // 1. Logo using Clearbit from the domain
+      const suggestedImages: string[] = [];
+      let metadataImage = null;
+      let metadataTitle = null;
+
+      // 1. Fetch metadata from link if available
       if (item.link?.trim()) {
         try {
-          const urlObj = new URL(item.link.startsWith('http') ? item.link : `https://${item.link}`);
-          const domain = urlObj.hostname.replace('www.', '');
-          imageUrl = `https://logo.clearbit.com/${domain}`;
+          const response = await fetch('/api/fetch-metadata', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: item.link.trim() })
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.imagem) {
+              const imgUrl = data.imagem.startsWith('//') ? `https:${data.imagem}` : data.imagem;
+              metadataImage = imgUrl;
+            } else if (data.imagens && data.imagens.length > 0) {
+              metadataImage = data.imagens[0];
+            }
+            if (data.titulo) {
+              metadataTitle = data.titulo;
+            }
+            
+            // If item name is empty, auto-fill it with metadata title
+            if (!item.name.trim() && data.titulo) {
+              const newItems = [...bundleItems];
+              newItems[index].name = data.titulo.substring(0, 100);
+              setBundleItems(newItems);
+            }
+          }
         } catch (e) {
-          // ignore invalid url
+          console.error("Metadata fetch error:", e);
         }
       }
 
-      // 2. Unsplash product search endpoint
-      if (!imageUrl && item.name.trim()) {
-        const searchTerms = encodeURIComponent(item.name.trim());
+      if (metadataImage) {
+        suggestedImages.push(metadataImage);
+      }
+      
+      // 2. Product Search - use metadata title as priority search term
+      let searchTerms = "";
+      
+      if (metadataTitle) {
+        searchTerms = metadataTitle
+          .replace(/comprar|preço|oferta|promoção|aliExpress|shopee|amazon|mercado livre/gi, '')
+          .split(/[|:-]/)[0]
+          .trim();
+      }
+
+      if (!searchTerms) searchTerms = item.name.trim();
+
+      // If no name/title, try to extract from URL
+      if (!searchTerms && item.link?.trim()) {
+        try {
+          const urlObj = new URL(item.link.startsWith('http') ? item.link : `https://${item.link}`);
+          const isShortened = urlObj.hostname.includes('a.aliexpress') || urlObj.hostname.includes('t.me') || urlObj.hostname.includes('bit.ly');
+          
+          if (isShortened) {
+            searchTerms = urlObj.hostname.split('.').reverse()[1];
+          } else {
+            // Ignore numeric IDs
+            const pathParts = urlObj.pathname.split('/').filter(p => {
+              if (p.length <= 3) return false;
+              if (/^\d+$/.test(p)) return false;
+              if (urlObj.hostname.includes('shopee') && p.includes('-i.')) return true;
+              return !p.includes('.');
+            });
+
+            if (pathParts.length > 0) {
+              let lastPart = decodeURIComponent(pathParts[pathParts.length - 1]);
+              if (urlObj.hostname.includes('shopee')) {
+                lastPart = lastPart.split('-i.')[0];
+              }
+              const isHash = /^[a-zA-Z0-9_-]+$/.test(lastPart) && (lastPart.includes('_') || lastPart.length < 10) && !lastPart.includes(' ');
+              searchTerms = !isHash ? lastPart.replace(/[-_]/g, ' ') : (urlObj.hostname.split('.').reverse()[1] || '');
+            } else {
+              searchTerms = urlObj.hostname.split('.').reverse()[1] || '';
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (searchTerms && searchTerms.length > 2) {
+        const encoded = encodeURIComponent(searchTerms);
         const randomId = Math.floor(Math.random() * 1000000) + index;
-        imageUrl = `https://images.unsplash.com/featured/500x500/?${searchTerms}&sig=${randomId}`;
+        suggestedImages.push(`https://images.unsplash.com/featured/500x500/?${encoded},product&sig=${randomId}`);
+        suggestedImages.push(`https://images.unsplash.com/featured/500x500/?${encoded},item&sig=${randomId + 1}`);
+      } else if (!metadataImage) {
+        const randomId = Math.floor(Math.random() * 1000000) + index;
+        suggestedImages.push(`https://images.unsplash.com/featured/500x500/?package,product&sig=${randomId}`);
       }
 
-      if (imageUrl) {
-        const newItems = [...bundleItems];
-        newItems[index].image = imageUrl;
-        const currentImages = newItems[index].images || [];
-        if (!currentImages.includes(imageUrl)) {
-          newItems[index].images = [...currentImages, imageUrl];
+      // 3. Logo using Clearbit & Google Favicon from the domain - Fallback reference
+      if (item.link?.trim()) {
+        const rootDomain = getRootDomain(item.link);
+        if (rootDomain) {
+          suggestedImages.push(`https://logo.clearbit.com/${rootDomain}`);
+          suggestedImages.push(`https://www.google.com/s2/favicons?domain=${rootDomain}&sz=128`);
         }
+      }
+
+      if (suggestedImages.length > 0) {
+        const newItems = [...bundleItems];
+        const currentImages = newItems[index].images || (newItems[index].image ? [newItems[index].image] : []);
+        const updatedImages = [...currentImages];
+        
+        suggestedImages.forEach(img => {
+          if (!updatedImages.includes(img)) {
+            updatedImages.push(img);
+          }
+        });
+        
+        newItems[index].images = updatedImages;
+        // Priority for non-logo images if setting for the first time
+        const firstNonLogo = updatedImages.find(img => !img.includes('logo.clearbit.com') && !img.includes('favicons'));
+        newItems[index].image = firstNonLogo || updatedImages[0] || '';
+        
         setBundleItems(newItems);
-        addToast('Imagem puxada com sucesso!', 'success');
+        addToast('Imagens sugeridas adicionadas!', 'success');
       } else {
         addToast('Não foi possível identificar imagem automática.', 'error');
       }
     } catch (err) {
       console.error(err);
       addToast('Erro ao puxar imagem.', 'error');
+    } finally {
+      setPullingBundleIndices(prev => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
     }
   };
 
@@ -764,11 +1035,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {platform.profiles.map((prof) => {
+                  {platform.profiles.map((prof, idx) => {
                     const isSel = selectedProfileId === prof.id;
                     return (
                       <button
-                        key={prof.id}
+                        key={`profile-sel-${prof.id}-${idx}`}
                         type="button"
                         onClick={() => setSelectedProfileId(prof.id)}
                         className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all cursor-pointer border ${
@@ -804,10 +1075,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   <Link className="w-4 h-4" />
                 </span>
                 <input
+                  id="input-link-do-produto"
                   type="url"
                   value={productLink}
                   onChange={(e) => setProductLink(e.target.value)}
-                  placeholder="https://... (preenche nome automaticamente)"
+                  placeholder="Cole o link da Shopee ou Amazon aqui..."
                   className="w-full h-12 pl-11 pr-4 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#050505] dark:border-[#2a2d40] dark:text-neutral-200 transition-all"
                 />
               </div>
@@ -856,6 +1128,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   <ShoppingBag className="w-4 h-4" />
                 </span>
                 <input
+                  id="input-nome-do-produto"
                   type="text"
                   required
                   value={productName}
@@ -890,22 +1163,28 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    disabled={isPulling || (!productName.trim() && !productLink.trim())}
-                    onClick={() => handleAutoPullImage()}
+                    disabled={isPulling || !productLink.trim()}
+                    onClick={() => puxarDadosScraper()}
                     className="h-8 px-2.5 text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                   >
                     {isPulling ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Processando...</span>
+                      </>
                     ) : (
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Puxar</span>
+                      </>
                     )}
-                    <span>Puxar</span>
                   </button>
 
                   <label className="h-8 px-2.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all active:scale-95">
                     <Upload className="w-3.5 h-3.5" />
                     <span>Enviar</span>
                     <input
+                      ref={fileInputRef}
                       type="file"
                       multiple
                       accept="image/*"
@@ -916,16 +1195,56 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 </div>
               </div>
 
+              {/* Dynamic link warning based on platform/shorteners */}
+              {(() => {
+                if (productImages.length > 0) return null; // Hide all warnings if images were successfully retrieved!
+                const warning = getLinkWarning(productLink);
+                if (!warning) return null;
+                return (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2.5 text-amber-700 dark:text-amber-300">
+                    <span className="text-sm shrink-0 mt-0.5">⚠️</span>
+                    <div className="flex-1 text-[11px] leading-relaxed select-text">
+                      <span className="font-bold block mb-0.5 text-amber-800 dark:text-amber-200">{warning.title}</span>
+                      {warning.body}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Foto Principal Preview (ID solicitado para ScraperAPI) */}
+              {productImages.length > 0 && (
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative aspect-video rounded-xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-white/[0.08] overflow-hidden mb-2 cursor-pointer group"
+                >
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex flex-col items-center justify-center text-white gap-2">
+                    <Upload className="w-8 h-8" />
+                    <span className="text-xs font-bold">Trocar por Foto Real</span>
+                  </div>
+                  <img
+                    id="exibicao-da-foto"
+                    src={getProxiedImageUrl(productImages[0])}
+                    alt="Preview Principal"
+                    className="w-full h-full object-contain"
+                    referrerPolicy="no-referrer"
+                    onError={handleImageError}
+                  />
+                </div>
+              )}
+
               {/* Thumbnails grid */}
               {productImages.length > 0 ? (
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2 max-h-[150px] overflow-y-auto pr-1">
                   {productImages.map((img, idx) => (
-                    <div key={`purchase-photo-${idx}-${img.substring(0, 30)}`} className="relative aspect-square rounded-lg border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-white dark:bg-[#000000] group">
-                      <img referrerPolicy="no-referrer"
-                        src={img}
-                        alt={`Produto ${idx + 1}`}
-                        onClick={() => setFullScreenCarousel({ images: productImages, initialIndex: idx })}
-                        className="w-full h-full object-contain p-1 bg-neutral-50 dark:bg-neutral-900 cursor-pointer hover:opacity-90 transition-opacity"
+                    <div key={`img-gallery-${idx}-${img.substring(0, 10)}`} className="relative aspect-square rounded-lg border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-neutral-100 dark:bg-neutral-800/30 group flex items-center justify-center">
+                      <ImageIcon className="absolute w-5 h-5 text-neutral-300 dark:text-neutral-700 z-0" />
+                      <img
+                        referrerPolicy="no-referrer"
+                        src={getProxiedImageUrl(img)}
+                        alt="Foto do produto"
+                        onError={handleImageError}
+                        onClick={() => setFullScreenCarousel({ images: productImages.map(formatShopeeCdnUrl), initialIndex: idx })}
+                        className="relative z-10 w-full h-full object-contain p-1 bg-transparent cursor-pointer hover:opacity-90 transition-all duration-300"
                       />
                       <button
                         type="button"
@@ -955,11 +1274,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 Status
               </label>
               <div className="flex flex-wrap gap-2 pt-0.5">
-                {availableStatuses.map((s) => {
+                {availableStatuses.map((s, idx) => {
                   const isSel = status === s.id;
                   return (
                     <button
-                      key={s.id}
+                      key={`status-sel-${s.id}-${idx}`}
                       type="button"
                       onClick={() => setStatus(s.id)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
@@ -1016,7 +1335,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   <div className="flex flex-col gap-2 mt-1">
                     {bundleItems.map((item, index) => {
                       return (
-                        <div key={`bundle-item-${index}-${item.id || 'item'}`} className="flex flex-col gap-2 bg-white dark:bg-[#0a0a0a] p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 relative group">
+                        <div key={`bundle-item-${index}-${item.id ? `${item.id}-${index}` : index}`} className="flex flex-col gap-2 bg-white dark:bg-[#0a0a0a] p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 relative group">
                           <button
                             type="button"
                             onClick={() => {
@@ -1066,8 +1385,8 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                                 }}
                                 className="w-32 h-9 px-2 rounded-md text-xs bg-neutral-50 dark:bg-[#111219] border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
                               >
-                                {availableStatuses.map(s => (
-                                  <option key={s.id} value={s.id}>{s.label}</option>
+                                {availableStatuses.map((s, idx) => (
+                                  <option key={`opt-status-${s.id}-${idx}`} value={s.id}>{s.label}</option>
                                 ))}
                               </select>
                             </div>
@@ -1079,12 +1398,22 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                                   {/* Botão de Puxar Imagem */}
                                   <button
                                     type="button"
+                                    disabled={pullingBundleIndices.has(index)}
                                     onClick={() => handleAutoPullBundleItemImage(index)}
-                                    className="px-2 py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-[9px] flex items-center gap-1 cursor-pointer transition-all border border-indigo-500/10"
+                                    className="px-2 py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-[9px] flex items-center gap-1 cursor-pointer transition-all border border-indigo-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Tentar buscar imagem automaticamente"
                                   >
-                                    <Sparkles className="w-2.5 h-2.5 text-amber-500 animate-pulse" />
-                                    <span>Puxar</span>
+                                    {pullingBundleIndices.has(index) ? (
+                                      <>
+                                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                        <span>...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Sparkles className="w-2.5 h-2.5 text-amber-500 animate-pulse" />
+                                        <span>Puxar</span>
+                                      </>
+                                    )}
                                   </button>
 
                                   {/* Botão de Upload da Galeria */}
@@ -1108,12 +1437,15 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                                 return itemImages.length > 0 ? (
                                   <div className="flex flex-wrap gap-1.5 max-h-[85px] overflow-y-auto py-1">
                                     {itemImages.map((img, imgIdx) => (
-                                      <div key={`item-img-${index}-${imgIdx}-${img.substring(0, 20)}`} className="w-10 h-10 rounded border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-white dark:bg-[#0e0f14] relative group/img shrink-0">
-                                        <img referrerPolicy="no-referrer" 
-                                          src={img} 
-                                          alt="" 
-                                          onClick={() => setFullScreenCarousel({ images: itemImages, initialIndex: imgIdx })}
-                                          className="w-full h-full object-cover cursor-pointer hover:brightness-110 transition-all"
+                                      <div key={`bundle-thumb-${index}-${imgIdx}`} className="w-10 h-10 rounded border border-neutral-200 dark:border-[#2a2d40] overflow-hidden bg-neutral-100 dark:bg-neutral-800/30 relative group/img shrink-0 flex items-center justify-center">
+                                        <ImageIcon className="absolute w-3.5 h-3.5 text-neutral-300 dark:text-neutral-700 z-0" />
+                                        <img
+                                          referrerPolicy="no-referrer" 
+                                          src={getProxiedImageUrl(img)} 
+                                          alt="Foto do produto" 
+                                          onError={handleImageError}
+                                          onClick={() => setFullScreenCarousel({ images: itemImages.map(formatShopeeCdnUrl), initialIndex: imgIdx })}
+                                          className="relative z-10 w-full h-full object-cover cursor-pointer hover:brightness-110 transition-all duration-300"
                                         />
                                         <button
                                           type="button"
@@ -1352,9 +1684,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                       <div className="flex flex-col gap-1.5">
                         <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-tight">Presets de Emoji</span>
                         <div className="flex flex-wrap gap-1">
-                          {PRESET_EMOJIS.map(em => (
+                          {PRESET_EMOJIS.map((em, idx) => (
                             <button
-                              key={em}
+                              key={`reg-emoji-${em}-${idx}`}
                               type="button"
                               onClick={() => setNewTagEmoji(em)}
                               className={`w-7 h-7 rounded flex items-center justify-center text-sm hover:bg-white dark:hover:bg-neutral-800 transition-all ${
@@ -1371,9 +1703,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                       <div className="flex flex-col gap-1.5">
                         <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-tight">Cores Rápidas</span>
                         <div className="flex flex-wrap gap-1.5">
-                          {PRESET_COLORS.map(col => (
+                          {PRESET_COLORS.map((col, idx) => (
                             <button
-                              key={col}
+                              key={`reg-color-${col}-${idx}`}
                               type="button"
                               onClick={() => setNewTagColor(col)}
                               className="w-5 h-5 rounded-full border border-black/10 flex items-center justify-center shadow-inner hover:scale-110 transition-all"
@@ -1504,9 +1836,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
                     {/* Tag List with edit/delete */}
                     <div className="border-t border-indigo-100 dark:border-indigo-900/30 pt-3 flex flex-wrap gap-2">
-                      {availableTags.map((tag) => (
+                      {availableTags.map((tag, idx) => (
                         <div 
-                          key={tag.id}
+                          key={`tag-manage-${tag.id}-${idx}`}
                           className="flex items-center gap-1 pl-2 pr-1 py-1 rounded-lg border dark:border-transparent group"
                           style={{ backgroundColor: `${tag.color}15`, borderColor: `${tag.color}30` }}
                         >
@@ -1537,11 +1869,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                     {availableTags.length === 0 ? (
                       <p className="text-[10px] text-neutral-500 font-medium italic">Nenhuma tag cadastrada. Clique em "Gerenciar Tags" para criar.</p>
                     ) : (
-                      availableTags.map((tag) => {
+                      availableTags.map((tag, idx) => {
                         const isSel = selectedTagIds.includes(tag.id);
                         return (
                           <button
-                            key={tag.id}
+                            key={`tag-toggle-${tag.id}-${idx}`}
                             type="button"
                             onClick={() => toggleTag(tag.id)}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
@@ -1786,7 +2118,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
       {fullScreenCarousel && (
         <FullScreenCarousel
-          images={fullScreenCarousel.images}
+          images={fullScreenCarousel.images.map(getProxiedImageUrl)}
           initialIndex={fullScreenCarousel.initialIndex}
           onClose={() => setFullScreenCarousel(null)}
         />

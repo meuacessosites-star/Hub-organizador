@@ -396,9 +396,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex flex-wrap gap-1.5 flex-1 min-w-[180px]">
-                  {PRESET_EMOJIS.map((em) => (
+                  {PRESET_EMOJIS.map((em, idx) => (
                     <button
-                      key={em}
+                      key={`cat-emoji-${em}-${idx}`}
                       type="button"
                       id={`manage-category-preset-emoji-${em}`}
                       data-testid={`manage-category-preset-emoji-${em}`}
@@ -435,9 +435,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                 <span className="text-[9px] text-neutral-500">Selecione ou use a roda de cores</span>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {PRESET_COLORS.map((col) => (
+                {PRESET_COLORS.map((col, idx) => (
                   <button
-                    key={col}
+                    key={`cat-color-${col}-${idx}`}
                     type="button"
                     id={`preset-color-btn-${col.replace('#', '')}`}
                     data-testid={`preset-color-btn-${col.replace('#', '')}`}

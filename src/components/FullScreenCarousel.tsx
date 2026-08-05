@@ -33,14 +33,45 @@ export const FullScreenCarousel: React.FC<FullScreenCarouselProps> = ({ images, 
         </button>
         
         <AnimatePresence mode="wait">
-          <motion.img
-            key={currentIndex}
-            src={images[currentIndex]}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            className="max-w-[90vw] max-h-[80vh] object-contain"
-          />
+          {(() => {
+            const currentRaw = images[currentIndex] || '';
+            if (!currentRaw) return null;
+            let rawUrl = currentRaw.trim();
+            if (
+              rawUrl.startsWith('data:') ||
+              rawUrl.startsWith('blob:') ||
+              rawUrl.startsWith('/api/proxy-image')
+            ) {
+              // use as is
+            } else {
+              if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+                if (rawUrl.startsWith('//')) {
+                  rawUrl = `https:${rawUrl}`;
+                } else {
+                  const cleanHash = rawUrl.replace(/^\/?(file\/)?/, '');
+                  rawUrl = `https://down-br.img.susercontent.com/file/${cleanHash}`;
+                }
+              }
+              rawUrl = `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
+            }
+
+            return (
+              <motion.img
+                key={currentIndex}
+                src={rawUrl}
+                alt="Foto do produto"
+                referrerPolicy="no-referrer"
+                onError={(e: any) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.opacity = '0.3';
+                }}
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                className="max-w-[90vw] max-h-[80vh] object-contain"
+              />
+            );
+          })()}
         </AnimatePresence>
         
         <button className="absolute right-4 text-white p-2" onClick={next}>

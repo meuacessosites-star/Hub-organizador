@@ -498,11 +498,11 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
               Status Existentes
             </span>
             <div className="flex flex-col gap-1.5 select-text">
-              {statuses.map((status) => {
+              {statuses.map((status, idx) => {
                 const isSystem = !status.isCustom;
                 return (
                   <div
-                    key={status.id}
+                    key={`manage-status-${status.id}-${idx}`}
                     className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-white/[0.06] bg-neutral-50 dark:bg-[#080808]"
                   >
                     <div className="flex items-center gap-2.5">

@@ -10,6 +10,25 @@ export const safeParse = <T,>(value: string | null, defaultValue: T): T => {
   }
 };
 
+export const safeGetItem = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.error("Error getting localStorage:", e);
+    return null;
+  }
+};
+
+export const safeRemoveItem = (key: string): boolean => {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (e) {
+    console.error("Error removing from localStorage:", e);
+    return false;
+  }
+};
+
 export const safeSetItem = (key: string, value: string): boolean => {
   try {
     localStorage.setItem(key, value);

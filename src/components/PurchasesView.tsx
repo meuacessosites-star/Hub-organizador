@@ -42,6 +42,32 @@ interface PurchasesViewProps {
   onClearInitialSearch?: () => void;
 }
 
+const formatImageUrl = (url: string) => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('/api/proxy-image')) {
+    return trimmed;
+  }
+
+  let rawUrl = trimmed;
+  if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+    if (rawUrl.startsWith('//')) {
+      rawUrl = `https:${rawUrl}`;
+    } else {
+      const cleanHash = rawUrl.replace(/^\/?(file\/)?/, '');
+      rawUrl = `https://down-br.img.susercontent.com/file/${cleanHash}`;
+    }
+  }
+
+  return `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
+};
+
+const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  const target = e.currentTarget;
+  target.style.opacity = '0.3';
+};
+
 const CardCarousel = ({ images, productName, onOpenFullScreen }: { images: string[]; productName: string, onOpenFullScreen: (index: number) => void }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -61,7 +87,7 @@ const CardCarousel = ({ images, productName, onOpenFullScreen }: { images: strin
         {/* Blurred Background */}
         <div 
           className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 transition-all duration-500"
-          style={{ backgroundImage: `url(${images[currentIndex]})` }}
+          style={{ backgroundImage: `url(${formatImageUrl(images[currentIndex])})` }}
         />
         {/* Image Container */}
         <motion.div 
@@ -83,7 +109,9 @@ const CardCarousel = ({ images, productName, onOpenFullScreen }: { images: strin
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
-            src={images[currentIndex]}
+            src={formatImageUrl(images[currentIndex])}
+            referrerPolicy="no-referrer"
+            onError={handleImgError}
             alt={`${productName} - Foto ${currentIndex + 1}`}
             className="max-w-full max-h-full object-contain select-none shadow-2xl rounded-sm"
           />
@@ -95,7 +123,7 @@ const CardCarousel = ({ images, productName, onOpenFullScreen }: { images: strin
         <div className="h-14 flex items-center gap-2 px-3 overflow-x-auto scrollbar-hide border-t border-neutral-100 dark:border-[#2a2d40]/40">
           {images.map((img, i) => (
             <button
-              key={`thumb-${i}-${img.substring(0, 20)}`}
+              key={`thumb-${i}`}
               onClick={(e) => {
                 e.stopPropagation();
                 setCurrentIndex(i);
@@ -106,7 +134,7 @@ const CardCarousel = ({ images, productName, onOpenFullScreen }: { images: strin
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
-              <img referrerPolicy="no-referrer" src={img} alt="" className="w-full h-full object-cover"/>
+              <img referrerPolicy="no-referrer" src={formatImageUrl(img)} onError={handleImgError} alt="Foto do produto" className="w-full h-full object-cover"/>
             </button>
           ))}
         </div>
@@ -660,14 +688,14 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPurchases.map((purchase) => {
+            {filteredPurchases.map((purchase, pIdx) => {
               const platform = platforms.find((p) => p.id === purchase.platformId);
               const buyerProfile = platform?.profiles.find((pr) => pr.id === purchase.profileId);
               const domain = platform ? getDomainFromInput(platform.name, platform.url) : '';
 
               return (
                 <motion.div
-                  key={`${purchase.platformId}-${purchase.id}`}
+                  key={`pur-card-${purchase.platformId}-${purchase.id}-${pIdx}`}
                   id={`purchase-card-${purchase.id}`}
                   layoutId={`purchase-card-${purchase.id}`}
                   className={`bg-[#0d0d0d] border rounded-2xl overflow-hidden transition-all duration-300 shadow-[0_15px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] hover:border-white/[0.1] flex flex-col group ${
@@ -824,7 +852,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                             const itemStatus = item.status || 'pedido_feito';
                             const hasPrice = item.price !== undefined && item.price !== null && item.price > 0;
                             return (
-                              <div key={item.id || `bi-${purchase.id}-${idx}-${item.name}`} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
+                              <div key={item.id ? `${item.id}-${idx}` : `bi-${purchase.id}-${idx}-${item.name}`} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
                                 <div className="flex items-center gap-2 max-w-[200px]">
                                   <button
                                     type="button"
@@ -846,7 +874,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                                       className="w-5 h-5 rounded overflow-hidden shrink-0 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/60 shadow-sm cursor-pointer hover:opacity-85 transition-opacity relative group"
                                       title="Ver em tela cheia"
                                     >
-                                      <img referrerPolicy="no-referrer" src={item.image} alt={item.name} className="w-full h-full object-cover pointer-events-none"/>
+                                      <img referrerPolicy="no-referrer" src={formatImageUrl(item.image)} onError={handleImgError} alt={item.name || "Item"} className="w-full h-full object-cover pointer-events-none"/>
                                       {item.images && item.images.length > 1 && (
                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-[8px] font-extrabold text-white opacity-0 group-hover:opacity-100 transition-opacity">
                                           +{item.images.length}

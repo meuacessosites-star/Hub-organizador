@@ -52,7 +52,7 @@ const steps: TutorialStep[] = [
   {
     targetId: 'platform-card-demo-plat-netflix',
     title: 'Visualização de Plataformas',
-    description: 'Olha só! Com a simulação ativa, adicionamos a Netflix como exemplo real. Cada card organiza as credenciais, contas e atalhos rápidos do serviço de forma isolada.',
+    description: 'Olha só! Com o tutorial ativo, adicionamos a Netflix como exemplo real. Cada card organiza as credenciais, contas e atalhos rápidos do serviço de forma isolada.',
     icon: <Sparkles className="w-5 h-5 text-purple-500" />,
     position: 'bottom'
   },
@@ -282,7 +282,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-[#0a0a0a] text-white rounded-3xl p-5 sm:p-8 max-w-5xl w-full shadow-2xl border border-neutral-800 relative my-auto mx-auto overflow-hidden flex flex-col max-h-[95vh] sm:max-h-none"
+          className="bg-[#0a0a0a] text-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 max-w-5xl w-full shadow-2xl border border-neutral-800 relative my-auto mx-auto overflow-hidden flex flex-col max-h-[90vh]"
         >
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600 via-indigo-600 to-purple-600 shrink-0" />
           
@@ -290,7 +290,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
             <div className="flex items-center gap-2 select-none">
               <Sparkles className="w-4.5 h-4.5 sm:w-5.5 sm:h-5.5 text-red-500 animate-pulse" />
               <h2 className="text-base sm:text-2xl font-bold text-neutral-100">
-                Simulação do Aplicativo
+                Tutorial do Aplicativo
               </h2>
             </div>
             <button 
@@ -449,7 +449,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
                             <div>
                               <span className="text-[8px] sm:text-[9px] font-extrabold text-neutral-500 uppercase tracking-wider block mb-1">RASCUNHO / NOTAS</span>
                               <div className="bg-[#16171d] px-2.5 py-2 sm:py-2.5 rounded-xl border border-neutral-800/40 text-[10px] sm:text-xs italic text-neutral-400">
-                                Simulação
+                                Tutorial de Uso
                               </div>
                             </div>
                           </div>
@@ -526,13 +526,13 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
                     <BookOpen className="w-4 h-4 text-red-500" /> 9 Dicas de Uso Essenciais
                   </h3>
                   
-                  <div className="space-y-3 sm:space-y-4 text-[11px] sm:text-xs text-neutral-400 leading-relaxed max-h-[300px] lg:max-h-[460px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-3 sm:space-y-4 text-[11px] sm:text-xs text-neutral-400 leading-relaxed lg:max-h-[460px] lg:overflow-y-auto pr-2 custom-scrollbar">
                     <div className="flex gap-2 sm:gap-3.5 bg-neutral-800/20 p-2 sm:p-3 rounded-xl border border-neutral-800/30">
                       <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-red-600/10 text-red-400 flex items-center justify-center font-black shrink-0 text-[9px] sm:text-xs">
                         1
                       </div>
                       <div>
-                        <p className="font-bold text-neutral-200 mb-0.5 text-[10px] sm:text-[12px]">Simulação Interativa</p>
+                        <p className="font-bold text-neutral-200 mb-0.5 text-[10px] sm:text-[12px]">Tutorial Interativo</p>
                         <p className="text-[10px] sm:text-[11px]">O card à esquerda é <span className="text-indigo-400">interativo</span>! Clique nas abas e botões para ver como o app se comporta.</p>
                       </div>
                     </div>
@@ -699,15 +699,14 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
         <motion.div
           key={currentStep}
           ref={tooltipRef}
-          initial={window.innerWidth < 640 ? { opacity: 0, scale: 0.9, x: '-50%', y: '-50%' } : { opacity: 0, scale: 0.9 }}
-          animate={window.innerWidth < 640 ? { opacity: 1, scale: 1, x: '-50%', y: '-50%' } : { opacity: 1, scale: 1 }}
-          exit={window.innerWidth < 640 ? { opacity: 0, scale: 0.9, x: '-50%', y: '-50%' } : { opacity: 0, scale: 0.9 }}
+          initial={window.innerWidth < 640 ? { opacity: 0, scale: 0.9, x: '-50%', y: 0 } : { opacity: 0, scale: 0.9 }}
+          animate={window.innerWidth < 640 ? { opacity: 1, scale: 1, x: '-50%', y: 0 } : { opacity: 1, scale: 1 }}
+          exit={window.innerWidth < 640 ? { opacity: 0, scale: 0.9, x: '-50%', y: 0 } : { opacity: 0, scale: 0.9 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           style={tooltipPos.top === '50%' || window.innerWidth < 640 ? {
             top: tooltipPos.top,
             bottom: tooltipPos.bottom,
             left: '50%',
-            transform: `translate(-50%, 0)`,
           } : {
             top: tooltipPos.top,
             left: tooltipPos.left,

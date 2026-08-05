@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { db, auth } from '../firebase';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
-import { safeParse, safeSetItem } from '../lib/utils';
+import { safeParse, safeSetItem, safeGetItem, safeRemoveItem } from '../lib/utils';
 import { handleFirestoreError, OperationType } from '../utils/firebaseErrors';
 
 const DEFAULT_TAGS: Tag[] = [
@@ -84,7 +84,7 @@ const getDemoPlatforms = (userId: string): Platform[] => [
         email: 'teste@gmailm.com',
         password: 'SenhaSecretaNetflix123',
         accessLink: 'Netflix.com',
-        description: 'Simulação',
+        description: 'Tutorial de Uso',
         avatar: { type: 'color', value: 'PE', bgColor: '#6366f1' }
       }
     ],
@@ -252,20 +252,20 @@ export function useStorage() {
       
       legacyKeys.forEach((oldKey, idx) => {
         const newKey = uniqueKeys[idx];
-        if (!localStorage.getItem(newKey) && localStorage.getItem(oldKey)) {
+        if (!safeGetItem(newKey) && safeGetItem(oldKey)) {
           console.log(`Migrating legacy guest data from ${oldKey} to ${newKey}`);
-          localStorage.setItem(newKey, localStorage.getItem(oldKey)!);
-          // Optional: localStorage.removeItem(oldKey); // Keep for safety for now
+          safeSetItem(newKey, safeGetItem(oldKey)!);
+          // Optional: safeRemoveItem(oldKey); // Keep for safety for now
         }
       });
     }
 
     // Load user-specific local storage cache for instant offline rendering
-    const savedTags = localStorage.getItem(`hub_user_${user.uid}_tags`);
-    const savedCats = localStorage.getItem(`hub_user_${user.uid}_categories`);
-    const savedPlats = localStorage.getItem(`hub_user_${user.uid}_platforms`);
-    const savedStatuses = localStorage.getItem(`hub_user_${user.uid}_statuses`);
-    const savedPresets = localStorage.getItem(`hub_user_${user.uid}_profile_presets`);
+    const savedTags = safeGetItem(`hub_user_${user.uid}_tags`);
+    const savedCats = safeGetItem(`hub_user_${user.uid}_categories`);
+    const savedPlats = safeGetItem(`hub_user_${user.uid}_platforms`);
+    const savedStatuses = safeGetItem(`hub_user_${user.uid}_statuses`);
+    const savedPresets = safeGetItem(`hub_user_${user.uid}_profile_presets`);
 
     const localTags = safeParse(savedTags, DEFAULT_TAGS);
     const localCats = safeParse(savedCats, DEFAULT_CATEGORIES);
@@ -326,7 +326,6 @@ export function useStorage() {
       const tagsRef = collection(db, 'users', user.uid, 'tags');
       unsubs.push(onSnapshot(tagsRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
-        if (snap.metadata.hasPendingWrites) return;
         
         console.log('useStorage: tags snapshot received', snap.size);
         if (!snap.empty) {
@@ -355,7 +354,6 @@ export function useStorage() {
       const catRef = collection(db, 'users', user.uid, 'categories');
       unsubs.push(onSnapshot(catRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
-        if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
           const cloudCats = snap.docs.map(d => ({ ...d.data() as Category, id: d.id }));
@@ -380,7 +378,6 @@ export function useStorage() {
       const platRef = collection(db, 'users', user.uid, 'platforms');
       unsubs.push(onSnapshot(platRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
-        if (snap.metadata.hasPendingWrites) return; // Ignore updates while we have pending local writes to this collection
         
         if (!snap.empty) {
           const cloudPlats = snap.docs.map(d => {
@@ -390,6 +387,10 @@ export function useStorage() {
           setPlatforms(cloudPlats);
           platformsRef.current = cloudPlats;
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
+        } else {
+          setPlatforms([]);
+          platformsRef.current = [];
+          safeSetItem(`hub_user_${user.uid}_platforms`, '[]');
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/platforms`);
@@ -399,7 +400,6 @@ export function useStorage() {
       const statusRef = collection(db, 'users', user.uid, 'statuses');
       unsubs.push(onSnapshot(statusRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
-        if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
           const cloudStatuses = snap.docs.map(d => ({ ...d.data() as Status, id: d.id }));
@@ -424,7 +424,6 @@ export function useStorage() {
       const presetRef = collection(db, 'users', user.uid, 'profilePresets');
       unsubs.push(onSnapshot(presetRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
-        if (snap.metadata.hasPendingWrites) return;
         
         if (!snap.empty) {
           const cloudPresets = snap.docs.map(d => ({ ...d.data() as ProfilePreset, id: d.id }));
@@ -460,7 +459,7 @@ export function useStorage() {
       
       // We only backup if local storage has non-default data
       // For simplicity, we'll just check if any platforms exist or if tags/categories differ from defaults
-      const savedPlats = localStorage.getItem(`hub_user_${user.uid}_platforms`);
+      const savedPlats = safeGetItem(`hub_user_${user.uid}_platforms`);
       if (!savedPlats || savedPlats === '[]') {
         console.log('useStorage: No platforms found for initial backup, skipping.');
         return;
@@ -936,7 +935,7 @@ export function useStorage() {
       `hub_user_${user.uid}_platforms`, `hub_user_${user.uid}_statuses`,
       `hub_user_${user.uid}_profile_presets`
     ];
-    keys.forEach(k => localStorage.removeItem(k));
+    keys.forEach(k => safeRemoveItem(k));
     
     // Clear refs to avoid immediate re-save
     lastTagsRef.current = null;

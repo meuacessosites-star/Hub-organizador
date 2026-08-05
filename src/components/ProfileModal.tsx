@@ -361,7 +361,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     } else if (avatarTab === 'emoji') {
       avatarValue = selectedEmoji;
     } else {
-      avatarValue = imageUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+      avatarValue = imageUrl || '';
     }
 
     const avatarObj: ProfileAvatar = {
@@ -410,13 +410,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   if (!isOpen || !platform) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm select-none">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 max-h-[90dvh] flex flex-col"
-      >
+    <div className="fixed inset-0 bg-black/75 z-50 overflow-y-auto backdrop-blur-sm scrollbar-hide">
+      <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 flex flex-col"
+        >
         {/* Header */}
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
           <div>
@@ -459,7 +460,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       referrerPolicy="no-referrer" 
                       src={imageUrl} 
                       alt="profile" 
-                      className="w-full h-full object-contain rounded-full transition-transform duration-200" 
+                      className="w-full h-full object-cover rounded-full transition-transform duration-200" 
                       style={{ transform: `scale(${avatarZoom})` }} 
                     />
                   ) : (
@@ -1164,9 +1165,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       </AnimatePresence>
 
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        {PRESET_COLORS.map((col) => (
+                        {PRESET_COLORS.map((col, idx) => (
                           <button
-                            key={col}
+                            key={`profile-color-${col}-${idx}`}
                             type="button"
                             onClick={() => setSelectedColor(col)}
                             className="w-6 h-6 rounded-full border border-black/40 flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all cursor-pointer"
@@ -1184,9 +1185,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   {avatarTab === 'emoji' && (
                     <div className="flex flex-col items-center gap-3.5 w-full mt-4 pt-4 border-t border-neutral-200 dark:border-[#2a2d40]">
                       <div className="grid grid-cols-5 gap-2 max-w-xs justify-center w-full">
-                        {PRESET_EMOJIS.map((em) => (
+                        {PRESET_EMOJIS.map((em, idx) => (
                           <button
-                            key={em}
+                            key={`profile-emoji-${em}-${idx}`}
                             type="button"
                             id={`profile-preset-emoji-${em}`}
                             data-testid={`profile-preset-emoji-${em}`}
@@ -1221,15 +1222,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   {avatarTab === 'image' && (
                     <div className="flex flex-col items-center gap-4 w-full select-none">
                       <div 
-                        className="w-16 h-16 rounded-full border-2 border-indigo-500/20 overflow-hidden flex items-center justify-center shadow-lg transition-colors"
-                        style={{ backgroundColor: selectedColor }}
+                        className="w-16 h-16 rounded-full border-2 border-indigo-500/20 overflow-hidden flex items-center justify-center shadow-lg transition-colors bg-white dark:bg-black"
                       >
                         {imageUrl ? (
                           <img 
                             referrerPolicy="no-referrer" 
                             src={imageUrl} 
                             alt="Avatar preview" 
-                            className="w-full h-full object-contain transition-transform duration-200"
+                            className="w-full h-full object-cover transition-transform duration-200"
                             style={{ transform: `scale(${avatarZoom})` }} 
                           />
                         ) : (
@@ -1258,9 +1258,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           <div className="flex flex-col gap-1.5">
                             <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-0.5">Cor de Fundo</span>
                             <div className="flex flex-wrap justify-center gap-1.5 relative">
-                              {['#7c5cfc', '#ff5c5c', '#5cff9d', '#5cd6ff', '#ffb85c', '#ff5cd6', '#333333', '#ffffff'].map(color => (
+                              {['#7c5cfc', '#ff5c5c', '#5cff9d', '#5cd6ff', '#ffb85c', '#ff5cd6', '#333333', '#ffffff'].map((color, idx) => (
                                 <button
-                                  key={color}
+                                  key={`profile-bgcol-${color}-${idx}`}
                                   type="button"
                                   onClick={() => setSelectedColor(color)}
                                   className={`w-6 h-6 rounded-full border transition-all cursor-pointer ${
@@ -1411,5 +1411,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
       </motion.div>
     </div>
-  );
+  </div>
+);
 };

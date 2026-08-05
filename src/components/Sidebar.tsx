@@ -187,12 +187,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Map other categories */}
             {categories
               .filter(cat => cat.name.toLowerCase().includes(categorySearch.toLowerCase()))
-              .map((cat) => {
+              .map((cat, idx) => {
               const isSelected = selectedCategory === cat.id;
               const slugName = cat.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
               return (
                 <button
-                  key={cat.id}
+                  key={`side-cat-${cat.id}-${idx}`}
                   id={`sidebar-category-btn-${cat.id}`}
                   data-testid={`sidebar-category-btn-${slugName}`}
                   aria-label={`Filtrar por ${cat.name}, ${getCategoryCount(cat.id)} itens`}

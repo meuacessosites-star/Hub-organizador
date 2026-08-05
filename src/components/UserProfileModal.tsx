@@ -107,6 +107,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [selectedColor, setSelectedColor] = useState('#7c5cfc');
   const [selectedEmoji, setSelectedEmoji] = useState('👤');
   const [imageUrl, setImageUrl] = useState('');
+  const [avatarZoom, setAvatarZoom] = useState(1);
   const [customLetters, setCustomLetters] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
@@ -240,7 +241,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             setSelectedEmoji(userProfile.avatar.value);
           }
         }
-        if (userProfile.avatar.type === 'image') setImageUrl(userProfile.avatar.value);
+        if (userProfile.avatar.type === 'image') {
+          setImageUrl(userProfile.avatar.value);
+          setAvatarZoom(userProfile.avatar.zoom || 1);
+        }
       } else {
         setAvatarTab(user.photoURL ? 'google' : 'color');
         setCustomLetters('');
@@ -338,7 +342,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         avatar: {
           type: avatarTab,
           value: avatarTab === 'emoji' ? selectedEmoji : avatarTab === 'image' ? imageUrl : avatarTab === 'color' ? customLetters : '',
-          bgColor: selectedColor
+          bgColor: selectedColor,
+          zoom: avatarTab === 'image' ? avatarZoom : undefined
         }
       };
 
@@ -383,7 +388,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   const renderAvatarPreview = () => {
     if (avatarTab === 'image' && imageUrl) {
-      return <img referrerPolicy="no-referrer" src={imageUrl} alt="preview" className="w-full h-full object-cover rounded-full" />;
+      return (
+        <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-neutral-100 dark:bg-neutral-900">
+          <img referrerPolicy="no-referrer" src={imageUrl} alt="preview" className="w-full h-full object-contain transition-transform duration-200" style={{ transform: `scale(${avatarZoom})` }} />
+        </div>
+      );
     }
     if (avatarTab === 'emoji') {
       return (
@@ -556,9 +565,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       {avatarTab === 'emoji' && (
                         <div>
                           <div className="flex flex-wrap gap-2 justify-center">
-                            {PRESET_EMOJIS.map(emoji => (
+                            {PRESET_EMOJIS.map((emoji, idx) => (
                               <button
-                                key={emoji}
+                                key={`upm-emoji-${emoji}-${idx}`}
                                 type="button"
                                 onClick={() => setSelectedEmoji(emoji)}
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg cursor-pointer transition-transform hover:scale-110 active:scale-95 ${
@@ -594,9 +603,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
                       {/* Preset Colors */}
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        {PRESET_COLORS.map((col) => (
+                        {PRESET_COLORS.map((col, idx) => (
                           <button
-                            key={col}
+                            key={`upm-color-${col}-${idx}`}
                             type="button"
                             onClick={() => setSelectedColor(col)}
                             className="w-6 h-6 rounded-full border border-black/20 flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all cursor-pointer"
@@ -692,7 +701,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   )}
 
                   {avatarTab === 'image' && (
-                    <div className="flex flex-col items-center gap-3">
+                    <div className="flex flex-col items-center gap-4">
                       <label className="cursor-pointer group flex flex-col items-center gap-2">
                         <div className="h-10 px-4 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center font-semibold text-sm group-hover:bg-indigo-100 transition-colors dark:bg-indigo-500/10 dark:text-indigo-400 dark:group-hover:bg-indigo-500/20">
                           Escolher imagem...
@@ -707,6 +716,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                           Formato JPG, PNG ou GIF. Máximo 5MB.
                         </span>
                       </label>
+
+                      {imageUrl && (
+                        <div className="w-full flex flex-col gap-2 pt-2 border-t border-neutral-200/50 dark:border-neutral-800/40">
+                          <div className="flex justify-between items-center px-1">
+                            <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Ajustar Zoom</span>
+                            <span className="text-[10px] font-mono font-bold text-indigo-500">{Math.round(avatarZoom * 100)}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.2"
+                            max="5"
+                            step="0.01"
+                            value={avatarZoom}
+                            onChange={(e) => setAvatarZoom(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

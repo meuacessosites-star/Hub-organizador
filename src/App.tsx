@@ -26,6 +26,7 @@ import { ScrollButtons } from './components/ScrollButtons';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
 
 import { useTheme } from './context/ThemeContext';
+import { safeStorage } from './utils/storage';
 
 export default function App() {
   const { addToast } = useToast();
@@ -61,7 +62,7 @@ export default function App() {
   } = useStorage();
 
   const [isTutorialActive, setIsTutorialActive] = useState(() => {
-    return localStorage.getItem('hub_onboarding_seen') !== 'true';
+    return safeStorage.getItem('hub_onboarding_seen') !== 'true';
   });
 
   const [selectedCategory, setSelectedCategory] = useState('todas');
@@ -279,7 +280,7 @@ export default function App() {
     
     // Automatically complete/hide the onboarding tutorial once they successfully create a platform
     setIsTutorialActive(false);
-    localStorage.setItem('hub_onboarding_seen', 'true');
+    safeStorage.setItem('hub_onboarding_seen', 'true');
     
     addToast(`Plataforma "${data.name}" criada com sucesso! 🚀`, 'success');
   };
@@ -531,11 +532,11 @@ export default function App() {
                         layout="position"
                         className="grid grid-cols-1 xl:grid-cols-2 gap-10"
                       >
-                        {filteredPlatforms.map((plat) => {
+                        {filteredPlatforms.map((plat, pIdx) => {
                           const cat = categories.find((c) => c.id === plat.categoryId);
                           return (
                             <PlatformCard
-                              key={plat.id}
+                              key={`plat-grid-${plat.id}-${pIdx}`}
                               platform={plat}
                               categoryName={cat ? cat.name : 'Outros'}
                               categoryIcon={cat ? cat.icon : '📁'}

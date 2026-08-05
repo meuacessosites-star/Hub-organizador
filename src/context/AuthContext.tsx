@@ -23,6 +23,7 @@ export interface UserProfileData {
     type: 'color' | 'emoji' | 'image' | 'google';
     value: string;
     bgColor?: string;
+    zoom?: number;
   };
 }
 

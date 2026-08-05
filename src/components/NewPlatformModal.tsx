@@ -204,6 +204,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   const [showColorWheel, setShowColorWheel] = useState(false);
   const [showAllPresets, setShowAllPresets] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
+  const [showAvatarZoomControl, setShowAvatarZoomControl] = useState(false);
 
   const colorWheelRef = useRef<HTMLDivElement>(null);
 
@@ -555,13 +556,14 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm select-none">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 max-h-[90dvh] flex flex-col"
-      >
+    <div className="fixed inset-0 bg-black/75 z-50 overflow-y-auto backdrop-blur-sm scrollbar-hide">
+      <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 flex flex-col"
+        >
         {/* Header */}
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
           <div>
@@ -581,7 +583,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
         </div>
 
         {/* Content Panel */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(85vh - 140px)' }}>
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
           {/* STEP 1 */}
           {step === 1 && (
             <div className="flex flex-col gap-5">
@@ -661,7 +663,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                        <img referrerPolicy="no-referrer"
                          src={finalLogoUrlPreview}
                          alt="Logo Preview"
-                         className="w-full h-full object-contain p-1.5"
+                         className="w-full h-full object-cover p-0"
                          onError={() => {
                            setLogoPreviewErrorCount(prev => prev + 1);
                          }}
@@ -1507,9 +1509,9 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
 
                       {/* Preset color bubbles */}
                       <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
-                        {PRESET_COLORS.map((col) => (
+                        {PRESET_COLORS.map((col, idx) => (
                           <button
-                            key={col}
+                            key={`newplatform-color-${col}-${idx}`}
                             type="button"
                             onClick={() => setSelectedColor(col)}
                             className={`w-6 h-6 rounded-full border border-black/40 flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all cursor-pointer`}
@@ -1535,9 +1537,9 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       </div>
 
                       <div className="grid grid-cols-5 gap-2.5 max-w-xs justify-center">
-                        {PRESET_EMOJIS.map((em) => (
+                        {PRESET_EMOJIS.map((em, idx) => (
                           <button
-                            key={em}
+                            key={`newplatform-emoji-${em}-${idx}`}
                             type="button"
                             onClick={() => setSelectedEmoji(em)}
                             className={`w-8 h-8 text-lg rounded-lg flex items-center justify-center transition-all hover:bg-neutral-200 cursor-pointer dark:hover:bg-neutral-800 ${
@@ -1565,7 +1567,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                             referrerPolicy="no-referrer" 
                             src={imageUrl} 
                             alt="Avatar preview" 
-                            className="w-full h-full object-contain transition-transform duration-200"
+                            className="w-full h-full object-cover transition-transform duration-200"
                             style={{ transform: `scale(${avatarZoom})` }} 
                           />
                         ) : (
@@ -1594,9 +1596,9 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           <div className="flex flex-col gap-1.5">
                             <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-0.5">Cor de Fundo</span>
                             <div className="flex flex-wrap justify-center gap-1.5 relative">
-                              {['#7c5cfc', '#ff5c5c', '#5cff9d', '#5cd6ff', '#ffb85c', '#ff5cd6', '#333333', '#ffffff'].map(color => (
+                              {['#7c5cfc', '#ff5c5c', '#5cff9d', '#5cd6ff', '#ffb85c', '#ff5cd6', '#333333', '#ffffff'].map((color, idx) => (
                                 <button
-                                  key={color}
+                                  key={`npm-bgcol-${color}-${idx}`}
                                   type="button"
                                   onClick={() => setSelectedColor(color)}
                                   className={`w-6 h-6 rounded-full border transition-all cursor-pointer ${
@@ -1704,5 +1706,6 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
         </div>
       </motion.div>
     </div>
-  );
+  </div>
+);
 };
