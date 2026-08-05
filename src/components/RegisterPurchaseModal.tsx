@@ -210,6 +210,22 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     return null;
   };
 
+  const extractAmazonAsinAndImage = (urlStr: string): { asin: string | null; imageUrl: string | null } => {
+    try {
+      const url = new URL(urlStr.startsWith('http') ? urlStr : `https://${urlStr}`);
+      const pathname = url.pathname;
+      const dpMatch = pathname.match(/\/(?:dp|gp\/product|ASIN)\/([A-Z0-9]{10})/i) || pathname.match(/\/([A-Z0-9]{10})(?:[\/?#]|$)/i);
+      if (dpMatch && dpMatch[1]) {
+        const asin = dpMatch[1].toUpperCase();
+        return {
+          asin,
+          imageUrl: `https://images-na.ssl-images-amazon.com/images/P/${asin}.01.LZZZZZZZ.jpg`
+        };
+      }
+    } catch (e) {}
+    return { asin: null, imageUrl: null };
+  };
+
   const extractNameFromUrl = (url: string): string => {
     if (!url) return '';
     try {
@@ -223,11 +239,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         const gpIdx = pathname.indexOf('/gp/product/');
         let amazonSlug = '';
 
-        if (dpIdx !== -1) {
+        if (dpIdx > 0) {
           const partBeforeDp = pathname.substring(0, dpIdx);
           const segments = partBeforeDp.split('/').filter(Boolean);
           if (segments.length > 0) amazonSlug = segments[segments.length - 1];
-        } else if (gpIdx !== -1) {
+        } else if (gpIdx > 0) {
           const partBeforeGp = pathname.substring(0, gpIdx);
           const segments = partBeforeGp.split('/').filter(Boolean);
           if (segments.length > 0) amazonSlug = segments[segments.length - 1];
@@ -246,6 +262,13 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
             return clean.charAt(0).toUpperCase() + clean.slice(1);
           }
         }
+
+        const dpMatch = pathname.match(/\/(?:dp|gp\/product|ASIN)\/([A-Z0-9]{10})/i) || pathname.match(/\/([A-Z0-9]{10})(?:[\/?#]|$)/i);
+        if (dpMatch && dpMatch[1]) {
+          return `Produto Amazon (${dpMatch[1].toUpperCase()})`;
+        }
+
+        return 'Produto Amazon';
       }
 
       // General fallback extraction
@@ -644,24 +667,30 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       }
     } else {
       // Fallback para Vercel static SPA ou quando a API backend não está presente
+      const amazonDetails = extractAmazonAsinAndImage(productLink);
       const extractedTitle = extractNameFromUrl(productLink) || "Produto Importado";
       if (!productName.trim()) {
         setProductName(extractedTitle);
       }
 
-      const queryTerm = extractedTitle
-        .toLowerCase()
-        .replace(/comprar|preço|oferta|promoção|shopee|amazon|mercado livre|frete grátis/gi, '')
-        .replace(/[^\w\s]/gi, '')
-        .trim()
-        .split(/\s+/)
-        .slice(0, 3)
-        .join(' ') || "product";
+      if (amazonDetails.imageUrl) {
+        setProductImages([amazonDetails.imageUrl]);
+        addToast("Título e imagem real da Amazon extraídos com sucesso! ✨", "success");
+      } else {
+        const queryTerm = extractedTitle
+          .toLowerCase()
+          .replace(/comprar|preço|oferta|promoção|shopee|amazon|mercado livre|frete grátis/gi, '')
+          .replace(/[^\w\s]/gi, '')
+          .trim()
+          .split(/\s+/)
+          .slice(0, 3)
+          .join(' ') || "product";
 
-      const unsplashImg = `https://images.unsplash.com/featured/500x500/?${encodeURIComponent(queryTerm)},product`;
+        const unsplashImg = `https://images.unsplash.com/featured/500x500/?${encodeURIComponent(queryTerm)},product`;
 
-      setProductImages((prev) => (prev.length > 0 ? prev : [unsplashImg]));
-      addToast("Dados do produto preenchidos com sucesso! ✨", "success");
+        setProductImages((prev) => (prev.length > 0 ? prev : [unsplashImg]));
+        addToast("Dados do produto preenchidos com sucesso! ✨", "success");
+      }
     }
 
     setIsPulling(false);
@@ -802,6 +831,20 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
       if (metadataImage) {
         suggestedImages.push(metadataImage);
+      } else if (item.link?.trim()) {
+        const amazonDetails = extractAmazonAsinAndImage(item.link.trim());
+        if (amazonDetails.imageUrl) {
+          metadataImage = amazonDetails.imageUrl;
+          suggestedImages.push(amazonDetails.imageUrl);
+        }
+        if (!item.name.trim()) {
+          const nameFromUrl = extractNameFromUrl(item.link.trim());
+          if (nameFromUrl) {
+            const newItems = [...bundleItems];
+            newItems[index].name = nameFromUrl;
+            setBundleItems(newItems);
+          }
+        }
       }
       
       // 2. Product Search - use metadata title as priority search term
