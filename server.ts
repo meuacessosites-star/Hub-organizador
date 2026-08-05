@@ -459,6 +459,19 @@ async function startServer() {
       } catch (e) {
         // try next
       }
+
+      try {
+        const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(currentUrl)}`;
+        const resp = await fetch(corsProxyUrl, { signal: AbortSignal.timeout(6000) });
+        if (resp.ok) {
+          const contentType = resp.headers.get('content-type') || 'image/jpeg';
+          const arrayBuffer = await resp.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          return `data:${contentType};base64,${buffer.toString('base64')}`;
+        }
+      } catch (e) {
+        // try next
+      }
     }
 
     return null;

@@ -40,9 +40,12 @@ export const FullScreenCarousel: React.FC<FullScreenCarouselProps> = ({ images, 
             if (
               rawUrl.startsWith('data:') ||
               rawUrl.startsWith('blob:') ||
-              rawUrl.startsWith('/api/proxy-image')
+              rawUrl.startsWith('https://corsproxy.io/')
             ) {
               // use as is
+            } else if (rawUrl.startsWith('/api/proxy-image?url=')) {
+              const extracted = decodeURIComponent(rawUrl.replace('/api/proxy-image?url=', ''));
+              rawUrl = `https://corsproxy.io/?${encodeURIComponent(extracted || rawUrl)}`;
             } else {
               if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
                 if (rawUrl.startsWith('//')) {
@@ -52,7 +55,7 @@ export const FullScreenCarousel: React.FC<FullScreenCarouselProps> = ({ images, 
                   rawUrl = `https://down-br.img.susercontent.com/file/${cleanHash}`;
                 }
               }
-              rawUrl = `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
+              rawUrl = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
             }
 
             return (

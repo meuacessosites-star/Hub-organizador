@@ -46,7 +46,12 @@ const formatImageUrl = (url: string) => {
   if (!url) return '';
   const trimmed = url.trim();
   if (!trimmed) return '';
-  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('/api/proxy-image')) {
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('https://corsproxy.io/')) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('/api/proxy-image?url=')) {
+    const extracted = decodeURIComponent(trimmed.replace('/api/proxy-image?url=', ''));
+    if (extracted) return `https://corsproxy.io/?${encodeURIComponent(extracted)}`;
     return trimmed;
   }
 
@@ -60,7 +65,7 @@ const formatImageUrl = (url: string) => {
     }
   }
 
-  return `/api/proxy-image?url=${encodeURIComponent(rawUrl)}`;
+  return `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
 };
 
 const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
