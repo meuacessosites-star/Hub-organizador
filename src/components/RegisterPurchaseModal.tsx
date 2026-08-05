@@ -214,9 +214,48 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     if (!url) return '';
     try {
       const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+      const host = parsed.hostname.toLowerCase();
       const pathname = parsed.pathname;
-      const parts = pathname.split('/').filter(p => p.length > 0 && !/^\d+$/.test(p));
-      let candidate = parts[parts.length - 1] || parts[0] || '';
+
+      // Special handling for Amazon URLs (amazon.com, amazon.com.br, amzn.to, a.co)
+      if (host.includes('amazon') || host.includes('amzn') || host.includes('a.co')) {
+        const dpIdx = pathname.indexOf('/dp/');
+        const gpIdx = pathname.indexOf('/gp/product/');
+        let amazonSlug = '';
+
+        if (dpIdx !== -1) {
+          const partBeforeDp = pathname.substring(0, dpIdx);
+          const segments = partBeforeDp.split('/').filter(Boolean);
+          if (segments.length > 0) amazonSlug = segments[segments.length - 1];
+        } else if (gpIdx !== -1) {
+          const partBeforeGp = pathname.substring(0, gpIdx);
+          const segments = partBeforeGp.split('/').filter(Boolean);
+          if (segments.length > 0) amazonSlug = segments[segments.length - 1];
+        } else {
+          const segments = pathname.split('/').filter(Boolean);
+          const candidates = segments.filter(s => s !== 'dp' && s !== 'gp' && s !== 'product' && !/^[A-Z0-9]{10}$/i.test(s) && s.length > 3);
+          if (candidates.length > 0) amazonSlug = candidates[0];
+        }
+
+        if (amazonSlug) {
+          let clean = decodeURIComponent(amazonSlug)
+            .replace(/[-_]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (clean.length > 2) {
+            return clean.charAt(0).toUpperCase() + clean.slice(1);
+          }
+        }
+      }
+
+      // General fallback extraction
+      const parts = pathname.split('/').filter(p => p.length > 0 && !/^\d+$/.test(p) && !/^[A-Z0-9]{10}$/i.test(p));
+      let candidate = '';
+      if (parts.length > 0) {
+        const sorted = [...parts].filter(p => p.length > 3 && !['dp', 'gp', 'product', 'p', 'item'].includes(p.toLowerCase())).sort((a, b) => b.length - a.length);
+        candidate = sorted[0] || parts[parts.length - 1] || parts[0] || '';
+      }
+
       if (candidate) {
         candidate = decodeURIComponent(candidate)
           .replace(/\.(html|php|aspx)$/gi, '')
@@ -226,11 +265,13 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
           .replace(/\s+/g, ' ')
           .trim();
       }
+
       if (candidate && candidate.length > 2) {
         return candidate.charAt(0).toUpperCase() + candidate.slice(1);
       }
-      const host = parsed.hostname.replace('www.', '').split('.')[0];
-      return `Produto ${host.charAt(0).toUpperCase() + host.slice(1)}`;
+
+      const domain = host.replace('www.', '').split('.')[0];
+      return `Produto ${domain.charAt(0).toUpperCase() + domain.slice(1)}`;
     } catch {
       return '';
     }
@@ -542,6 +583,45 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       console.warn("API /api/fetch-metadata indisponível ou resposta não é JSON (ex. ambiente de preview):", e);
     }
 
+    if (!data) {
+      // Attempt client-side fetch via corsproxy.io for static hosts like Vercel
+      try {
+        const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(productLink)}`;
+        const res = await fetch(corsProxyUrl, { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+          const htmlText = await res.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlText, "text/html");
+
+          const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
+                          doc.querySelector('#productTitle')?.textContent?.trim() ||
+                          doc.querySelector('title')?.textContent?.trim();
+
+          const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') ||
+                          doc.querySelector('#landingImage')?.getAttribute('src') ||
+                          doc.querySelector('#imgBlkFront')?.getAttribute('src') ||
+                          doc.querySelector('#main-image')?.getAttribute('src');
+
+          if (ogTitle) {
+            let cleanTitle = ogTitle
+              .replace(/Amazon.com.br|Amazon.com|: Amazon.*/gi, '')
+              .replace(/[\n\r]/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            if (cleanTitle) {
+              data = {
+                titulo: cleanTitle,
+                imagem: ogImage ? (ogImage.startsWith('http') ? ogImage : `https:${ogImage}`) : null,
+                imagens: ogImage ? [ogImage.startsWith('http') ? ogImage : `https:${ogImage}`] : []
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Client-side corsproxy fallback failed:", err);
+      }
+    }
+
     if (data && (data.titulo || data.imagem || (data.imagens && data.imagens.length > 0))) {
       if (data.resolvedUrl && data.resolvedUrl !== productLink) {
         setProductLink(data.resolvedUrl);
@@ -558,20 +638,29 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setProductImages([data.imagem]);
         addToast("Título e imagem real extraídos com sucesso! ✨", "success");
       } else {
-        const fallbackImg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%236366f1'/><rect x='20' y='20' width='360' height='360' rx='16' stroke='%23a5b4fc' stroke-width='4' fill='none'/><path d='M140 240 L180 180 L220 220 L250 190 L290 240' stroke='%23ffffff' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='170' cy='160' r='18' fill='%23fbbf24'/><text x='200' y='300' fill='%23ffffff' font-family='sans-serif' font-size='18' font-weight='bold' text-anchor='middle'>Imagem do Produto</text></svg>";
+        const fallbackImg = "https://images.unsplash.com/photo-1555529669-2269763671c0?auto=format&fit=crop&q=80&w=400";
         setProductImages([fallbackImg]);
         addToast("Título extraído com sucesso! ✨", "success");
       }
     } else {
-      // Fallback para preview ou quando a API backend não retorna JSON válido
+      // Fallback para Vercel static SPA ou quando a API backend não está presente
       const extractedTitle = extractNameFromUrl(productLink) || "Produto Importado";
       if (!productName.trim()) {
         setProductName(extractedTitle);
       }
 
-      const testImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%236366f1'/><rect x='20' y='20' width='360' height='360' rx='16' stroke='%23a5b4fc' stroke-width='4' fill='none'/><path d='M140 240 L180 180 L220 220 L250 190 L290 240' stroke='%23ffffff' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='170' cy='160' r='18' fill='%23fbbf24'/><text x='200' y='300' fill='%23ffffff' font-family='sans-serif' font-size='18' font-weight='bold' text-anchor='middle'>Imagem do Produto</text></svg>";
+      const queryTerm = extractedTitle
+        .toLowerCase()
+        .replace(/comprar|preço|oferta|promoção|shopee|amazon|mercado livre|frete grátis/gi, '')
+        .replace(/[^\w\s]/gi, '')
+        .trim()
+        .split(/\s+/)
+        .slice(0, 3)
+        .join(' ') || "product";
 
-      setProductImages((prev) => (prev.length > 0 ? prev : [testImage]));
+      const unsplashImg = `https://images.unsplash.com/featured/500x500/?${encodeURIComponent(queryTerm)},product`;
+
+      setProductImages((prev) => (prev.length > 0 ? prev : [unsplashImg]));
       addToast("Dados do produto preenchidos com sucesso! ✨", "success");
     }
 
