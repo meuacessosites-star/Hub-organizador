@@ -43,7 +43,7 @@ export const LoginPage: React.FC = () => {
     try {
       if (mode === 'reset') {
         await resetPassword(email);
-        setSuccessMessage('Email de redefinição enviado! Verifique sua caixa de entrada.');
+        setSuccessMessage('E-mail de redefinição enviado com sucesso! Verifique sua caixa de entrada e também a pasta de SPAM (lixo eletrônico).');
       } else if (mode === 'register') {
         if (!displayName.trim()) {
           setError('Por favor, insira seu nome completo.');

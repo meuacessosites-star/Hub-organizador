@@ -472,18 +472,9 @@ export function useStorage() {
           platformsRef.current = cloudPlats;
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
         } else {
-          // If cloud is empty but we have local platforms, push local platforms to cloud
-          if (platformsRef.current.length > 0) {
-            console.log(`useStorage: Cloud platforms empty on sync, backing up ${platformsRef.current.length} local platforms to Firestore`);
-            platformsRef.current.forEach(p => {
-              fbSet('platforms', p.id, { ...p, ownerId: user.uid });
-            });
-            safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(platformsRef.current));
-          } else {
-            setPlatforms([]);
-            platformsRef.current = [];
-            safeSetItem(`hub_user_${user.uid}_platforms`, '[]');
-          }
+          setPlatforms([]);
+          platformsRef.current = [];
+          safeSetItem(`hub_user_${user.uid}_platforms`, '[]');
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/platforms`);
@@ -585,7 +576,6 @@ export function useStorage() {
   const lastTagsRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
-    if (tags.length === 0 && tagsRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_tags`;
     const value = JSON.stringify(tags);
     if (lastTagsRef.current !== value) {
@@ -598,7 +588,6 @@ export function useStorage() {
   const lastCategoriesRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
-    if (categories.length === 0 && categoriesRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_categories`;
     const value = JSON.stringify(categories);
     if (lastCategoriesRef.current !== value) {
@@ -611,7 +600,6 @@ export function useStorage() {
   const lastPlatformsRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
-    if (platforms.length === 0 && platformsRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_platforms`;
     const value = JSON.stringify(platforms);
     if (lastPlatformsRef.current !== value) {
@@ -624,7 +612,6 @@ export function useStorage() {
   const lastStatusesRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
-    if (statuses.length === 0 && statusesRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_statuses`;
     const value = JSON.stringify(statuses);
     if (lastStatusesRef.current !== value) {
@@ -637,7 +624,6 @@ export function useStorage() {
   const lastPresetsRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
-    if (profilePresets.length === 0 && profilePresetsRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_profile_presets`;
     const value = JSON.stringify(profilePresets);
     if (lastPresetsRef.current !== value) {
