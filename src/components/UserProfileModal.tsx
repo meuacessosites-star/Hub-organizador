@@ -792,7 +792,23 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         <div className="w-full flex flex-col gap-2 pt-2 border-t border-neutral-200/50 dark:border-neutral-800/40">
                           <div className="flex justify-between items-center px-1">
                             <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Ajustar Zoom</span>
-                            <span className="text-[10px] font-mono font-bold text-indigo-500">{Math.round(avatarZoom * 100)}%</span>
+                           <div className="flex items-center gap-1">
+                             <input
+                               type="number"
+                               min="20"
+                               max="500"
+                               value={Math.round(avatarZoom * 100)}
+                               onChange={(e) => {
+                                 const val = parseInt(e.target.value);
+                                 if (!isNaN(val)) {
+                                   setAvatarZoom(Math.max(20, Math.min(500, val)) / 100);
+                                 }
+                               }}
+                               className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
+                               title="Digite o zoom manualmente"
+                             />
+                             <span className="text-[10px] font-mono text-indigo-500">%</span>
+                           </div>
                           </div>
                           <input
                             type="range"

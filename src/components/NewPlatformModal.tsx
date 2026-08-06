@@ -1471,7 +1471,23 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       <div className="w-full flex flex-col gap-1.5 px-6">
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Brilho</span>
-                          <span className="text-[10px] font-mono text-neutral-400">{Math.round(brightness * 100)}%</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={Math.round(brightness * 100)}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val)) {
+                                  setBrightness(Math.max(0, Math.min(100, val)) / 100);
+                                }
+                              }}
+                              className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
+                              title="Digite o valor manualmente"
+                            />
+                            <span className="text-[10px] font-mono text-neutral-400">%</span>
+                          </div>
                         </div>
                         <input
                           type="range"
@@ -1574,7 +1590,23 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           <div className="flex flex-col gap-1.5">
                             <div className="flex justify-between items-center px-0.5">
                               <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Ajustar Zoom</span>
-                              <span className="text-[10px] font-mono font-bold text-indigo-500">{Math.round(avatarZoom * 100)}%</span>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  min="20"
+                                  max="500"
+                                  value={Math.round(avatarZoom * 100)}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    if (!isNaN(val)) {
+                                      setAvatarZoom(Math.max(20, Math.min(500, val)) / 100);
+                                    }
+                                  }}
+                                  className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
+                                  title="Digite o zoom manualmente"
+                                />
+                                <span className="text-[10px] font-mono text-indigo-500">%</span>
+                              </div>
                             </div>
                             <input
                               type="range"
