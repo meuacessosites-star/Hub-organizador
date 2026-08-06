@@ -35,12 +35,17 @@ export const formatImageUrl = (url?: string | null): string => {
     }
   }
 
-  // Direct URLs for Amazon, Unsplash, and standard static images that don't need proxying
+  // Direct URLs for Amazon, Unsplash, Google, Gravatar, and standard static images that don't need proxying
   if (
     rawUrl.includes('amazon') ||
     rawUrl.includes('media-amazon') ||
     rawUrl.includes('ssl-images-amazon') ||
-    rawUrl.includes('unsplash.com')
+    rawUrl.includes('unsplash.com') ||
+    rawUrl.includes('googleusercontent') ||
+    rawUrl.includes('google.com') ||
+    rawUrl.includes('ggpht.com') ||
+    rawUrl.includes('gravatar.com') ||
+    rawUrl.includes('githubusercontent.com')
   ) {
     return rawUrl;
   }
@@ -61,6 +66,15 @@ export const formatImageUrl = (url?: string | null): string => {
 
 export const getNextFallbackUrl = (currentSrc: string, originalUrl?: string): string | null => {
   if (!currentSrc) return null;
+
+  // Don't route Google/Gravatar avatars through proxy if they fail once
+  if (
+    currentSrc.includes('googleusercontent') ||
+    currentSrc.includes('ggpht.com') ||
+    currentSrc.includes('gravatar.com')
+  ) {
+    return null;
+  }
 
   if (currentSrc.includes('/api/proxy-image?url=')) {
     const raw = decodeURIComponent(currentSrc.split('/api/proxy-image?url=')[1] || '');

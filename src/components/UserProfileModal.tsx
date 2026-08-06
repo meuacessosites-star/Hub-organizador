@@ -229,6 +229,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     isDraggingRef.current = false;
   };
 
+  const availableGooglePhoto = user.photoURL || userProfile?.photoURL || (userProfile?.avatar?.type === 'google' ? userProfile.avatar.value : '') || '';
+
   useEffect(() => {
     if (isOpen && user) {
       setDisplayName(userProfile?.displayName || user.displayName || '');
@@ -247,12 +249,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           setAvatarZoom(userProfile.avatar.zoom || 1);
         }
       } else {
-        setAvatarTab(user.photoURL ? 'google' : 'color');
+        setAvatarTab(availableGooglePhoto ? 'google' : 'color');
         setCustomLetters('');
       }
       setShowSuccess(false);
     }
-  }, [isOpen, user, userProfile]);
+  }, [isOpen, user, userProfile, availableGooglePhoto]);
 
   const handleExportData = () => {
     try {
@@ -338,11 +340,29 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      let photoToSave = '';
+      if (avatarTab === 'image') {
+        photoToSave = imageUrl || availableGooglePhoto || '';
+      } else if (avatarTab === 'google') {
+        photoToSave = availableGooglePhoto || imageUrl || '';
+      } else {
+        photoToSave = availableGooglePhoto || imageUrl || '';
+      }
+
+      const avatarValue = avatarTab === 'emoji' 
+        ? selectedEmoji 
+        : avatarTab === 'image' 
+        ? imageUrl 
+        : avatarTab === 'color' 
+        ? customLetters 
+        : photoToSave;
+
       const newProfile: UserProfileData = {
         displayName,
+        photoURL: photoToSave,
         avatar: {
           type: avatarTab,
-          value: avatarTab === 'emoji' ? selectedEmoji : avatarTab === 'image' ? imageUrl : avatarTab === 'color' ? customLetters : '',
+          value: avatarValue,
           bgColor: selectedColor,
           zoom: avatarTab === 'image' ? avatarZoom : undefined
         }
@@ -355,7 +375,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         await setDoc(doc(db, 'usuarios', user.uid), { 
           ...newProfile, 
           email: user.email || '',
-          photoURL: user.photoURL || '',
+          photoURL: photoToSave,
           uid: user.uid,
           origem: 'Hub Organizador', 
           origem_app: 'Hub Organizador',
@@ -418,8 +438,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         </div>
       );
     }
-    if (avatarTab === 'google' && user.photoURL) {
-      return <SmartImage src={user.photoURL} alt="google preview" className="w-full h-full object-cover rounded-full"/>;
+    if (avatarTab === 'google' && availableGooglePhoto) {
+      return <SmartImage src={availableGooglePhoto} alt="google preview" className="w-full h-full object-cover rounded-full"/>;
     }
     
     // Fallback
@@ -495,7 +515,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 
                 {/* Tabs */}
                 <div className="flex gap-2 p-1.5 bg-neutral-100 dark:bg-[#1a1b26] rounded-xl mb-4 overflow-x-auto custom-scrollbar shrink-0">
-                  {user.photoURL && (
+                  {availableGooglePhoto && (
                     <button
                       type="button"
                       onClick={() => setAvatarTab('google')}

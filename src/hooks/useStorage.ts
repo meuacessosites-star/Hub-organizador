@@ -199,6 +199,21 @@ export function useStorage() {
   // Flag to prevent re-upload during bulk deletion
   const isClearingRef = useRef(false);
 
+  // Track local writes & initial snapshot state to notify user on real-time updates from other devices
+  const recentLocalWritesRef = useRef<Set<string>>(new Set());
+  const isInitialLoadedRef = useRef<Record<string, boolean>>({});
+  const listenerStartTimeRef = useRef<number>(0);
+  const remoteSyncToastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const notifyRemoteSync = useCallback((_collectionLabel: string) => {
+    if (remoteSyncToastTimeoutRef.current) {
+      clearTimeout(remoteSyncToastTimeoutRef.current);
+    }
+    remoteSyncToastTimeoutRef.current = setTimeout(() => {
+      addToast('Dados sincronizados em tempo real de outro dispositivo', 'info', 4000);
+    }, 400);
+  }, [addToast]);
+
   // Refs to track the latest state for async persistence without stale closures
   const tagsRef = useRef<Tag[]>(DEFAULT_TAGS);
   const categoriesRef = useRef<Category[]>(DEFAULT_CATEGORIES);
@@ -323,11 +338,40 @@ export function useStorage() {
     const unsubs: (() => void)[] = [];
 
     if (!isGuest && user.uid) {
+      listenerStartTimeRef.current = Date.now();
+      isInitialLoadedRef.current = {};
+
+      const checkRemoteChangesAndNotify = (colName: string, snap: any) => {
+        const isFirstLoad = !isInitialLoadedRef.current[colName];
+        isInitialLoadedRef.current[colName] = true;
+
+        const timeSinceStart = Date.now() - listenerStartTimeRef.current;
+
+        if (!isFirstLoad && timeSinceStart > 2500 && !snap.metadata.hasPendingWrites) {
+          let hasRemoteChanges = false;
+          snap.docChanges().forEach((change: any) => {
+            const docKey = `${colName}/${change.doc.id}`;
+            if (recentLocalWritesRef.current.has(docKey)) {
+              recentLocalWritesRef.current.delete(docKey);
+            } else {
+              hasRemoteChanges = true;
+            }
+          });
+
+          if (hasRemoteChanges) {
+            console.log(`[Realtime Sync] Remote changes detected in collection '${colName}' from another device`);
+            notifyRemoteSync(colName);
+          }
+        }
+      };
+
       // Sync tags with Firestore
       const tagsRef = collection(db, 'users', user.uid, 'tags');
       unsubs.push(onSnapshot(tagsRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
         
+        checkRemoteChangesAndNotify('tags', snap);
+
         console.log('useStorage: tags snapshot received', snap.size);
         if (!snap.empty) {
           const cloudTags = snap.docs.map(d => ({ ...d.data() as Tag, id: d.id }));
@@ -356,6 +400,8 @@ export function useStorage() {
       unsubs.push(onSnapshot(catRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
         
+        checkRemoteChangesAndNotify('categories', snap);
+
         if (!snap.empty) {
           const cloudCats = snap.docs.map(d => ({ ...d.data() as Category, id: d.id }));
           setCategories(() => {
@@ -380,6 +426,8 @@ export function useStorage() {
       unsubs.push(onSnapshot(platRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
         
+        checkRemoteChangesAndNotify('platforms', snap);
+
         if (!snap.empty) {
           const cloudPlats = snap.docs.map(d => {
             const data = d.data() as Platform;
@@ -412,6 +460,8 @@ export function useStorage() {
       unsubs.push(onSnapshot(statusRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
         
+        checkRemoteChangesAndNotify('statuses', snap);
+
         if (!snap.empty) {
           const cloudStatuses = snap.docs.map(d => ({ ...d.data() as Status, id: d.id }));
           setStatuses(() => {
@@ -436,6 +486,8 @@ export function useStorage() {
       unsubs.push(onSnapshot(presetRef, { includeMetadataChanges: true }, (snap) => {
         if (isClearingRef.current || isDemoActive) return;
         
+        checkRemoteChangesAndNotify('profilePresets', snap);
+
         if (!snap.empty) {
           const cloudPresets = snap.docs.map(d => ({ ...d.data() as ProfilePreset, id: d.id }));
           setProfilePresets(() => {
@@ -580,6 +632,7 @@ export function useStorage() {
       return;
     }
     if (user && !isGuest) {
+      recentLocalWritesRef.current.add(`${collectionName}/${id}`);
       try {
         const cleanData = sanitizeForFirestore(data);
         console.log(`[Firestore Write Start] Sincronizando com Firestore: coleção='${collectionName}', docId='${id}'`, cleanData);
@@ -600,6 +653,7 @@ export function useStorage() {
       return;
     }
     if (user && !isGuest) {
+      recentLocalWritesRef.current.add(`${collectionName}/${id}`);
       try {
         console.log(`[Firestore Delete Start] Deletando do Firestore: coleção='${collectionName}', docId='${id}'`);
         await deleteDoc(doc(db, 'users', user.uid, collectionName, id));

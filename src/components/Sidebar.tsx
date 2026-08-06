@@ -42,10 +42,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const getSidebarAvatarContent = () => {
     if (!user) return null;
 
+    const availablePhoto = user.photoURL || userProfile?.photoURL || (userProfile?.avatar?.type === 'google' ? userProfile.avatar.value : null) || (userProfile?.avatar?.type === 'image' ? userProfile.avatar.value : null);
+
     if (userProfile?.avatar) {
       const { type, value, bgColor } = userProfile.avatar;
       if (type === 'image' && value) {
-        return <SmartImage src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" />;
+        return <SmartImage src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${userProfile.avatar.zoom || 1})` }} />;
       }
       if (type === 'emoji') {
         return (
@@ -61,13 +63,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         );
       }
-      if (type === 'google' && user.photoURL) {
-        return <SmartImage src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
+      if (type === 'google' && availablePhoto) {
+        return <SmartImage src={availablePhoto} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
       }
     }
 
-    if (user.photoURL) {
-      return <SmartImage src={user.photoURL} alt="Google Avatar" className="w-full h-full object-cover rounded-full" />;
+    if (availablePhoto) {
+      return <SmartImage src={availablePhoto} alt="User Avatar" className="w-full h-full object-cover rounded-full" />;
     }
 
     return (

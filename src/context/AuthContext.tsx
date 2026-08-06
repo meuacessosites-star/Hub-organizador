@@ -19,6 +19,7 @@ import { handleFirestoreError, OperationType } from '../utils/firebaseErrors';
 
 export interface UserProfileData {
   displayName?: string;
+  photoURL?: string;
   avatar?: {
     type: 'color' | 'emoji' | 'image' | 'google';
     value: string;
@@ -106,17 +107,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const userDocRef = doc(db, 'usuarios', u.uid);
         const nowIso = new Date().toISOString();
-        await setDoc(userDocRef, {
+        const updatePayload: Record<string, any> = {
           uid: u.uid,
           email: u.email || '',
           displayName: u.displayName || u.email?.split('@')[0] || '',
-          photoURL: u.photoURL || '',
           origem: 'Hub Organizador',
           origem_app: 'Hub Organizador',
           lastLogin: nowIso,
           lastLoginAt: serverTimestamp(),
           updatedAt: nowIso
-        }, { merge: true });
+        };
+        if (u.photoURL) {
+          updatePayload.photoURL = u.photoURL;
+        }
+        await setDoc(userDocRef, updatePayload, { merge: true });
         console.log(`[Usuarios Sync] Sucesso ao atualizar usuário ${u.uid} na coleção 'usuarios' com origem_app: 'Hub Organizador'`);
       } catch (error) {
         console.error(`[Usuarios Sync Error] Falha ao atualizar documento em 'usuarios':`, error);

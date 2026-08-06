@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type AvatarType = 'color' | 'emoji' | 'image';
+export type AvatarType = 'color' | 'emoji' | 'image' | 'google';
 
 export interface ProfileAvatar {
   type: AvatarType;
