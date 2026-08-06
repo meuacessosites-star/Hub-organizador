@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Profile, Platform, ProfileAvatar, ProfilePreset } from '../types';
 import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload, RefreshCw, GripVertical } from 'lucide-react';
-import { motion, AnimatePresence, Reorder } from 'motion/react';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -108,6 +108,66 @@ const getIndicatorCoords = (color: string, radius: number = 64) => {
     x: radius + Math.cos(angle) * dist,
     y: radius + Math.sin(angle) * dist,
   };
+};
+
+interface PresetReorderItemProps {
+  preset: ProfilePreset;
+  onEdit: (preset: ProfilePreset) => void;
+  onDelete: (preset: ProfilePreset) => void;
+}
+
+const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, onEdit, onDelete }) => {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={preset}
+      dragListener={false}
+      dragControls={dragControls}
+      className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-[#13141c] border border-neutral-100 dark:border-[#2a2d40]/40 shadow-sm select-none"
+    >
+      {/* Drag Handle Icon */}
+      <div
+        onPointerDown={(e) => dragControls.start(e)}
+        className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-grab active:cursor-grabbing touch-none shrink-0"
+        title="Tocar e arrastar para reordenar"
+      >
+        <GripVertical className="w-4 h-4" />
+      </div>
+
+      <div 
+        className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0 overflow-hidden"
+        style={{ backgroundColor: preset.avatar.bgColor || (preset.avatar.type === 'color' ? preset.avatar.value : undefined) }}
+      >
+        {preset.avatar.type === 'emoji' ? (
+          preset.avatar.value
+        ) : preset.avatar.type === 'image' ? (
+          <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+        ) : (
+          preset.name.slice(0, 2).toUpperCase()
+        )}
+      </div>
+      <span className="flex-1 text-xs font-medium truncate">{preset.name}</span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onEdit(preset)}
+          className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 cursor-pointer transition-colors"
+          title="Editar preset"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(preset)}
+          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer transition-colors"
+          title="Excluir preset"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </Reorder.Item>
+  );
 };
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -666,86 +726,47 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       </span>
                     </div>
                     {profilePresets.map((preset) => (
-                      <Reorder.Item
+                      <PresetReorderItem
                         key={preset.id}
-                        value={preset}
-                        className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-[#13141c] border border-neutral-100 dark:border-[#2a2d40]/40 shadow-sm cursor-grab active:cursor-grabbing select-none"
-                      >
-                        {/* Drag Handle Icon */}
-                        <div
-                          className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-grab active:cursor-grabbing touch-none shrink-0"
-                          title="Tocar e arrastar para reordenar"
-                        >
-                          <GripVertical className="w-4 h-4" />
-                        </div>
-
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0 overflow-hidden"
-                          style={{ backgroundColor: preset.avatar.bgColor || (preset.avatar.type === 'color' ? preset.avatar.value : undefined) }}
-                        >
-                          {preset.avatar.type === 'emoji' ? (
-                            preset.avatar.value
-                          ) : preset.avatar.type === 'image' ? (
-                            <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
-                          ) : (
-                            preset.name.slice(0, 2).toUpperCase()
-                          )}
-                        </div>
-                        <span className="flex-1 text-xs font-medium truncate">{preset.name}</span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingPresetId(preset.id);
-                              setProfileName(preset.name);
-                              setIsCustomProfile(true);
-                              setCustomProfileName(preset.name);
-                              setAvatarTab(preset.avatar.type);
-                              if (preset.avatar.bgColor) setSelectedColor(preset.avatar.bgColor);
-                              else if (preset.avatar.type === 'color') setSelectedColor(preset.avatar.value);
-                              
-                              if (preset.avatar.type === 'emoji') setSelectedEmoji(preset.avatar.value);
-                              else if (preset.avatar.type === 'image') {
-                                setImageUrl(preset.avatar.value);
-                                setAvatarZoom(preset.avatar.zoom || 1);
-                              }
-                              
-                              setEmail(preset.email || '');
-                              setUsername(preset.username || '');
-                              setPassword(preset.password || '');
-                              setAccessLink(preset.accessLink || '');
-                              setDescription(preset.description || '');
-                              
-                              addToast(`Editando preset: ${preset.name}`, 'info');
-                              setTimeout(() => {
-                                customNameInputRef.current?.focus();
-                                customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                              }, 100);
-                            }}
-                            className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 cursor-pointer transition-colors"
-                            title="Editar preset"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              deleteProfilePreset(preset.id);
-                              if (profileName === preset.name) {
-                                setProfileName(profilePresets[0]?.name || '');
-                              }
-                              if (editingPresetId === preset.id) {
-                                setEditingPresetId(null);
-                                setIsCustomProfile(false);
-                              }
-                            }}
-                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer transition-colors"
-                            title="Excluir preset"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </Reorder.Item>
+                        preset={preset}
+                        onEdit={(presetToEdit) => {
+                          setEditingPresetId(presetToEdit.id);
+                          setProfileName(presetToEdit.name);
+                          setIsCustomProfile(true);
+                          setCustomProfileName(presetToEdit.name);
+                          setAvatarTab(presetToEdit.avatar.type);
+                          if (presetToEdit.avatar.bgColor) setSelectedColor(presetToEdit.avatar.bgColor);
+                          else if (presetToEdit.avatar.type === 'color') setSelectedColor(presetToEdit.avatar.value);
+                          
+                          if (presetToEdit.avatar.type === 'emoji') setSelectedEmoji(presetToEdit.avatar.value);
+                          else if (presetToEdit.avatar.type === 'image') {
+                            setImageUrl(presetToEdit.avatar.value);
+                            setAvatarZoom(presetToEdit.avatar.zoom || 1);
+                          }
+                          
+                          setEmail(presetToEdit.email || '');
+                          setUsername(presetToEdit.username || '');
+                          setPassword(presetToEdit.password || '');
+                          setAccessLink(presetToEdit.accessLink || '');
+                          setDescription(presetToEdit.description || '');
+                          
+                          addToast(`Editando preset: ${presetToEdit.name}`, 'info');
+                          setTimeout(() => {
+                            customNameInputRef.current?.focus();
+                            customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 100);
+                        }}
+                        onDelete={(presetToDelete) => {
+                          deleteProfilePreset(presetToDelete.id);
+                          if (profileName === presetToDelete.name) {
+                            setProfileName(profilePresets[0]?.name || '');
+                          }
+                          if (editingPresetId === presetToDelete.id) {
+                            setEditingPresetId(null);
+                            setIsCustomProfile(false);
+                          }
+                        }}
+                      />
                     ))}
 
                     {/* New/Edit Preset Form Integrated */}
