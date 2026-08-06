@@ -286,15 +286,15 @@ export function useStorage() {
     const savedStatuses = safeGetItem(`hub_user_${user.uid}_statuses`);
     const savedPresets = safeGetItem(`hub_user_${user.uid}_profile_presets`);
 
-    // Recovery check for guest mode platforms if current key is empty
-    if ((!savedPlats || savedPlats === '[]') && isGuest) {
+    // Recovery check for platforms if current user key is empty
+    if (!savedPlats || savedPlats === '[]') {
       try {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
-          if (k && (k === 'hub_platforms' || (k.startsWith('hub_user_guest_') && k.endsWith('_platforms')))) {
+          if (k && (k === 'hub_platforms' || k.endsWith('_platforms'))) {
             const val = safeGetItem(k);
             if (val && val !== '[]') {
-              console.log(`Recovered guest platforms from key ${k}`);
+              console.log(`Recovered platforms from key ${k}`);
               savedPlats = val;
               safeSetItem(`hub_user_${user.uid}_platforms`, val);
               break;
@@ -302,7 +302,7 @@ export function useStorage() {
           }
         }
       } catch (err) {
-        console.warn('Error recovering guest platforms from localStorage:', err);
+        console.warn('Error recovering platforms from localStorage:', err);
       }
     }
 
@@ -472,9 +472,9 @@ export function useStorage() {
           platformsRef.current = cloudPlats;
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
         } else {
-          // If cloud is empty and initial backup was already done, set empty
-          if (platformsRef.current.length > 0 && !hasAttemptedInitialBackup.current) {
-            console.log(`useStorage: Cloud platforms empty on first sync, pushing ${platformsRef.current.length} local platforms to Firestore`);
+          // If cloud is empty but we have local platforms, push local platforms to cloud
+          if (platformsRef.current.length > 0) {
+            console.log(`useStorage: Cloud platforms empty on sync, backing up ${platformsRef.current.length} local platforms to Firestore`);
             platformsRef.current.forEach(p => {
               fbSet('platforms', p.id, { ...p, ownerId: user.uid });
             });
@@ -585,6 +585,7 @@ export function useStorage() {
   const lastTagsRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
+    if (tags.length === 0 && tagsRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_tags`;
     const value = JSON.stringify(tags);
     if (lastTagsRef.current !== value) {
@@ -597,6 +598,7 @@ export function useStorage() {
   const lastCategoriesRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
+    if (categories.length === 0 && categoriesRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_categories`;
     const value = JSON.stringify(categories);
     if (lastCategoriesRef.current !== value) {
@@ -609,6 +611,7 @@ export function useStorage() {
   const lastPlatformsRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
+    if (platforms.length === 0 && platformsRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_platforms`;
     const value = JSON.stringify(platforms);
     if (lastPlatformsRef.current !== value) {
@@ -621,6 +624,7 @@ export function useStorage() {
   const lastStatusesRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
+    if (statuses.length === 0 && statusesRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_statuses`;
     const value = JSON.stringify(statuses);
     if (lastStatusesRef.current !== value) {
@@ -633,6 +637,7 @@ export function useStorage() {
   const lastPresetsRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
+    if (profilePresets.length === 0 && profilePresetsRef.current.length > 0) return; // Prevent initial stale closure overwrite
     const key = `hub_user_${user.uid}_profile_presets`;
     const value = JSON.stringify(profilePresets);
     if (lastPresetsRef.current !== value) {
