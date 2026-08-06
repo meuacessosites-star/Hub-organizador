@@ -147,6 +147,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [selectedEmoji, setSelectedEmoji] = useState('👤');
   const [imageUrl, setImageUrl] = useState('');
   const [avatarZoom, setAvatarZoom] = useState(1);
+  const [zoomInput, setZoomInput] = useState('100');
+
+  useEffect(() => {
+    setZoomInput(String(Math.round(avatarZoom * 100)));
+  }, [avatarZoom]);
   const [showColorWheel, setShowColorWheel] = useState(false);
   const [showAllPresets, setShowAllPresets] = useState(false);
 

@@ -109,6 +109,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [selectedEmoji, setSelectedEmoji] = useState('👤');
   const [imageUrl, setImageUrl] = useState('');
   const [avatarZoom, setAvatarZoom] = useState(1);
+  const [zoomInput, setZoomInput] = useState('100');
+
+  useEffect(() => {
+    setZoomInput(String(Math.round(avatarZoom * 100)));
+  }, [avatarZoom]);
   const [customLetters, setCustomLetters] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
@@ -797,11 +802,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                                type="number"
                                min="20"
                                max="500"
-                               value={Math.round(avatarZoom * 100)}
+                               value={zoomInput}
                                onChange={(e) => {
-                                 const val = parseInt(e.target.value);
+                                 const str = e.target.value;
+                                 setZoomInput(str);
+                                 if (str === '') return;
+                                 const val = parseInt(str);
                                  if (!isNaN(val)) {
                                    setAvatarZoom(Math.max(20, Math.min(500, val)) / 100);
+                                 }
+                               }}
+                               onBlur={() => {
+                                 if (zoomInput === '' || isNaN(parseInt(zoomInput))) {
+                                   setZoomInput(String(Math.round(avatarZoom * 100)));
                                  }
                                }}
                                className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
