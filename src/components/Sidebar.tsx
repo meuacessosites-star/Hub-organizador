@@ -73,6 +73,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         );
       }
       if (type === 'color') {
+        if (availablePhoto && (!value || value === userInitial)) {
+          return (
+            <SmartImage 
+              src={availablePhoto} 
+              alt="User Avatar" 
+              className="w-full h-full object-cover rounded-full" 
+              containerClassName="w-full h-full rounded-full overflow-hidden"
+              fallbackIcon={defaultFallback}
+            />
+          );
+        }
         return (
           <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm" style={{ backgroundColor: bgColor || '#7c5cfc' }}>
             {value || userInitial}

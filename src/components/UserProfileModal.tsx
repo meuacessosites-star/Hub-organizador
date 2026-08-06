@@ -259,20 +259,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   useEffect(() => {
     if (isOpen && user) {
       setDisplayName(userProfile?.displayName || user.displayName || '');
-      if (userProfile?.avatar) {
+      if (userProfile?.avatar && userProfile.avatar.type !== 'color') {
         setAvatarTab(userProfile.avatar.type);
-        if (userProfile.avatar.type === 'color' || userProfile.avatar.type === 'emoji') {
-          setSelectedColor(userProfile.avatar.bgColor || (userProfile.avatar.type === 'color' ? userProfile.avatar.value : '#7c5cfc'));
-          if (userProfile.avatar.type === 'color') {
-            setCustomLetters(userProfile.avatar.value || '');
-          } else {
-            setSelectedEmoji(userProfile.avatar.value);
-          }
+        if (userProfile.avatar.type === 'emoji') {
+          setSelectedColor(userProfile.avatar.bgColor || '#7c5cfc');
+          setSelectedEmoji(userProfile.avatar.value);
         }
         if (userProfile.avatar.type === 'image') {
           setImageUrl(userProfile.avatar.value);
           setAvatarZoom(userProfile.avatar.zoom || 1);
         }
+      } else if (
+        userProfile?.avatar?.type === 'color' && 
+        userProfile.avatar.value && 
+        userProfile.avatar.value !== (userProfile?.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()
+      ) {
+        setAvatarTab('color');
+        setSelectedColor(userProfile.avatar.bgColor || '#7c5cfc');
+        setCustomLetters(userProfile.avatar.value);
       } else {
         setAvatarTab(availableGooglePhoto ? 'google' : 'color');
         setCustomLetters('');

@@ -67,12 +67,15 @@ export const formatImageUrl = (url?: string | null): string => {
 export const getNextFallbackUrl = (currentSrc: string, originalUrl?: string): string | null => {
   if (!currentSrc) return null;
 
-  // Don't route Google/Gravatar avatars through proxy if they fail once
+  // If Google/Gravatar avatar fails directly, try proxying via /api/proxy-image once before giving up
   if (
     currentSrc.includes('googleusercontent') ||
     currentSrc.includes('ggpht.com') ||
     currentSrc.includes('gravatar.com')
   ) {
+    if (!currentSrc.includes('/api/proxy-image?url=')) {
+      return `/api/proxy-image?url=${encodeURIComponent(currentSrc)}`;
+    }
     return null;
   }
 
