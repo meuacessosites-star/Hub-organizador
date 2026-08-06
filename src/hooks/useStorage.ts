@@ -272,7 +272,7 @@ export function useStorage() {
         const newKey = uniqueKeys[idx];
         const currentVal = safeGetItem(newKey);
         const oldVal = safeGetItem(oldKey);
-        if ((!currentVal || currentVal === '[]') && oldVal && oldVal !== '[]') {
+        if (currentVal === null && oldVal && oldVal !== '[]') {
           console.log(`Migrating legacy guest data from ${oldKey} to ${newKey}`);
           safeSetItem(newKey, oldVal);
         }
@@ -282,29 +282,9 @@ export function useStorage() {
     // Load user-specific local storage cache for instant offline rendering
     const savedTags = safeGetItem(`hub_user_${user.uid}_tags`);
     const savedCats = safeGetItem(`hub_user_${user.uid}_categories`);
-    let savedPlats = safeGetItem(`hub_user_${user.uid}_platforms`);
+    const savedPlats = safeGetItem(`hub_user_${user.uid}_platforms`);
     const savedStatuses = safeGetItem(`hub_user_${user.uid}_statuses`);
     const savedPresets = safeGetItem(`hub_user_${user.uid}_profile_presets`);
-
-    // Recovery check for platforms if current user key is empty
-    if (!savedPlats || savedPlats === '[]') {
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && (k === 'hub_platforms' || k.endsWith('_platforms'))) {
-            const val = safeGetItem(k);
-            if (val && val !== '[]') {
-              console.log(`Recovered platforms from key ${k}`);
-              savedPlats = val;
-              safeSetItem(`hub_user_${user.uid}_platforms`, val);
-              break;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Error recovering platforms from localStorage:', err);
-      }
-    }
 
     const localTags = safeParse(savedTags, DEFAULT_TAGS);
     const localCats = safeParse(savedCats, DEFAULT_CATEGORIES);

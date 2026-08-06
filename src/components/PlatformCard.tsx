@@ -867,7 +867,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                       id={`delete-platform-btn-${platform.id}`}
                       data-testid={`delete-platform-btn-${platform.id}`}
                       aria-label={`Remover plataforma ${platform.name}`}
-                      onClick={() => setShowDeleteConfirm(true)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteConfirm(true);
+                      }}
                       className="flex items-center gap-1.5 text-rose-500 hover:text-rose-400 dark:text-rose-500 dark:hover:text-rose-400 text-[11px] font-semibold transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
