@@ -7,7 +7,7 @@ import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Profile, Platform, ProfileAvatar, ProfilePreset } from '../types';
-import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
@@ -751,8 +751,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                               : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
                           }`}
                         >
-                          {editingPresetId ? <Pencil className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5 fill-current" />}
-                          {editingPresetId ? 'Atualizar Preset' : 'Salvar'}
+                          {editingPresetId ? <RefreshCw className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5 fill-current" />}
+                          {editingPresetId ? 'Atualizar' : 'Salvar'}
                         </button>
                         
                         <button

@@ -7,7 +7,7 @@ import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Category, ProfileAvatar, Platform, Profile, ProfilePreset } from '../types';
-import { X, Globe, Link, Eye, EyeOff, Shield, Image as ImageIcon, Smile, Palette, Upload, Check, Trash2, Search, User, Mail, Bookmark, Pencil } from 'lucide-react';
+import { X, Globe, Link, Eye, EyeOff, Shield, Image as ImageIcon, Smile, Palette, Upload, Check, Trash2, Search, User, Mail, Bookmark, Pencil, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getLogoUrl, getDomainFromInput, getInitials, getPlatformColor, getPlatformNameFromUrl } from '../utils/logoHelper';
 import { useAuth } from '../context/AuthContext';
@@ -1159,8 +1159,8 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                               : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
                           }`}
                         >
-                          {editingPresetId ? <Pencil className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5 fill-current" />}
-                          {editingPresetId ? 'Atualizar Preset' : 'Salvar'}
+                          {editingPresetId ? <RefreshCw className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5 fill-current" />}
+                          {editingPresetId ? 'Atualizar' : 'Salvar'}
                         </button>
                         
                         <button
