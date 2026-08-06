@@ -135,10 +135,10 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ productName?: string; originalPrice?: string; finalPrice?: string }>({});
 
-  // New dates & payment fields
   const [purchaseDate, setPurchaseDate] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethodSelect, setPaymentMethodSelect] = useState('');
   const [bankName, setBankName] = useState('');
   const [installments, setInstallments] = useState<number>(1);
   const [cardName, setCardName] = useState('');
@@ -562,7 +562,18 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
         setPurchaseDate(purchase.date ? purchase.date.substring(0, 10) : new Date().toISOString().substring(0, 10));
         setPaymentDate(purchase.paymentDate ? purchase.paymentDate.substring(0, 10) : '');
-        setPaymentMethod(purchase.paymentMethod || '');
+        const pm = purchase.paymentMethod || '';
+        const standardPmList = ['Pix', 'cartao', 'parcelada', 'Boleto Bancário', 'Dinheiro', 'conta'];
+        if (standardPmList.includes(pm)) {
+          setPaymentMethodSelect(pm);
+          setPaymentMethod(pm);
+        } else if (pm) {
+          setPaymentMethodSelect('Outro');
+          setPaymentMethod(pm);
+        } else {
+          setPaymentMethodSelect('');
+          setPaymentMethod('');
+        }
         setBankName(purchase.bankName || '');
         setInstallments(purchase.installments || 1);
         setCardName(purchase.cardName || '');
@@ -587,6 +598,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setPurchaseDate(new Date().toISOString().substring(0, 10));
         setPaymentDate('');
         setPaymentMethod('');
+        setPaymentMethodSelect('');
         setBankName('');
         setInstallments(1);
         setCardName('');
@@ -2224,10 +2236,15 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 </label>
                 <div className="relative">
                   <select
-                    value={['Pix', 'Cartão de Crédito', 'Boleto Bancário', 'Dinheiro', 'Saldo'].includes(paymentMethod) ? paymentMethod : (['cartao', 'parcelada', 'conta'].includes(paymentMethod) ? paymentMethod : (paymentMethod ? 'Outro' : ''))}
+                    value={paymentMethodSelect}
                     onChange={(e) => {
                       const val = e.target.value;
-                      setPaymentMethod(val);
+                      setPaymentMethodSelect(val);
+                      if (val === 'Outro') {
+                        setPaymentMethod('');
+                      } else {
+                        setPaymentMethod(val);
+                      }
                     }}
                     className="w-full h-11 px-3.5 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 font-medium dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 cursor-pointer appearance-none"
                   >
@@ -2238,7 +2255,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                     <option value="Boleto Bancário">Boleto Bancário</option>
                     <option value="Dinheiro">Dinheiro</option>
                     <option value="conta">Conta / Saldo Bancário</option>
-                    <option value="Outro">Outro...</option>
+                    <option value="Outro">Outro (Digitar)...</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-neutral-400">
                     <Receipt className="w-3.5 h-3.5" />
@@ -2299,12 +2316,12 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   </motion.div>
                 )}
 
-                {paymentMethod === 'Outro' && (
+                {paymentMethodSelect === 'Outro' && (
                   <input
                     type="text"
-                    value={paymentMethod === 'Outro' ? '' : paymentMethod}
+                    value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    placeholder="Especifique o meio..."
+                    placeholder="Digite o meio de pagamento..."
                     className="w-full h-11 px-3.5 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 font-medium dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 mt-1.5"
                   />
                 )}
