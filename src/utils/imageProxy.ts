@@ -67,38 +67,38 @@ export const formatImageUrl = (url?: string | null): string => {
 export const getNextFallbackUrl = (currentSrc: string, originalUrl?: string): string | null => {
   if (!currentSrc) return null;
 
-  // If Google/Gravatar avatar fails directly, try proxying via /api/proxy-image once before giving up
-  if (
-    currentSrc.includes('googleusercontent') ||
-    currentSrc.includes('ggpht.com') ||
-    currentSrc.includes('gravatar.com')
-  ) {
-    if (!currentSrc.includes('/api/proxy-image?url=')) {
-      return `/api/proxy-image?url=${encodeURIComponent(currentSrc)}`;
-    }
-    return null;
+  // Extract raw URL if currentSrc is already proxied
+  let raw = currentSrc;
+  if (currentSrc.includes('wsrv.nl/?url=')) {
+    raw = decodeURIComponent(currentSrc.split('wsrv.nl/?url=')[1] || '');
+  } else if (currentSrc.includes('/api/proxy-image?url=')) {
+    raw = decodeURIComponent(currentSrc.split('/api/proxy-image?url=')[1] || '');
+  } else if (currentSrc.includes('corsproxy.io/?')) {
+    raw = decodeURIComponent(currentSrc.split('corsproxy.io/?')[1] || '');
   }
 
-  if (currentSrc.includes('/api/proxy-image?url=')) {
-    const raw = decodeURIComponent(currentSrc.split('/api/proxy-image?url=')[1] || '');
-    if (raw) {
-      return `https://corsproxy.io/?${encodeURIComponent(raw)}`;
-    }
-  } else if (currentSrc.includes('corsproxy.io/?')) {
-    const raw = decodeURIComponent(currentSrc.split('corsproxy.io/?')[1] || '');
-    if (raw) {
+  // 1. Try wsrv.nl CDN proxy first (works globally and on static hosts like Vercel)
+  if (!currentSrc.includes('wsrv.nl/?url=')) {
+    if (raw && raw.startsWith('http')) {
       return `https://wsrv.nl/?url=${encodeURIComponent(raw)}`;
     }
-  } else if (currentSrc.includes('wsrv.nl/?url=')) {
-    const raw = decodeURIComponent(currentSrc.split('wsrv.nl/?url=')[1] || '');
-    if (raw) {
-      return raw;
-    }
-  } else if (currentSrc.startsWith('http') && !currentSrc.startsWith('data:') && !currentSrc.startsWith('blob:')) {
-    return `/api/proxy-image?url=${encodeURIComponent(currentSrc)}`;
   }
 
-  if (originalUrl && originalUrl !== currentSrc && originalUrl.startsWith('http')) {
+  // 2. Try server-side Express proxy (/api/proxy-image)
+  if (!currentSrc.includes('/api/proxy-image?url=')) {
+    if (raw && raw.startsWith('http')) {
+      return `/api/proxy-image?url=${encodeURIComponent(raw)}`;
+    }
+  }
+
+  // 3. Try corsproxy.io
+  if (!currentSrc.includes('corsproxy.io/?')) {
+    if (raw && raw.startsWith('http')) {
+      return `https://corsproxy.io/?${encodeURIComponent(raw)}`;
+    }
+  }
+
+  if (originalUrl && originalUrl !== currentSrc && originalUrl.startsWith('http') && !originalUrl.includes('wsrv.nl')) {
     return originalUrl;
   }
 
