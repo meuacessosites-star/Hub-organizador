@@ -1,7 +1,7 @@
 import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle, Sparkles, Download } from 'lucide-react';
+import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle, Sparkles, Download, Shield } from 'lucide-react';
 import { User, updateProfile as firebaseUpdateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -91,7 +91,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onSignOut,
   onStartTutorial,
 }) => {
-  const { userProfile, isGuest } = useAuth();
+  const { userProfile, isGuest, linkPasswordToAccount } = useAuth();
   const { 
     clearAllData, 
     platforms, 
@@ -116,6 +116,31 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [showColorWheel, setShowColorWheel] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+
+  const [linkPasswordInput, setLinkPasswordInput] = useState('');
+  const [isLinkingPassword, setIsLinkingPassword] = useState(false);
+
+  const hasPasswordProvider = user?.providerData?.some(p => p.providerId === 'password');
+  const hasGoogleProvider = user?.providerData?.some(p => p.providerId === 'google.com');
+
+  const handleLinkPasswordInModal = async () => {
+    if (!linkPasswordInput.trim()) return;
+    if (linkPasswordInput.length < 6) {
+      addToast('A senha deve ter pelo menos 6 caracteres.', 'error');
+      return;
+    }
+    setIsLinkingPassword(true);
+    try {
+      await linkPasswordToAccount(linkPasswordInput);
+      addToast('Senha vinculada com sucesso! Agora você pode entrar com e-mail e senha ou Google.', 'success');
+      setLinkPasswordInput('');
+    } catch (err: any) {
+      console.error(err);
+      addToast(err.message || 'Erro ao vincular senha.', 'error');
+    } finally {
+      setIsLinkingPassword(false);
+    }
+  };
 
   const colorWheelRef = useRef<HTMLDivElement>(null);
   const colorWheelContainerRef = useRef<HTMLDivElement>(null);
@@ -786,6 +811,64 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Account Security & Password Link */}
+              {user && !isGuest && (
+                <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="w-4 h-4 text-indigo-500" />
+                    <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
+                      Segurança e Vincular Senha
+                    </h3>
+                  </div>
+                  <div className="bg-neutral-50 dark:bg-white/[0.03] border border-neutral-200/80 dark:border-neutral-800 rounded-xl p-4 text-xs space-y-3">
+                    <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
+                      <span>Provedores de Acesso:</span>
+                      <div className="flex items-center gap-1.5">
+                        {hasGoogleProvider && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-medium text-[10px]">
+                            ✓ Google
+                          </span>
+                        )}
+                        {hasPasswordProvider ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-medium text-[10px]">
+                            ✓ E-mail/Senha
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-medium text-[10px]">
+                            Sem Senha
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {!hasPasswordProvider && (
+                      <div className="space-y-2 pt-1">
+                        <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
+                          Você criou esta conta pelo Google. Cadastre uma senha abaixo para poder entrar tanto pelo Google quanto digitando e-mail e senha:
+                        </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="password"
+                            placeholder="Digite uma nova senha (mín. 6 caract.)"
+                            value={linkPasswordInput}
+                            onChange={(e) => setLinkPasswordInput(e.target.value)}
+                            className="flex-1 h-9 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"
+                          />
+                          <button
+                            type="button"
+                            disabled={isLinkingPassword || !linkPasswordInput.trim()}
+                            onClick={handleLinkPasswordInModal}
+                            className="h-9 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs disabled:opacity-50 transition-all cursor-pointer shrink-0"
+                          >
+                            {isLinkingPassword ? 'Vinculando...' : 'Vincular'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Danger Zone */}
               <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800">

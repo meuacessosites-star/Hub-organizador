@@ -5,7 +5,17 @@ import { motion } from 'motion/react';
 import { Logo } from './Logo';
 
 export const LoginPage: React.FC = () => {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, enterAsGuest, loading, authError } = useAuth();
+  const { 
+    signInWithGoogle, 
+    signInWithEmail, 
+    signUpWithEmail, 
+    resetPassword, 
+    enterAsGuest, 
+    loading, 
+    authError, 
+    linkSuccessMessage, 
+    clearLinkSuccessMessage 
+  } = useAuth();
   const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -13,6 +23,7 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLinkingAccount, setIsLinkingAccount] = useState(false);
 
   React.useEffect(() => {
     if (authError) {
@@ -24,6 +35,9 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
     setSuccessMessage('');
+    clearLinkSuccessMessage();
+    setIsLinkingAccount(false);
+
     try {
       if (mode === 'reset') {
         await resetPassword(email);
@@ -43,7 +57,10 @@ export const LoginPage: React.FC = () => {
       const code = err?.code || '';
       const msg = err?.message || '';
 
-      if (code === 'auth/api-key-not-valid' || msg.includes('api-key-not-valid')) {
+      if (code === 'auth/account-exists-google' || code === 'auth/account-exists-google-only') {
+        setIsLinkingAccount(true);
+        setError('');
+      } else if (code === 'auth/api-key-not-valid' || msg.includes('api-key-not-valid')) {
         setError('Chave de API do Firebase (apiKey) está inválida ou não foi configurada no servidor/Vercel. Verifique as variáveis de ambiente (VITE_FIREBASE_API_KEY) ou entre no "Modo Visitante" abaixo.');
       } else if (code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
@@ -62,6 +79,8 @@ export const LoginPage: React.FC = () => {
   const toggleMode = (newMode: 'login' | 'register' | 'reset') => {
     setError('');
     setSuccessMessage('');
+    clearLinkSuccessMessage();
+    setIsLinkingAccount(false);
     setMode(newMode);
   };
 
@@ -165,25 +184,61 @@ export const LoginPage: React.FC = () => {
             
             {error && (
               <div className="flex items-center gap-2 text-red-500 text-xs bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                <AlertTriangle className="w-4 h-4" />
+                <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
-            {successMessage && (
-              <div className="flex items-center gap-2 text-emerald-500 text-xs bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
-                <CheckCircle className="w-4 h-4" />
-                <span>{successMessage}</span>
+            {(successMessage || linkSuccessMessage) && (
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/40">
+                <CheckCircle className="w-4 h-4 shrink-0" />
+                <span>{successMessage || linkSuccessMessage}</span>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all active:scale-[0.98] shadow-md shadow-indigo-500/20 disabled:opacity-50"
-            >
-              {loading ? 'Processando...' : (mode === 'reset' ? 'Enviar link de redefinição' : mode === 'register' ? 'Criar Conta' : 'Entrar')}
-            </button>
+            {isLinkingAccount ? (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/20 border border-amber-200 dark:border-amber-700/50 p-4 rounded-2xl space-y-3">
+                <div className="flex items-start gap-3 text-amber-900 dark:text-amber-200">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-1">
+                    <p className="font-bold text-sm text-amber-900 dark:text-amber-100">
+                      Conta do Google encontrada!
+                    </p>
+                    <p className="leading-relaxed">
+                      O e-mail <span className="font-semibold">{email}</span> já está registrado via Google.
+                    </p>
+                    <p className="leading-relaxed text-amber-800 dark:text-amber-300">
+                      Clique no botão abaixo para entrar com o Google e <strong>vincular sua senha</strong> a essa mesma conta. Tudo o que você salvar em uma sessão ficará sincronizado na outra!
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setError('');
+                    try {
+                      await signInWithGoogle();
+                    } catch (err: any) {
+                      setError(err.message || 'Erro ao vincular com o Google.');
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                >
+                  <img src="https://authjs.dev/img/providers/google.svg" className="w-4 h-4 bg-white rounded-full p-0.5" alt="Google" />
+                  <span>Entrar com o Google e Vincular Senha</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all active:scale-[0.98] shadow-md shadow-indigo-500/20 disabled:opacity-50 cursor-pointer"
+              >
+                {loading ? 'Processando...' : (mode === 'reset' ? 'Enviar link de redefinição' : mode === 'register' ? 'Criar Conta e Vincular' : 'Entrar')}
+              </button>
+            )}
 
             <div className="flex flex-col items-center gap-2">
               {mode === 'reset' ? (

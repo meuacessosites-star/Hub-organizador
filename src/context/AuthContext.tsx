@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { 
   User, 
   onAuthStateChanged, 
@@ -10,7 +10,10 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   updateProfile, 
-  sendPasswordResetEmail 
+  sendPasswordResetEmail,
+  fetchSignInMethodsForEmail,
+  EmailAuthProvider,
+  linkWithCredential
 } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -34,11 +37,14 @@ interface AuthContextType {
   loading: boolean;
   isGuest: boolean;
   authError: string | null;
+  linkSuccessMessage: string | null;
   enterAsGuest: () => void;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  linkPasswordToAccount: (password: string) => Promise<void>;
+  clearLinkSuccessMessage: () => void;
   signOut: () => Promise<void>;
 }
 
@@ -48,11 +54,14 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isGuest: false,
   authError: null,
+  linkSuccessMessage: null,
   enterAsGuest: () => {},
   signInWithGoogle: async () => {},
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
   resetPassword: async () => {},
+  linkPasswordToAccount: async () => {},
+  clearLinkSuccessMessage: () => {},
   signOut: async () => {},
 });
 
@@ -61,9 +70,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [linkSuccessMessage, setLinkSuccessMessage] = useState<string | null>(null);
+  const pendingLinkRef = useRef<{ email: string; password: string; displayName: string } | null>(null);
+
   const [isGuest, setIsGuest] = useState(() => {
     return localStorage.getItem('hub_guest_mode') === 'true';
   });
+
+  const clearLinkSuccessMessage = () => setLinkSuccessMessage(null);
+
+  const syncUserToUsuariosCollection = async (u: User) => {
+    try {
+      const userDocRef = doc(db, 'usuarios', u.uid);
+      const nowIso = new Date().toISOString();
+      const updatePayload: Record<string, any> = {
+        uid: u.uid,
+        email: u.email || '',
+        displayName: u.displayName || u.email?.split('@')[0] || '',
+        origem: 'Hub Organizador',
+        origem_app: 'Hub Organizador',
+        lastLogin: nowIso,
+        lastLoginAt: serverTimestamp(),
+        updatedAt: nowIso
+      };
+      if (u.photoURL) {
+        updatePayload.photoURL = u.photoURL;
+      }
+      await setDoc(userDocRef, updatePayload, { merge: true });
+      console.log(`[Usuarios Sync] Sucesso ao atualizar usuário ${u.uid} na coleção 'usuarios' com origem_app: 'Hub Organizador'`);
+    } catch (error) {
+      console.error(`[Usuarios Sync Error] Falha ao atualizar documento em 'usuarios':`, error);
+    }
+  };
+
+  // Helper to handle pending email/password link after Google Auth
+  const handlePendingAccountLink = async (currentUser: User) => {
+    if (pendingLinkRef.current && currentUser.email?.toLowerCase() === pendingLinkRef.current.email.toLowerCase()) {
+      const { email: pendingEmail, password: pendingPassword, displayName: pendingName } = pendingLinkRef.current;
+      try {
+        const cred = EmailAuthProvider.credential(pendingEmail, pendingPassword);
+        await linkWithCredential(currentUser, cred);
+        console.log(`[AuthContext] Senha vinculada com sucesso à conta do Google (${currentUser.email})`);
+        if (pendingName && (!currentUser.displayName || currentUser.displayName === currentUser.email?.split('@')[0])) {
+          await updateProfile(currentUser, { displayName: pendingName });
+        }
+        setLinkSuccessMessage('Sua senha foi vinculada com sucesso à sua conta do Google! Agora você pode entrar usando o Google ou Email e Senha.');
+      } catch (linkErr: any) {
+        console.warn('[AuthContext] Erro/Aviso ao vincular senha:', linkErr);
+        if (linkErr.code === 'auth/provider-already-linked' || linkErr.code === 'auth/credential-already-in-use') {
+          setLinkSuccessMessage('Sua conta do Google já está vinculada e pronta para uso com e-mail e senha!');
+        } else {
+          setAuthError(`Não foi possível vincular a senha: ${linkErr.message || 'Erro desconhecido'}`);
+        }
+      } finally {
+        pendingLinkRef.current = null;
+      }
+    }
+  };
 
   // Unique guest ID per device
   const getGuestId = () => {
@@ -103,30 +166,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const syncUserToUsuariosCollection = async (u: User) => {
-      try {
-        const userDocRef = doc(db, 'usuarios', u.uid);
-        const nowIso = new Date().toISOString();
-        const updatePayload: Record<string, any> = {
-          uid: u.uid,
-          email: u.email || '',
-          displayName: u.displayName || u.email?.split('@')[0] || '',
-          origem: 'Hub Organizador',
-          origem_app: 'Hub Organizador',
-          lastLogin: nowIso,
-          lastLoginAt: serverTimestamp(),
-          updatedAt: nowIso
-        };
-        if (u.photoURL) {
-          updatePayload.photoURL = u.photoURL;
-        }
-        await setDoc(userDocRef, updatePayload, { merge: true });
-        console.log(`[Usuarios Sync] Sucesso ao atualizar usuário ${u.uid} na coleção 'usuarios' com origem_app: 'Hub Organizador'`);
-      } catch (error) {
-        console.error(`[Usuarios Sync Error] Falha ao atualizar documento em 'usuarios':`, error);
-      }
-    };
-
     const unsubscribeAuth = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setAuthError(null);
@@ -137,6 +176,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Save or update user document in 'usuarios' collection with origin tags
         await syncUserToUsuariosCollection(u);
+
+        // Check and link any pending email/password credential to this Google user
+        await handlePendingAccountLink(u);
 
         // Listen for profile changes in the background (NON-BLOCKING)
         unsubscribeProfile = onSnapshot(doc(db, 'usuarios', u.uid), (docSnap) => {
@@ -162,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('AuthContext: redirect login successful', result.user.email);
           setAuthError(null);
           await syncUserToUsuariosCollection(result.user);
+          await handlePendingAccountLink(result.user);
         }
       })
       .catch((err) => {
@@ -204,6 +247,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await signInWithPopup(auth, provider);
       if (result && result.user) {
         setAuthError(null);
+        await syncUserToUsuariosCollection(result.user);
+        await handlePendingAccountLink(result.user);
         setLoading(false);
         return;
       }
@@ -248,6 +293,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
       setLoading(false);
+      const code = err?.code || '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        try {
+          const methods = await fetchSignInMethodsForEmail(auth, email);
+          if (methods.includes('google.com') && !methods.includes('password')) {
+            const customErr: any = new Error('ACCOUNT_EXISTS_GOOGLE_ONLY');
+            customErr.code = 'auth/account-exists-google-only';
+            throw customErr;
+          }
+        } catch (methodsErr: any) {
+          if (methodsErr.code === 'auth/account-exists-google-only') {
+            throw methodsErr;
+          }
+        }
+      }
       throw err;
     }
   };
@@ -262,7 +322,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err: any) {
       setLoading(false);
+      if (err.code === 'auth/email-already-in-use') {
+        try {
+          const methods = await fetchSignInMethodsForEmail(auth, email);
+          if (methods.includes('google.com')) {
+            pendingLinkRef.current = { email, password, displayName };
+            const customErr: any = new Error('ACCOUNT_EXISTS_GOOGLE');
+            customErr.code = 'auth/account-exists-google';
+            throw customErr;
+          }
+        } catch (methodsErr: any) {
+          if (methodsErr.code === 'auth/account-exists-google') {
+            throw methodsErr;
+          }
+        }
+      }
       throw err;
+    }
+  };
+
+  const linkPasswordToAccount = async (password: string) => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      throw new Error('Nenhum usuário logado para vincular a senha.');
+    }
+    setLoading(true);
+    try {
+      const cred = EmailAuthProvider.credential(auth.currentUser.email, password);
+      await linkWithCredential(auth.currentUser, cred);
+      setLinkSuccessMessage('Sua senha foi vinculada à sua conta com sucesso! Agora você pode entrar com Google ou com e-mail e senha.');
+    } catch (err: any) {
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -320,7 +411,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, isGuest, authError, enterAsGuest, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      userProfile, 
+      loading, 
+      isGuest, 
+      authError, 
+      linkSuccessMessage,
+      enterAsGuest, 
+      signInWithGoogle, 
+      signInWithEmail, 
+      signUpWithEmail, 
+      resetPassword, 
+      linkPasswordToAccount,
+      clearLinkSuccessMessage,
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );
