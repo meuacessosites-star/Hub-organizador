@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Category, Platform } from '../types';
-import { LayoutGrid, Settings2, X, Search, HelpCircle } from 'lucide-react';
+import { LayoutGrid, Settings2, X, Search, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from './Logo';
 import { CategoryIcon } from './CategoryIcon';
@@ -18,6 +18,7 @@ interface SidebarProps {
   setSelectedCategory: (id: string) => void;
   onManageCategories: () => void;
   onManageStatuses: () => void;
+  onManageProfiles?: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
   onBackToLogin: () => void;
@@ -31,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setSelectedCategory,
   onManageCategories,
   onManageStatuses,
+  onManageProfiles,
   isOpenMobile = false,
   onCloseMobile,
   onBackToLogin,
@@ -273,6 +275,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Bottom Part */}
         <div className="flex flex-col border-t border-neutral-200 dark:border-white/5 p-4 gap-3">
+          {onManageProfiles && (
+            <button
+              id="sidebar-manage-profiles-btn"
+              onClick={() => {
+                onManageProfiles();
+                if (onCloseMobile) onCloseMobile();
+              }}
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer"
+            >
+              <User className="w-4 h-4" />
+              <span>Gerenciar perfis</span>
+            </button>
+          )}
+
           <button
             id="sidebar-manage-status-btn"
             onClick={() => {

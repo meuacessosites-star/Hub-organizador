@@ -94,6 +94,16 @@ export default function App() {
     setIsManageStatusesOpen(true);
   }, []);
 
+  const handleOpenManageProfiles = useCallback(() => {
+    setProfileModal({
+      isOpen: true,
+      platformId: null,
+      profile: null,
+      startInEditMode: true,
+      openPresetsManager: true,
+    });
+  }, []);
+
   const handleOpenSidebarMobile = useCallback(() => {
     setIsSidebarOpenMobile(true);
   }, []);
@@ -144,11 +154,13 @@ export default function App() {
     platformId: string | null;
     profile: Profile | null;
     startInEditMode?: boolean;
+    openPresetsManager?: boolean;
   }>({
     isOpen: false,
     platformId: null,
     profile: null,
     startInEditMode: false,
+    openPresetsManager: false,
   });
 
   // Purchase modal state (Handles both add and view/edit)
@@ -422,6 +434,7 @@ export default function App() {
           setSelectedCategory={setSelectedCategory}
           onManageCategories={handleOpenManageCategories}
           onManageStatuses={handleOpenManageStatuses}
+          onManageProfiles={handleOpenManageProfiles}
           isOpenMobile={isSidebarOpenMobile}
           onCloseMobile={handleCloseSidebarMobile}
           onBackToLogin={handleSignOut}
@@ -626,13 +639,14 @@ export default function App() {
           {profileModal.isOpen && (
             <ProfileModal
               isOpen={profileModal.isOpen}
-              onClose={() => setProfileModal({ isOpen: false, platformId: null, profile: null, startInEditMode: false })}
+              onClose={() => setProfileModal({ isOpen: false, platformId: null, profile: null, startInEditMode: false, openPresetsManager: false })}
               platform={currentPlatformForProfile}
               profile={profileModal.profile}
               onSave={handleSaveProfile}
               onEdit={handleEditProfile}
               onDelete={handleDeleteProfile}
               startInEditMode={profileModal.startInEditMode}
+              openPresetsManager={profileModal.openPresetsManager}
             />
           )}
 

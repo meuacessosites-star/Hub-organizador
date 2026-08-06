@@ -18,12 +18,13 @@ import { SmartImage } from './SmartImage';
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  platform: Platform | null;
-  profile: Profile | null; // If null, mode is "add"
-  onSave: (profileData: Omit<Profile, 'id'>) => void;
-  onEdit: (profileId: string, profileData: Partial<Profile>) => void;
+  platform?: Platform | null;
+  profile?: Profile | null; // If null, mode is "add"
+  onSave?: (profileData: Omit<Profile, 'id'>) => void;
+  onEdit?: (profileId: string, profileData: Partial<Profile>) => void;
   onDelete?: (profileId: string) => void;
   startInEditMode?: boolean;
+  openPresetsManager?: boolean;
 }
 
 const PRESET_PROFILE_NAMES = [
@@ -118,11 +119,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onEdit,
   onDelete,
   startInEditMode = false,
+  openPresetsManager = false,
 }) => {
   const isEditMode = !!profile;
   const { addToast } = useToast();
   const { user } = useAuth();
   const { profilePresets, addProfilePreset, deleteProfilePreset, updateProfilePreset, reorderProfilePresets } = useStorage();
+
+  useEffect(() => {
+    if (isOpen && openPresetsManager) {
+      setIsEditingNamesList(true);
+      setIsEditingInView(true);
+    }
+  }, [isOpen, openPresetsManager]);
   
   const movePresetUp = (index: number) => {
     if (index <= 0) return;
@@ -432,7 +441,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     }
   };
 
-  if (!isOpen || !platform) return null;
+  if (!isOpen || (!platform && !openPresetsManager)) return null;
 
   return (
     <div className="fixed inset-0 bg-black/75 z-50 overflow-y-auto backdrop-blur-sm scrollbar-hide">
@@ -447,13 +456,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
           <div>
             <h2 className="font-sans font-bold text-base text-neutral-900 dark:text-white flex items-center gap-2">
-              <span>{isEditMode ? 'Visualizar perfil' : 'Adicionar conta'}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-600/15 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-100 dark:border-transparent">
-                {platform.name}
-              </span>
+              <span>{openPresetsManager ? 'Gerenciar Perfis Padrão (Presets)' : isEditMode ? 'Visualizar perfil' : 'Adicionar conta'}</span>
+              {platform && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-600/15 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-100 dark:border-transparent">
+                  {platform.name}
+                </span>
+              )}
             </h2>
             <p className="text-neutral-500 text-[10px] font-medium mt-1">
-              {isEditMode ? 'Detalhes e credenciais de acesso' : 'Cadastre um novo perfil de acesso'}
+              {openPresetsManager
+                ? 'Adicione, edite e reordene os perfis de acesso padrão'
+                : isEditMode
+                  ? 'Detalhes e credenciais de acesso'
+                  : 'Cadastre um novo perfil de acesso'}
             </p>
           </div>
           <button
@@ -1436,7 +1451,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
 
           <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
-            {isEditMode && !isEditingInView ? (
+            {openPresetsManager ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full sm:w-auto px-6 h-10 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer shadow-md"
+              >
+                Concluir
+              </button>
+            ) : isEditMode && !isEditingInView ? (
               /* View State Actions */
               <>
                 <button
