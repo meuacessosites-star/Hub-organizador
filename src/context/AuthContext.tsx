@@ -235,7 +235,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     console.log('AuthContext: starting signInWithGoogle');
-    setLoading(true);
     setAuthError(null);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
@@ -249,7 +248,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAuthError(null);
         await syncUserToUsuariosCollection(result.user);
         await handlePendingAccountLink(result.user);
-        setLoading(false);
         return;
       }
     } catch (popupErr: any) {
@@ -268,7 +266,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      setLoading(false);
       let finalError = `Erro ao entrar com Google: ${msg}`;
 
       if (code === 'auth/api-key-not-valid' || msg.includes('api-key-not-valid')) {
@@ -288,16 +285,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithEmail = async (email: string, password: string) => {
     setAuthError(null);
-    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
-      setLoading(false);
       const code = err?.code || '';
       if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
         try {
           const methods = await fetchSignInMethodsForEmail(auth, email);
-          if (methods.includes('google.com') && !methods.includes('password')) {
+          if (methods && methods.includes('google.com') && !methods.includes('password')) {
             const customErr: any = new Error('ACCOUNT_EXISTS_GOOGLE_ONLY');
             customErr.code = 'auth/account-exists-google-only';
             throw customErr;
@@ -314,18 +309,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     setAuthError(null);
-    setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       if (userCredential.user) {
         await updateProfile(userCredential.user, { displayName });
       }
     } catch (err: any) {
-      setLoading(false);
       if (err.code === 'auth/email-already-in-use') {
         try {
           const methods = await fetchSignInMethodsForEmail(auth, email);
-          if (methods.includes('google.com')) {
+          if (methods && methods.includes('google.com')) {
             pendingLinkRef.current = { email, password, displayName };
             const customErr: any = new Error('ACCOUNT_EXISTS_GOOGLE');
             customErr.code = 'auth/account-exists-google';
@@ -345,15 +338,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!auth.currentUser || !auth.currentUser.email) {
       throw new Error('Nenhum usuário logado para vincular a senha.');
     }
-    setLoading(true);
     try {
       const cred = EmailAuthProvider.credential(auth.currentUser.email, password);
       await linkWithCredential(auth.currentUser, cred);
       setLinkSuccessMessage('Sua senha foi vinculada à sua conta com sucesso! Agora você pode entrar com Google ou com e-mail e senha.');
     } catch (err: any) {
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 

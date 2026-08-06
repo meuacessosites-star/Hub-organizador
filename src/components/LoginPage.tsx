@@ -24,6 +24,7 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLinkingAccount, setIsLinkingAccount] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
     if (authError) {
@@ -37,6 +38,7 @@ export const LoginPage: React.FC = () => {
     setSuccessMessage('');
     clearLinkSuccessMessage();
     setIsLinkingAccount(false);
+    setIsSubmitting(true);
 
     try {
       if (mode === 'reset') {
@@ -45,6 +47,7 @@ export const LoginPage: React.FC = () => {
       } else if (mode === 'register') {
         if (!displayName.trim()) {
           setError('Por favor, insira seu nome completo.');
+          setIsSubmitting(false);
           return;
         }
         await signUpWithEmail(email, password, displayName);
@@ -62,8 +65,8 @@ export const LoginPage: React.FC = () => {
         setError('');
       } else if (code === 'auth/api-key-not-valid' || msg.includes('api-key-not-valid')) {
         setError('Chave de API do Firebase (apiKey) está inválida ou não foi configurada no servidor/Vercel. Verifique as variáveis de ambiente (VITE_FIREBASE_API_KEY) ou entre no "Modo Visitante" abaixo.');
-      } else if (code === 'auth/invalid-credential') {
-        setError('Email ou senha inválidos.');
+      } else if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+        setError('E-mail ou senha incorretos.');
       } else if (code === 'auth/user-not-found') {
         setError('Usuário não encontrado.');
       } else if (code === 'auth/email-already-in-use') {
@@ -73,6 +76,8 @@ export const LoginPage: React.FC = () => {
       } else {
         setError(msg || 'Erro de autenticação.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -217,26 +222,36 @@ export const LoginPage: React.FC = () => {
                   type="button"
                   onClick={async () => {
                     setError('');
+                    setIsSubmitting(true);
                     try {
                       await signInWithGoogle();
                     } catch (err: any) {
                       setError(err.message || 'Erro ao vincular com o Google.');
+                    } finally {
+                      setIsSubmitting(false);
                     }
                   }}
-                  disabled={loading}
+                  disabled={isSubmitting}
                   className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
                   <img src="https://authjs.dev/img/providers/google.svg" className="w-4 h-4 bg-white rounded-full p-0.5" alt="Google" />
-                  <span>Entrar com o Google e Vincular Senha</span>
+                  <span>{isSubmitting ? 'Conectando...' : 'Entrar com o Google e Vincular Senha'}</span>
                 </button>
               </div>
             ) : (
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all active:scale-[0.98] shadow-md shadow-indigo-500/20 disabled:opacity-50 cursor-pointer"
+                disabled={isSubmitting}
+                className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all active:scale-[0.98] shadow-md shadow-indigo-500/20 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? 'Processando...' : (mode === 'reset' ? 'Enviar link de redefinição' : mode === 'register' ? 'Criar Conta e Vincular' : 'Entrar')}
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                    <span>Processando...</span>
+                  </>
+                ) : (
+                  mode === 'reset' ? 'Enviar link de redefinição' : mode === 'register' ? 'Criar Conta e Vincular' : 'Entrar'
+                )}
               </button>
             )}
 
@@ -284,21 +299,27 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={async () => {
                 setError('');
+                setIsSubmitting(true);
                 try {
                   await signInWithGoogle();
                 } catch (err: any) {
                   const isPopupBlocked = err.message.includes('pop-up foi bloqueado');
                   setError(err.message || 'Erro ao entrar com Google. Verifique se os popups estão permitidos.');
                   if (isPopupBlocked) {
-                    // Extra visual feedback or even a simple alert to make sure user sees it
                     console.warn('Popup blocked detected');
                   }
+                } finally {
+                  setIsSubmitting(false);
                 }
               }}
-              disabled={loading}
-              className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 text-neutral-700 dark:text-neutral-200 font-medium text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+              disabled={isSubmitting}
+              className="w-full h-12 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 text-neutral-700 dark:text-neutral-200 font-medium text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
-              <img src="https://authjs.dev/img/providers/google.svg" className="w-5 h-5" alt="Google" />
+              {isSubmitting ? (
+                <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin shrink-0" />
+              ) : (
+                <img src="https://authjs.dev/img/providers/google.svg" className="w-5 h-5" alt="Google" />
+              )}
               <span>Google</span>
             </button>
 
