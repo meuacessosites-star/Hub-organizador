@@ -204,14 +204,20 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   const [imageUrl, setImageUrl] = useState('');
   const [avatarZoom, setAvatarZoom] = useState(1);
   const [zoomInput, setZoomInput] = useState('100');
+  const [isZoomFocused, setIsZoomFocused] = useState(false);
+  const [isBrightnessFocused, setIsBrightnessFocused] = useState(false);
 
   useEffect(() => {
-    setBrightnessInput(String(Math.round(brightness * 100)));
-  }, [brightness]);
+    if (!isBrightnessFocused) {
+      setBrightnessInput(String(Math.round(brightness * 100)));
+    }
+  }, [brightness, isBrightnessFocused]);
 
   useEffect(() => {
-    setZoomInput(String(Math.round(avatarZoom * 100)));
-  }, [avatarZoom]);
+    if (!isZoomFocused) {
+      setZoomInput(String(Math.round(avatarZoom * 100)));
+    }
+  }, [avatarZoom, isZoomFocused]);
   const [showColorWheel, setShowColorWheel] = useState(false);
   const [showAllPresets, setShowAllPresets] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
@@ -1483,27 +1489,33 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Brilho</span>
                           <div className="flex items-center gap-1">
                             <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={brightnessInput}
-                              onChange={(e) => {
-                                const str = e.target.value;
-                                setBrightnessInput(str);
-                                if (str === '') return;
-                                const val = parseInt(str);
-                                if (!isNaN(val)) {
-                                  setBrightness(Math.max(0, Math.min(100, val)) / 100);
-                                }
-                              }}
-                              onBlur={() => {
-                                if (brightnessInput === '' || isNaN(parseInt(brightnessInput))) {
-                                  setBrightnessInput(String(Math.round(brightness * 100)));
-                                }
-                              }}
-                              className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
-                              title="Digite o valor manualmente"
-                            />
+                               type="text"
+                               inputMode="numeric"
+                               value={brightnessInput}
+                               onChange={(e) => {
+                                 const str = e.target.value.replace(/\D/g, '');
+                                 setBrightnessInput(str);
+                                 if (str === '') return;
+                                 const val = parseInt(str);
+                                 if (!isNaN(val) && val >= 0 && val <= 100) {
+                                   setBrightness(val / 100);
+                                 }
+                               }}
+                               onFocus={() => setIsBrightnessFocused(true)}
+                               onBlur={() => {
+                                 setIsBrightnessFocused(false);
+                                 const val = parseInt(brightnessInput);
+                                 if (brightnessInput === '' || isNaN(val)) {
+                                   setBrightnessInput(String(Math.round(brightness * 100)));
+                                 } else {
+                                   const clamped = Math.max(0, Math.min(100, val));
+                                   setBrightnessInput(String(clamped));
+                                   setBrightness(clamped / 100);
+                                 }
+                               }}
+                               className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
+                               title="Digite o valor manualmente"
+                             />
                             <span className="text-[10px] font-mono text-neutral-400">%</span>
                           </div>
                         </div>
@@ -1610,27 +1622,33 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                               <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Ajustar Zoom</span>
                               <div className="flex items-center gap-1">
                                 <input
-                                  type="number"
-                                  min="20"
-                                  max="500"
-                                  value={zoomInput}
-                                  onChange={(e) => {
-                                    const str = e.target.value;
-                                    setZoomInput(str);
-                                    if (str === '') return;
-                                    const val = parseInt(str);
-                                    if (!isNaN(val)) {
-                                      setAvatarZoom(Math.max(20, Math.min(500, val)) / 100);
-                                    }
-                                  }}
-                                  onBlur={() => {
-                                    if (zoomInput === '' || isNaN(parseInt(zoomInput))) {
-                                      setZoomInput(String(Math.round(avatarZoom * 100)));
-                                    }
-                                  }}
-                                  className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
-                                  title="Digite o zoom manualmente"
-                                />
+                                   type="text"
+                                   inputMode="numeric"
+                                   value={zoomInput}
+                                   onChange={(e) => {
+                                     const str = e.target.value.replace(/\D/g, '');
+                                     setZoomInput(str);
+                                     if (str === '') return;
+                                     const val = parseInt(str);
+                                     if (!isNaN(val) && val >= 20 && val <= 500) {
+                                       setAvatarZoom(val / 100);
+                                     }
+                                   }}
+                                   onFocus={() => setIsZoomFocused(true)}
+                                   onBlur={() => {
+                                     setIsZoomFocused(false);
+                                     const val = parseInt(zoomInput);
+                                     if (zoomInput === '' || isNaN(val)) {
+                                       setZoomInput(String(Math.round(avatarZoom * 100)));
+                                     } else {
+                                       const clamped = Math.max(20, Math.min(500, val));
+                                       setZoomInput(String(clamped));
+                                       setAvatarZoom(clamped / 100);
+                                     }
+                                   }}
+                                   className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
+                                   title="Digite o zoom manualmente"
+                                 />
                                 <span className="text-[10px] font-mono text-indigo-500">%</span>
                               </div>
                             </div>
