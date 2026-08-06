@@ -169,9 +169,12 @@ export default function App() {
   // Filter platforms by ownership (STRICT SECURITY)
   const userPlatforms = useMemo(() => {
     return platforms.filter((plat) => {
-      return user && (!plat.ownerId || plat.ownerId === user.uid);
+      if (!user) return false;
+      const isGuestUser = user.uid.startsWith('guest_') || user.isAnonymous;
+      if (isGuestUser) return true; // Show all local platforms in guest mode
+      return !plat.ownerId || plat.ownerId === user.uid;
     });
-  }, [platforms, user?.uid]);
+  }, [platforms, user]);
 
   // Find dynamic counts
   const filteredPlatforms = useMemo(() => {

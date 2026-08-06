@@ -40,12 +40,28 @@ export const Header: React.FC<HeaderProps> = ({
   const getAvatarContent = () => {
     if (!user) return null;
 
+    const userInitial = (userProfile?.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase();
+    const defaultFallback = (
+      <div className="w-full h-full rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs text-white shadow-inner">
+        {userInitial}
+      </div>
+    );
+
     const availablePhoto = user.photoURL || userProfile?.photoURL || (userProfile?.avatar?.type === 'google' ? userProfile.avatar.value : null) || (userProfile?.avatar?.type === 'image' ? userProfile.avatar.value : null);
     
     if (userProfile?.avatar) {
       const { type, value, bgColor } = userProfile.avatar;
       if (type === 'image' && value) {
-        return <SmartImage src={value} alt="User Avatar" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${userProfile.avatar.zoom || 1})` }} />;
+        return (
+          <SmartImage 
+            src={value} 
+            alt="User Avatar" 
+            className="w-full h-full object-cover rounded-full" 
+            containerClassName="w-full h-full rounded-full overflow-hidden"
+            fallbackIcon={defaultFallback}
+            style={{ transform: `scale(${userProfile.avatar.zoom || 1})` }} 
+          />
+        );
       }
       if (type === 'emoji') {
         return (
@@ -57,26 +73,38 @@ export const Header: React.FC<HeaderProps> = ({
       if (type === 'color') {
         return (
           <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm" style={{ backgroundColor: bgColor || '#7c5cfc' }}>
-            {value || (userProfile.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+            {value || userInitial}
           </div>
         );
       }
       if (type === 'google' && availablePhoto) {
-        return <SmartImage src={availablePhoto} alt="Google Avatar" className="w-full h-full object-cover rounded-full"/>;
+        return (
+          <SmartImage 
+            src={availablePhoto} 
+            alt="Google Avatar" 
+            className="w-full h-full object-cover rounded-full"
+            containerClassName="w-full h-full rounded-full overflow-hidden"
+            fallbackIcon={defaultFallback}
+          />
+        );
       }
     }
     
     // Fallback to Google / profile photo if available
     if (availablePhoto) {
-      return <SmartImage src={availablePhoto} alt="User Avatar" className="w-full h-full object-cover rounded-full"/>;
+      return (
+        <SmartImage 
+          src={availablePhoto} 
+          alt="User Avatar" 
+          className="w-full h-full object-cover rounded-full"
+          containerClassName="w-full h-full rounded-full overflow-hidden"
+          fallbackIcon={defaultFallback}
+        />
+      );
     }
 
     // Default fallback
-    return (
-      <div className="w-full h-full rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold text-xs shadow-sm">
-        {(userProfile?.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
-      </div>
-    );
+    return defaultFallback;
   };
 
   const isSearchActive = isFocused || searchQuery.trim().length > 0;

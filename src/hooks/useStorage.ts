@@ -227,12 +227,15 @@ export function useStorage() {
   useEffect(() => { statusesRef.current = statuses; }, [statuses]);
   useEffect(() => { profilePresetsRef.current = profilePresets; }, [profilePresets]);
 
+  const isStorageInitializedRef = useRef<boolean>(false);
+
   // Sync from Firebase & Cleanup on logout
   useEffect(() => {
     if (authLoading) return;
 
     if (!user) {
       console.log('useStorage: Logged out, resetting states to avoid data leakage');
+      isStorageInitializedRef.current = false;
       setIsDemoActive(false);
       realDataRef.current = null;
       setTags(DEFAULT_TAGS);
@@ -254,7 +257,7 @@ export function useStorage() {
       return;
     }
     
-    // MIGRATION: If guest and unique ID keys don't exist, try to load from old 'hub_tags' etc.
+    // MIGRATION: If guest and unique ID keys don't exist or are empty, try to load from old 'hub_tags' or other guest keys
     if (isGuest) {
       const uniqueKeys = [
         `hub_user_${user.uid}_tags`, 
@@ -263,14 +266,15 @@ export function useStorage() {
         `hub_user_${user.uid}_statuses`,
         `hub_user_${user.uid}_profile_presets`
       ];
-      const legacyKeys = ['hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses'];
+      const legacyKeys = ['hub_tags', 'hub_categories', 'hub_platforms', 'hub_statuses', 'hub_profile_presets'];
       
       legacyKeys.forEach((oldKey, idx) => {
         const newKey = uniqueKeys[idx];
-        if (!safeGetItem(newKey) && safeGetItem(oldKey)) {
+        const currentVal = safeGetItem(newKey);
+        const oldVal = safeGetItem(oldKey);
+        if ((!currentVal || currentVal === '[]') && oldVal && oldVal !== '[]') {
           console.log(`Migrating legacy guest data from ${oldKey} to ${newKey}`);
-          safeSetItem(newKey, safeGetItem(oldKey)!);
-          // Optional: safeRemoveItem(oldKey); // Keep for safety for now
+          safeSetItem(newKey, oldVal);
         }
       });
     }
@@ -278,9 +282,29 @@ export function useStorage() {
     // Load user-specific local storage cache for instant offline rendering
     const savedTags = safeGetItem(`hub_user_${user.uid}_tags`);
     const savedCats = safeGetItem(`hub_user_${user.uid}_categories`);
-    const savedPlats = safeGetItem(`hub_user_${user.uid}_platforms`);
+    let savedPlats = safeGetItem(`hub_user_${user.uid}_platforms`);
     const savedStatuses = safeGetItem(`hub_user_${user.uid}_statuses`);
     const savedPresets = safeGetItem(`hub_user_${user.uid}_profile_presets`);
+
+    // Recovery check for guest mode platforms if current key is empty
+    if ((!savedPlats || savedPlats === '[]') && isGuest) {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k === 'hub_platforms' || (k.startsWith('hub_user_guest_') && k.endsWith('_platforms')))) {
+            const val = safeGetItem(k);
+            if (val && val !== '[]') {
+              console.log(`Recovered guest platforms from key ${k}`);
+              savedPlats = val;
+              safeSetItem(`hub_user_${user.uid}_platforms`, val);
+              break;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Error recovering guest platforms from localStorage:', err);
+      }
+    }
 
     const localTags = safeParse(savedTags, DEFAULT_TAGS);
     const localCats = safeParse(savedCats, DEFAULT_CATEGORIES);
@@ -334,6 +358,16 @@ export function useStorage() {
 
     setPlatforms(localPlats);
     platformsRef.current = localPlats;
+
+    // Update refs to reflect initial load
+    lastTagsRef.current = JSON.stringify(localTags);
+    lastCategoriesRef.current = JSON.stringify(localCats);
+    lastPlatformsRef.current = JSON.stringify(localPlats);
+    lastStatusesRef.current = JSON.stringify(localStatuses);
+    lastPresetsRef.current = JSON.stringify(localPresets);
+
+    // Mark storage as initialized so sync effects don't overwrite with default state
+    isStorageInitializedRef.current = true;
 
     const unsubs: (() => void)[] = [];
 
@@ -550,7 +584,7 @@ export function useStorage() {
   // Sync to local storage for offline / instant render when state updates
   const lastTagsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return;
+    if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
     const key = `hub_user_${user.uid}_tags`;
     const value = JSON.stringify(tags);
     if (lastTagsRef.current !== value) {
@@ -562,7 +596,7 @@ export function useStorage() {
 
   const lastCategoriesRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return;
+    if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
     const key = `hub_user_${user.uid}_categories`;
     const value = JSON.stringify(categories);
     if (lastCategoriesRef.current !== value) {
@@ -574,7 +608,7 @@ export function useStorage() {
 
   const lastPlatformsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return;
+    if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
     const key = `hub_user_${user.uid}_platforms`;
     const value = JSON.stringify(platforms);
     if (lastPlatformsRef.current !== value) {
@@ -586,7 +620,7 @@ export function useStorage() {
 
   const lastStatusesRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return;
+    if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
     const key = `hub_user_${user.uid}_statuses`;
     const value = JSON.stringify(statuses);
     if (lastStatusesRef.current !== value) {
@@ -598,7 +632,7 @@ export function useStorage() {
 
   const lastPresetsRef = useRef<string | null>(null);
   useEffect(() => {
-    if (authLoading || !user || isDemoActive) return;
+    if (authLoading || !user || isDemoActive || !isStorageInitializedRef.current) return;
     const key = `hub_user_${user.uid}_profile_presets`;
     const value = JSON.stringify(profilePresets);
     if (lastPresetsRef.current !== value) {

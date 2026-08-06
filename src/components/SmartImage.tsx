@@ -86,30 +86,32 @@ export const SmartImage: React.FC<SmartImageProps> = ({
       className={`relative overflow-hidden select-none flex items-center justify-center ${containerClassName}`}
       onClick={onClick}
     >
-      {/* Skeleton / Loading State */}
-      {loading && showLoadingSkeleton && !error && (
-        <div className="absolute inset-0 z-10 bg-neutral-200/80 dark:bg-neutral-800/80 animate-pulse flex items-center justify-center rounded-inherit" />
-      )}
-
-      {/* Fallback View when URL fails or is empty */}
-      {error || !currentSrc ? (
+      {/* Fallback View when URL fails, is empty, or while loading when fallbackIcon is provided */}
+      {fallbackIcon ? (
+        <div className="absolute inset-0 z-0 flex items-center justify-center w-full h-full rounded-inherit overflow-hidden">
+          {fallbackIcon}
+        </div>
+      ) : error || !currentSrc ? (
         <div
           id={id}
           className="w-full h-full min-h-[100%] bg-neutral-100/80 dark:bg-neutral-900/60 border border-neutral-200/40 dark:border-neutral-800/50 flex flex-col items-center justify-center p-1 text-neutral-400 dark:text-neutral-500 rounded-inherit select-none overflow-hidden"
         >
-          {fallbackIcon ? (
-            fallbackIcon
-          ) : (
-            <ImageOff className="w-[45%] h-[45%] max-w-6 max-h-6 min-w-3 min-h-3 stroke-[1.75] text-neutral-400 dark:text-neutral-500 opacity-80" />
-          )}
+          <ImageOff className="w-[45%] h-[45%] max-w-6 max-h-6 min-w-3 min-h-3 stroke-[1.75] text-neutral-400 dark:text-neutral-500 opacity-80" />
           {fallbackText && (
             <span className="mt-1 text-[10px] font-medium text-neutral-400 dark:text-neutral-500 text-center line-clamp-1">
               {fallbackText}
             </span>
           )}
         </div>
-      ) : (
-        /* Actual Image */
+      ) : null}
+
+      {/* Skeleton / Loading State if no fallbackIcon provided */}
+      {loading && showLoadingSkeleton && !error && !fallbackIcon && (
+        <div className="absolute inset-0 z-10 bg-neutral-200/80 dark:bg-neutral-800/80 animate-pulse flex items-center justify-center rounded-inherit" />
+      )}
+
+      {/* Actual Image */}
+      {currentSrc && !error && (
         <img
           {...imgProps}
           id={id}
@@ -118,7 +120,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
           referrerPolicy="no-referrer"
           onLoad={handleImgLoad}
           onError={handleImgError}
-          className={`${className} ${fitClass} transition-opacity duration-300 ${
+          className={`relative z-10 ${className} ${fitClass} transition-opacity duration-300 ${
             loading ? 'opacity-0' : 'opacity-100'
           }`}
           style={style}

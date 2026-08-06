@@ -417,10 +417,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   const renderAvatarPreview = () => {
+    const defaultInitial = (displayName || user?.displayName || user?.email || 'U').charAt(0).toUpperCase();
+    const defaultFallback = (
+      <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center text-4xl font-bold shadow-inner rounded-full">
+        {defaultInitial}
+      </div>
+    );
+
     if (avatarTab === 'image' && imageUrl) {
       return (
         <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-neutral-100 dark:bg-neutral-900">
-          <SmartImage src={imageUrl} alt="preview" className="w-full h-full object-contain transition-transform duration-200" style={{ transform: `scale(${avatarZoom})` }} />
+          <SmartImage 
+            src={imageUrl} 
+            alt="preview" 
+            className="w-full h-full object-contain transition-transform duration-200" 
+            containerClassName="w-full h-full rounded-full overflow-hidden"
+            fallbackIcon={defaultFallback}
+            style={{ transform: `scale(${avatarZoom})` }} 
+          />
         </div>
       );
     }
@@ -434,20 +448,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     if (avatarTab === 'color') {
       return (
         <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white shadow-inner rounded-full" style={{ backgroundColor: selectedColor }}>
-          {customLetters || (displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+          {customLetters || defaultInitial}
         </div>
       );
     }
     if (avatarTab === 'google' && availableGooglePhoto) {
-      return <SmartImage src={availableGooglePhoto} alt="google preview" className="w-full h-full object-cover rounded-full"/>;
+      return (
+        <SmartImage 
+          src={availableGooglePhoto} 
+          alt="google preview" 
+          className="w-full h-full object-cover rounded-full"
+          containerClassName="w-full h-full rounded-full overflow-hidden"
+          fallbackIcon={defaultFallback}
+        />
+      );
     }
     
     // Fallback
-    return (
-      <div className="w-full h-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-4xl font-bold shadow-inner rounded-full">
-        {(displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()}
-      </div>
-    );
+    return defaultFallback;
   };
 
   return (
