@@ -7,8 +7,8 @@ import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Profile, Platform, ProfileAvatar, ProfilePreset } from '../types';
-import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload, RefreshCw, GripVertical } from 'lucide-react';
+import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -122,7 +122,25 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const isEditMode = !!profile;
   const { addToast } = useToast();
   const { user } = useAuth();
-  const { profilePresets, addProfilePreset, deleteProfilePreset, updateProfilePreset } = useStorage();
+  const { profilePresets, addProfilePreset, deleteProfilePreset, updateProfilePreset, reorderProfilePresets } = useStorage();
+  
+  const movePresetUp = (index: number) => {
+    if (index <= 0) return;
+    const newPresets = [...profilePresets];
+    const temp = newPresets[index];
+    newPresets[index] = newPresets[index - 1];
+    newPresets[index - 1] = temp;
+    reorderProfilePresets(newPresets);
+  };
+
+  const movePresetDown = (index: number) => {
+    if (index >= profilePresets.length - 1) return;
+    const newPresets = [...profilePresets];
+    const temp = newPresets[index];
+    newPresets[index] = newPresets[index + 1];
+    newPresets[index + 1] = temp;
+    reorderProfilePresets(newPresets);
+  };
   
   const getProfileNamesKey = () => user ? `hub_user_${user.uid}_profile_names` : 'hub_profile_names';
 
@@ -618,12 +636,34 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </div>
 
                 {isEditingNamesList ? (
-                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/20 scrollbar-track-transparent">
-                    <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
-                      Gerenciar perfis salvos
-                    </span>
+                  <Reorder.Group
+                    axis="y"
+                    values={profilePresets}
+                    onReorder={reorderProfilePresets}
+                    className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/20 scrollbar-track-transparent"
+                  >
+                    <div className="flex items-center justify-between pb-1">
+                      <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                        Gerenciar e reordenar perfis
+                      </span>
+                      <span className="text-[9px] font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                        <GripVertical className="w-3 h-3 inline" /> Arraste o ícone para reordenar
+                      </span>
+                    </div>
                     {profilePresets.map((preset) => (
-                      <div key={`preset-edit-${preset.id}`} className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-[#13141c] border border-neutral-100 dark:border-[#2a2d40]/40 shadow-sm">
+                      <Reorder.Item
+                        key={preset.id}
+                        value={preset}
+                        className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-[#13141c] border border-neutral-100 dark:border-[#2a2d40]/40 shadow-sm cursor-grab active:cursor-grabbing select-none"
+                      >
+                        {/* Drag Handle Icon */}
+                        <div
+                          className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-grab active:cursor-grabbing touch-none shrink-0"
+                          title="Tocar e arrastar para reordenar"
+                        >
+                          <GripVertical className="w-4 h-4" />
+                        </div>
+
                         <div 
                           className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0 overflow-hidden"
                           style={{ backgroundColor: preset.avatar.bgColor || (preset.avatar.type === 'color' ? preset.avatar.value : undefined) }}
@@ -690,7 +730,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      </div>
+                      </Reorder.Item>
                     ))}
 
                     {/* New/Edit Preset Form Integrated */}
@@ -809,7 +849,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         Nenhum perfil salvo como padrão.
                       </p>
                     )}
-                  </div>
+                  </Reorder.Group>
                 ) : (
                   <div className="flex flex-wrap gap-2 pt-0.5 transition-all duration-300">
                     {(showAllPresets ? profilePresets : profilePresets.slice(0, 8)).map((preset) => {

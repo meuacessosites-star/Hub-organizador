@@ -148,7 +148,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     }
   };
 
-  const colorWheelRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    setAvatarTab('image');
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 50);
+  };
   const colorWheelContainerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
 
@@ -529,9 +536,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
               {/* Avatar Preview */}
               <div className="flex flex-col items-center gap-4 mb-8">
-                <div className="w-24 h-24 rounded-full shadow-md border-4 border-white dark:border-[#13141c] relative">
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  className="w-24 h-24 rounded-full shadow-md border-4 border-white dark:border-[#13141c] relative group cursor-pointer overflow-hidden transition-transform active:scale-95"
+                  title="Tocar para alterar a foto de perfil da galeria"
+                >
                   {renderAvatarPreview()}
-                </div>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+                    <Camera className="w-6 h-6 text-white drop-shadow" />
+                  </div>
+                  <div className="absolute bottom-0 right-0 p-1.5 bg-indigo-600 text-white rounded-full shadow-md border-2 border-white dark:border-[#13141c]">
+                    <Camera className="w-3.5 h-3.5" />
+                  </div>
+                </button>
                 <div className="text-center">
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium mb-1">E-mail da conta</p>
                   <p className="text-sm font-bold text-neutral-900 dark:text-white">
@@ -784,6 +802,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                           Escolher imagem...
                         </div>
                         <input
+                          ref={fileInputRef}
                           type="file"
                           accept="image/*"
                           onChange={handleImageUpload}

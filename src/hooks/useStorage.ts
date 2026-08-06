@@ -943,6 +943,14 @@ export function useStorage() {
     fbDelete('profilePresets', id);
   }, [fbDelete]);
 
+  const reorderProfilePresets = useCallback((newPresets: ProfilePreset[]) => {
+    setProfilePresets(newPresets);
+    profilePresetsRef.current = newPresets;
+    newPresets.forEach((p) => {
+      fbSet('profilePresets', p.id, p);
+    });
+  }, [fbSet]);
+
   const importData = useCallback(async (data: any) => {
     if (!user) return;
     isClearingRef.current = true;
@@ -1045,7 +1053,7 @@ export function useStorage() {
     addProfile, updateProfile, deleteProfile,
     addPurchase, updatePurchase, deletePurchase,
     statuses, addStatus, updateStatus, deleteStatus,
-    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset,
+    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset, reorderProfilePresets,
     importData,
     clearAllData,
     isDemoActive, setDemoActive,
@@ -1056,7 +1064,7 @@ export function useStorage() {
     addProfile, updateProfile, deleteProfile,
     addPurchase, updatePurchase, deletePurchase,
     statuses, addStatus, updateStatus, deleteStatus,
-    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset,
+    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset, reorderProfilePresets,
     importData,
     clearAllData,
     isDemoActive, setDemoActive
