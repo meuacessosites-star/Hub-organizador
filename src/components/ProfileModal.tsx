@@ -119,6 +119,13 @@ interface PresetReorderItemProps {
 const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, onEdit, onDelete }) => {
   const dragControls = useDragControls();
 
+  const isHex = (val?: string) => val && /^#([0-9A-F]{3}){1,2}$/i.test(val);
+  const bgColor = isHex(preset.avatar.bgColor) 
+    ? preset.avatar.bgColor 
+    : isHex(preset.avatar.value) 
+      ? preset.avatar.value 
+      : '#6366f1';
+
   return (
     <Reorder.Item
       value={preset}
@@ -137,14 +144,16 @@ const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, onEdit, o
 
       <div 
         className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0 overflow-hidden"
-        style={{ backgroundColor: preset.avatar.bgColor || (preset.avatar.type === 'color' ? preset.avatar.value : undefined) }}
+        style={{
+          backgroundColor: preset.avatar.type === 'image' && preset.avatar.value ? 'transparent' : bgColor
+        }}
       >
-        {preset.avatar.type === 'emoji' ? (
+        {preset.avatar.type === 'emoji' && preset.avatar.value ? (
           preset.avatar.value
-        ) : preset.avatar.type === 'image' ? (
-          <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+        ) : preset.avatar.type === 'image' && preset.avatar.value ? (
+          <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
         ) : (
-          preset.name.slice(0, 2).toUpperCase()
+          <span className="text-white font-bold">{preset.name ? preset.name.slice(0, 2).toUpperCase() : 'PF'}</span>
         )}
       </div>
       <span className="flex-1 text-xs font-medium truncate">{preset.name}</span>
@@ -890,6 +899,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   <div className="flex flex-wrap gap-2 pt-0.5 transition-all duration-300">
                     {(showAllPresets ? profilePresets : profilePresets.slice(0, 8)).map((preset) => {
                       const isSel = profileName === preset.name && !isCustomProfile;
+                      const isHex = (val?: string) => val && /^#([0-9A-F]{3}){1,2}$/i.test(val);
+                      const chipBgColor = isHex(preset.avatar.bgColor) 
+                        ? preset.avatar.bgColor 
+                        : isHex(preset.avatar.value) 
+                          ? preset.avatar.value 
+                          : '#6366f1';
+
                       return (
                         <button
                           key={`preset-chip-${preset.id}`}
@@ -924,15 +940,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           }`}
                         >
                           <div 
-                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm overflow-hidden ${isSel ? 'bg-white/20' : 'bg-neutral-300 dark:bg-neutral-700'}`}
-                            style={{ backgroundColor: isSel ? 'rgba(255,255,255,0.2)' : (preset.avatar.bgColor || (preset.avatar.type === 'color' ? preset.avatar.value : undefined)) }}
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm overflow-hidden text-white"
+                            style={{
+                              backgroundColor: isSel 
+                                ? 'rgba(255,255,255,0.2)' 
+                                : preset.avatar.type === 'image' && preset.avatar.value ? 'transparent' : chipBgColor
+                            }}
                           >
-                            {preset.avatar.type === 'emoji' ? (
+                            {preset.avatar.type === 'emoji' && preset.avatar.value ? (
                               preset.avatar.value
-                            ) : preset.avatar.type === 'image' ? (
-                              <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+                            ) : preset.avatar.type === 'image' && preset.avatar.value ? (
+                              <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
                             ) : (
-                              preset.name.slice(0, 2).toUpperCase()
+                              preset.name ? preset.name.slice(0, 2).toUpperCase() : 'PF'
                             )}
                           </div>
                           {preset.name}
