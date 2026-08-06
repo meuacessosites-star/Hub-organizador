@@ -47,20 +47,24 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
     );
 
-    const availablePhoto = user.photoURL || userProfile?.photoURL || (userProfile?.avatar?.type === 'google' ? userProfile.avatar.value : null) || (userProfile?.avatar?.type === 'image' ? userProfile.avatar.value : null);
-
-    const isCustomLetter = (val?: string) => {
-      if (!val) return false;
-      const cleanVal = val.trim().toLowerCase();
-      const initial = userInitial.toLowerCase();
-      const name = (userProfile?.displayName || user.displayName || '').trim().toLowerCase();
-      const emailPrefix = (user.email || '').split('@')[0].trim().toLowerCase();
-      if (cleanVal === initial || cleanVal === name || cleanVal === emailPrefix) return false;
-      return true;
-    };
+    const googlePhoto = user.photoURL || user.providerData?.find(p => p.photoURL)?.photoURL || userProfile?.photoURL || (userProfile?.avatar?.type === 'google' ? userProfile.avatar.value : null);
 
     if (userProfile?.avatar) {
       const { type, value, bgColor } = userProfile.avatar;
+      if (type === 'google') {
+        const photoToUse = value || googlePhoto;
+        if (photoToUse) {
+          return (
+            <SmartImage 
+              src={photoToUse} 
+              alt="User Avatar" 
+              className="w-full h-full object-cover rounded-full"
+              containerClassName="w-full h-full rounded-full overflow-hidden"
+              fallbackIcon={defaultFallback}
+            />
+          );
+        }
+      }
       if (type === 'image' && value) {
         return (
           <SmartImage 
@@ -80,32 +84,24 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         );
       }
-      if (type === 'color' && isCustomLetter(value)) {
+      if (type === 'color') {
         return (
           <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm" style={{ backgroundColor: bgColor || '#7c5cfc' }}>
-            {value}
+            {value || userInitial}
           </div>
         );
       }
     }
 
-    if (availablePhoto) {
+    if (googlePhoto) {
       return (
         <SmartImage 
-          src={availablePhoto} 
+          src={googlePhoto} 
           alt="User Avatar" 
           className="w-full h-full object-cover rounded-full"
           containerClassName="w-full h-full rounded-full overflow-hidden"
           fallbackIcon={defaultFallback}
         />
-      );
-    }
-
-    if (userProfile?.avatar?.type === 'color') {
-      return (
-        <div className="w-full h-full rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm" style={{ backgroundColor: userProfile.avatar.bgColor || '#7c5cfc' }}>
-          {userProfile.avatar.value || userInitial}
-        </div>
       );
     }
 

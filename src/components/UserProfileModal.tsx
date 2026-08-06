@@ -254,29 +254,23 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     isDraggingRef.current = false;
   };
 
-  const availableGooglePhoto = user.photoURL || userProfile?.photoURL || (userProfile?.avatar?.type === 'google' ? userProfile.avatar.value : '') || '';
+  const availableGooglePhoto = user?.photoURL || user?.providerData?.find(p => p.photoURL)?.photoURL || userProfile?.photoURL || (userProfile?.avatar?.type === 'google' ? userProfile.avatar.value : '') || '';
 
   useEffect(() => {
     if (isOpen && user) {
       setDisplayName(userProfile?.displayName || user.displayName || '');
-      if (userProfile?.avatar && userProfile.avatar.type !== 'color') {
+      if (userProfile?.avatar?.type) {
         setAvatarTab(userProfile.avatar.type);
         if (userProfile.avatar.type === 'emoji') {
           setSelectedColor(userProfile.avatar.bgColor || '#7c5cfc');
-          setSelectedEmoji(userProfile.avatar.value);
-        }
-        if (userProfile.avatar.type === 'image') {
-          setImageUrl(userProfile.avatar.value);
+          setSelectedEmoji(userProfile.avatar.value || '👤');
+        } else if (userProfile.avatar.type === 'image') {
+          setImageUrl(userProfile.avatar.value || '');
           setAvatarZoom(userProfile.avatar.zoom || 1);
+        } else if (userProfile.avatar.type === 'color') {
+          setSelectedColor(userProfile.avatar.bgColor || '#7c5cfc');
+          setCustomLetters(userProfile.avatar.value || '');
         }
-      } else if (
-        userProfile?.avatar?.type === 'color' && 
-        userProfile.avatar.value && 
-        userProfile.avatar.value !== (userProfile?.displayName || user.displayName || user.email || 'U').charAt(0).toUpperCase()
-      ) {
-        setAvatarTab('color');
-        setSelectedColor(userProfile.avatar.bgColor || '#7c5cfc');
-        setCustomLetters(userProfile.avatar.value);
       } else {
         setAvatarTab(availableGooglePhoto ? 'google' : 'color');
         setCustomLetters('');

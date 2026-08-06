@@ -93,12 +93,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastLoginAt: serverTimestamp(),
         updatedAt: nowIso
       };
-      if (u.photoURL) {
-        updatePayload.photoURL = u.photoURL;
-        updatePayload.avatar = {
-          type: 'google',
-          value: u.photoURL
-        };
+      const photoFromUser = u.photoURL || u.providerData?.find(p => p.photoURL)?.photoURL;
+      if (photoFromUser) {
+        updatePayload.photoURL = photoFromUser;
       }
       await setDoc(userDocRef, updatePayload, { merge: true });
       console.log(`[Usuarios Sync] Sucesso ao atualizar usuário ${u.uid} na coleção 'usuarios' com origem_app: 'Hub Organizador'`);
