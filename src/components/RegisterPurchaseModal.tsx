@@ -1351,13 +1351,38 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                         }`}
                       >
                         <div
-                          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase shadow-sm border border-white/20"
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase shadow-sm border border-white/20 overflow-hidden"
                           style={{
                             backgroundColor:
-                              prof.avatar.bgColor || (prof.avatar.type === 'color' ? prof.avatar.value : '#4f46e5'),
+                              (prof.avatar.type === 'image' || (prof.avatar.value && (prof.avatar.value.startsWith('http') || prof.avatar.value.startsWith('data:') || prof.avatar.value.startsWith('blob:') || prof.avatar.value.startsWith('/')))) && prof.avatar.value
+                                ? 'transparent'
+                                : prof.avatar.bgColor || (prof.avatar.type === 'color' ? prof.avatar.value : '#4f46e5'),
                           }}
                         >
-                          {prof.avatar.type === 'emoji' ? prof.avatar.value : prof.name.slice(0, 1).toUpperCase()}
+                          {(() => {
+                            const av = prof.avatar;
+                            const isImg = av?.type === 'image' || (av?.value && (
+                              av.value.startsWith('http') ||
+                              av.value.startsWith('data:') ||
+                              av.value.startsWith('blob:') ||
+                              av.value.startsWith('/')
+                            ));
+                            const isEmoji = av?.type === 'emoji' || (!isImg && !av?.value?.startsWith('#') && av?.value && av.value.length <= 8);
+                            if (isImg && av?.value) {
+                              return (
+                                <SmartImage
+                                  src={av.value}
+                                  alt={prof.name}
+                                  className="w-full h-full object-cover rounded-full"
+                                  style={{ transform: `scale(${av.zoom || 1})` }}
+                                />
+                              );
+                            }
+                            if (isEmoji && av?.value) {
+                              return av.value;
+                            }
+                            return prof.name.slice(0, 1).toUpperCase();
+                          })()}
                         </div>
                         <span>{prof.name}</span>
                       </button>

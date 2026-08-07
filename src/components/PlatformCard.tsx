@@ -134,17 +134,18 @@ interface PlatformCardProps {
 
 const highlightText = (text: string, highlight?: string) => {
   if (!highlight || !highlight.trim()) return <span>{text}</span>;
+  const cleanHighlight = highlight.trim().toLowerCase();
   const regex = new RegExp(`(${highlight.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
   const parts = text.split(regex);
   return (
     <>
       {parts.map((part, i) =>
-        regex.test(part) ? (
-          <mark key={`highlight-${part}-${i}`} className="bg-yellow-200 text-neutral-900 font-bold px-0.5 rounded dark:bg-amber-500/35 dark:text-amber-200">
+        part.toLowerCase() === cleanHighlight ? (
+          <mark key={`hl-${i}`} className="bg-yellow-200 text-neutral-900 font-bold px-0.5 rounded dark:bg-amber-500/35 dark:text-amber-200">
             {part}
           </mark>
         ) : (
-          <span key={`text-${part}-${i}`}>{part}</span>
+          <span key={`txt-${i}`}>{part}</span>
         )
       )}
     </>
@@ -409,26 +410,38 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 <div
                   key={`p-avatar-${platform.id}-${profile.id}-${prIdx}`}
                   title={`${profile.name} (${profile.email || profile.username || ''})`}
-                  className="w-7 h-7 rounded-full border-2 border-white dark:border-[#111218] flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase cursor-pointer hover:z-10 transition-transform hover:scale-110"
+                  className="w-7 h-7 rounded-full border-2 border-white dark:border-[#111218] flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase cursor-pointer hover:z-10 transition-transform hover:scale-110 overflow-hidden"
                   style={{
                     backgroundColor:
-                      profile.avatar.type === 'image'
+                      (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:') || profile.avatar.value.startsWith('/')))) && profile.avatar.value
                         ? 'transparent'
                         : profile.avatar.bgColor || (profile.avatar.type === 'color' ? profile.avatar.value : '#3b82f6'),
                   }}
                 >
-                  {profile.avatar.type === 'emoji' ? (
-                    profile.avatar.value
-                  ) : profile.avatar.type === 'image' ? (
-                    <SmartImage
-                      src={profile.avatar.value}
-                      alt={profile.name}
-                      className="w-full h-full object-cover rounded-full"
-                      style={{ transform: `scale(${profile.avatar.zoom || 1})` }}
-                    />
-                  ) : (
-                    profile.name.slice(0, 2).toUpperCase()
-                  )}
+                  {(() => {
+                    const av = profile.avatar;
+                    const isImg = av?.type === 'image' || (av?.value && (
+                      av.value.startsWith('http') ||
+                      av.value.startsWith('data:') ||
+                      av.value.startsWith('blob:') ||
+                      av.value.startsWith('/')
+                    ));
+                    const isEmoji = av?.type === 'emoji' || (!isImg && !av?.value?.startsWith('#') && av?.value && av.value.length <= 8);
+                    if (isImg && av?.value) {
+                      return (
+                        <SmartImage
+                          src={av.value}
+                          alt={profile.name}
+                          className="w-full h-full object-cover rounded-full"
+                          style={{ transform: `scale(${av.zoom || 1})` }}
+                        />
+                      );
+                    }
+                    if (isEmoji && av?.value) {
+                      return av.value;
+                    }
+                    return profile.name.slice(0, 2).toUpperCase();
+                  })()}
                 </div>
               ))}
             </div>
@@ -601,25 +614,33 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               <div className="flex items-center gap-2.5">
                                 {/* Avatar element */}
                                 <div
-                                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 uppercase shadow-inner"
+                                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 uppercase shadow-inner overflow-hidden"
                                   style={{
                                     backgroundColor:
-                                      profile.avatar.type === 'image'
+                                      (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:')))) && profile.avatar.value
                                         ? 'transparent'
                                         : profile.avatar.bgColor || (profile.avatar.type === 'color' ? profile.avatar.value : '#4f46e5'),
                                   }}
                                 >
-                                  {profile.avatar.type === 'emoji' ? (
+                                  {profile.avatar.type === 'emoji' && profile.avatar.value ? (
                                     profile.avatar.value
-                                  ) : profile.avatar.type === 'image' ? (
+                                  ) : (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:')))) && profile.avatar.value ? (
                                     <SmartImage
                                       src={profile.avatar.value}
                                       alt={profile.name}
                                       className="w-full h-full object-cover rounded-full"
                                       style={{ transform: `scale(${profile.avatar.zoom || 1})` }}
+                                      fallbackIcon={
+                                        <div
+                                          className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white uppercase"
+                                          style={{ backgroundColor: profile.avatar.bgColor || '#4f46e5' }}
+                                        >
+                                          {profile.name ? profile.name.slice(0, 2).toUpperCase() : 'PF'}
+                                        </div>
+                                      }
                                     />
                                   ) : (
-                                    profile.name.slice(0, 2).toUpperCase()
+                                    profile.name ? profile.name.slice(0, 2).toUpperCase() : 'PF'
                                   )}
                                 </div>
 

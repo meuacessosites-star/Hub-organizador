@@ -47,6 +47,11 @@ export const SmartImage: React.FC<SmartImageProps> = ({
       setLoading(true);
       setError(false);
       setTriedUrls(new Set([formatted]));
+
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 2500);
+      return () => clearTimeout(timer);
     }
   }, [src]);
 

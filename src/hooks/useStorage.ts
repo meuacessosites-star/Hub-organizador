@@ -389,19 +389,18 @@ export function useStorage() {
         console.log('useStorage: tags snapshot received', snap.size);
         if (!snap.empty) {
           const cloudTags = snap.docs.map(d => ({ ...d.data() as Tag, id: d.id }));
-          setTags(() => {
-            const merged = [...DEFAULT_TAGS];
-            cloudTags.forEach(ct => {
-              const idx = merged.findIndex(m => m.id === ct.id);
-              if (idx !== -1) merged[idx] = ct;
-              else merged.push(ct);
-            });
-            return merged;
+          const unique: Tag[] = [];
+          const seen = new Set<string>();
+          cloudTags.forEach(t => {
+            if (t.id && !seen.has(t.id)) {
+              seen.add(t.id);
+              unique.push(t);
+            }
           });
-          safeSetItem(`hub_user_${user.uid}_tags`, JSON.stringify(cloudTags));
+          setTags(unique);
+          safeSetItem(`hub_user_${user.uid}_tags`, JSON.stringify(unique));
         } else {
-          // If empty in cloud, check if we should keep defaults or go truly empty
-          // For now, if cloud is empty, we show defaults for new users
+          DEFAULT_TAGS.forEach(t => fbSet('tags', t.id, t));
           setTags(DEFAULT_TAGS);
         }
       }, (err) => {
@@ -418,17 +417,18 @@ export function useStorage() {
 
         if (!snap.empty) {
           const cloudCats = snap.docs.map(d => ({ ...d.data() as Category, id: d.id }));
-          setCategories(() => {
-            const merged = [...DEFAULT_CATEGORIES];
-            cloudCats.forEach(cc => {
-              const idx = merged.findIndex(m => m.id === cc.id);
-              if (idx !== -1) merged[idx] = cc;
-              else merged.push(cc);
-            });
-            return merged;
+          const unique: Category[] = [];
+          const seen = new Set<string>();
+          cloudCats.forEach(c => {
+            if (c.id && !seen.has(c.id)) {
+              seen.add(c.id);
+              unique.push(c);
+            }
           });
-          safeSetItem(`hub_user_${user.uid}_categories`, JSON.stringify(cloudCats));
+          setCategories(unique);
+          safeSetItem(`hub_user_${user.uid}_categories`, JSON.stringify(unique));
         } else {
+          DEFAULT_CATEGORIES.forEach(c => fbSet('categories', c.id, c));
           setCategories(DEFAULT_CATEGORIES);
         }
       }, (err) => {
@@ -469,17 +469,18 @@ export function useStorage() {
 
         if (!snap.empty) {
           const cloudStatuses = snap.docs.map(d => ({ ...d.data() as Status, id: d.id }));
-          setStatuses(() => {
-            const merged = [...DEFAULT_STATUSES];
-            cloudStatuses.forEach(cs => {
-              const idx = merged.findIndex(m => m.id === cs.id);
-              if (idx !== -1) merged[idx] = cs;
-              else merged.push(cs);
-            });
-            return merged;
+          const unique: Status[] = [];
+          const seen = new Set<string>();
+          cloudStatuses.forEach(s => {
+            if (s.id && !seen.has(s.id)) {
+              seen.add(s.id);
+              unique.push(s);
+            }
           });
-          safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(cloudStatuses));
+          setStatuses(unique);
+          safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(unique));
         } else {
+          DEFAULT_STATUSES.forEach(s => fbSet('statuses', s.id, s));
           setStatuses(DEFAULT_STATUSES);
         }
       }, (err) => {
@@ -495,17 +496,18 @@ export function useStorage() {
 
         if (!snap.empty) {
           const cloudPresets = snap.docs.map(d => ({ ...d.data() as ProfilePreset, id: d.id }));
-          setProfilePresets(() => {
-            const merged = [...DEFAULT_PROFILE_PRESETS];
-            cloudPresets.forEach(cp => {
-              const idx = merged.findIndex(m => m.id === cp.id);
-              if (idx !== -1) merged[idx] = cp;
-              else merged.push(cp);
-            });
-            return merged;
+          const unique: ProfilePreset[] = [];
+          const seen = new Set<string>();
+          cloudPresets.forEach(p => {
+            if (p.id && !seen.has(p.id)) {
+              seen.add(p.id);
+              unique.push(p);
+            }
           });
-          safeSetItem(`hub_user_${user.uid}_profile_presets`, JSON.stringify(cloudPresets));
+          setProfilePresets(unique);
+          safeSetItem(`hub_user_${user.uid}_profile_presets`, JSON.stringify(unique));
         } else {
+          DEFAULT_PROFILE_PRESETS.forEach(p => fbSet('profilePresets', p.id, p));
           setProfilePresets(DEFAULT_PROFILE_PRESETS);
         }
       }, (err) => {

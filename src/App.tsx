@@ -608,6 +608,10 @@ export default function App() {
               onClose={() => setIsNewPlatformOpen(false)}
               categories={categories}
               onSubmit={handleCreatePlatform}
+              onManageProfiles={() => {
+                setIsNewPlatformOpen(false);
+                handleOpenManageProfiles();
+              }}
             />
           )}
 

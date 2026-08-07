@@ -112,26 +112,43 @@ const getIndicatorCoords = (color: string, radius: number = 64) => {
 
 interface PresetReorderItemProps {
   preset: ProfilePreset;
+  isEditing?: boolean;
+  liveAvatar?: ProfileAvatar;
   onEdit: (preset: ProfilePreset) => void;
   onDelete: (preset: ProfilePreset) => void;
 }
 
-const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, onEdit, onDelete }) => {
+const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing, liveAvatar, onEdit, onDelete }) => {
   const dragControls = useDragControls();
 
+  const activeAvatar = isEditing && liveAvatar ? liveAvatar : preset.avatar;
+
   const isHex = (val?: string) => val && /^#([0-9A-F]{3}){1,2}$/i.test(val);
-  const bgColor = isHex(preset.avatar.bgColor) 
-    ? preset.avatar.bgColor 
-    : isHex(preset.avatar.value) 
-      ? preset.avatar.value 
+  const bgColor = isHex(activeAvatar?.bgColor) 
+    ? activeAvatar.bgColor 
+    : isHex(activeAvatar?.value) 
+      ? activeAvatar.value 
       : '#6366f1';
+
+  const isImg = activeAvatar?.type === 'image' || (activeAvatar?.value && (
+    activeAvatar.value.startsWith('http') ||
+    activeAvatar.value.startsWith('data:') ||
+    activeAvatar.value.startsWith('blob:') ||
+    activeAvatar.value.startsWith('/')
+  ));
+
+  const isEmoji = activeAvatar?.type === 'emoji' && activeAvatar?.value && !isImg;
 
   return (
     <Reorder.Item
       value={preset}
       dragListener={false}
       dragControls={dragControls}
-      className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-[#13141c] border border-neutral-100 dark:border-[#2a2d40]/40 shadow-sm select-none"
+      className={`flex items-center gap-2 p-2 rounded-lg border shadow-sm select-none transition-all ${
+        isEditing 
+          ? 'bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-500/50 ring-1 ring-indigo-500/20' 
+          : 'bg-white dark:bg-[#13141c] border-neutral-100 dark:border-[#2a2d40]/40'
+      }`}
     >
       {/* Drag Handle Icon */}
       <div
@@ -145,13 +162,18 @@ const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, onEdit, o
       <div 
         className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0 overflow-hidden"
         style={{
-          backgroundColor: preset.avatar.type === 'image' && preset.avatar.value ? 'transparent' : bgColor
+          backgroundColor: isImg && activeAvatar?.value ? 'transparent' : (activeAvatar?.bgColor || (activeAvatar?.type === 'color' ? activeAvatar.value : bgColor))
         }}
       >
-        {preset.avatar.type === 'emoji' && preset.avatar.value ? (
-          preset.avatar.value
-        ) : preset.avatar.type === 'image' && preset.avatar.value ? (
-          <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+        {isEmoji ? (
+          activeAvatar.value
+        ) : isImg && activeAvatar?.value ? (
+          <SmartImage
+            src={activeAvatar.value}
+            alt={preset.name}
+            className="w-full h-full object-cover"
+            style={{ transform: `scale(${activeAvatar.zoom || 1})` }}
+          />
         ) : (
           <span className="text-white font-bold">{preset.name ? preset.name.slice(0, 2).toUpperCase() : 'PF'}</span>
         )}
@@ -161,7 +183,11 @@ const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, onEdit, o
         <button
           type="button"
           onClick={() => onEdit(preset)}
-          className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 cursor-pointer transition-colors"
+          className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+            isEditing 
+              ? 'bg-indigo-600 text-white' 
+              : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20'
+          }`}
           title="Editar preset"
         >
           <Pencil className="w-3.5 h-3.5" />
@@ -298,18 +324,25 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setDescription(profile.description || '');
 
       if (profile.avatar) {
-        setAvatarTab(profile.avatar.type);
         if (profile.avatar.bgColor) {
           setSelectedColor(profile.avatar.bgColor);
         } else if (profile.avatar.type === 'color') {
           setSelectedColor(profile.avatar.value);
         }
         
-        if (profile.avatar.type === 'emoji') {
-          setSelectedEmoji(profile.avatar.value);
-        } else if (profile.avatar.type === 'image') {
+        const isImg = profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:')));
+
+        if (isImg && profile.avatar.value) {
+          setAvatarTab('image');
           setImageUrl(profile.avatar.value);
           setAvatarZoom(profile.avatar.zoom || 1);
+        } else if (profile.avatar.type === 'emoji') {
+          setAvatarTab('emoji');
+          setSelectedEmoji(profile.avatar.value);
+          setImageUrl('');
+        } else {
+          setAvatarTab('color');
+          setImageUrl('');
         }
       }
     } else {
@@ -430,6 +463,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       try {
         const resized = await resizeImage(file);
         setImageUrl(resized);
+        setAvatarTab('image');
       } catch (error) {
         addToast('Erro ao processar imagem.', 'error');
       }
@@ -458,20 +492,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     const finalProfileName = isCustomProfile ? customProfileName : profileName;
     if (!finalProfileName.trim()) return;
 
+    let finalAvatarType = avatarTab;
     let avatarValue = '';
     if (avatarTab === 'color') {
       avatarValue = selectedColor;
     } else if (avatarTab === 'emoji') {
       avatarValue = selectedEmoji;
     } else {
-      avatarValue = imageUrl || '';
+      if (imageUrl) {
+        avatarValue = imageUrl;
+      } else {
+        finalAvatarType = 'color';
+        avatarValue = selectedColor;
+      }
     }
 
     const avatarObj: ProfileAvatar = {
-      type: avatarTab,
+      type: finalAvatarType,
       value: avatarValue,
       bgColor: selectedColor,
-      zoom: avatarTab === 'image' ? avatarZoom : undefined,
+      zoom: finalAvatarType === 'image' ? avatarZoom : undefined,
     };
 
     if (isEditMode && profile) {
@@ -556,19 +596,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               {/* Profile Avatar Card */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/[0.06]">
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-md uppercase"
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-md uppercase overflow-hidden shrink-0"
                   style={{
-                    backgroundColor:
-                      avatarTab === 'image' ? 'transparent' : selectedColor,
+                    backgroundColor: selectedColor,
                   }}
                 >
-                  {avatarTab === 'emoji' ? (
+                  {avatarTab === 'emoji' && selectedEmoji ? (
                     selectedEmoji
                   ) : avatarTab === 'image' && imageUrl ? (
                     <SmartImage 
                       src={imageUrl} 
                       alt="profile" 
-                      className="w-full h-full object-cover rounded-full transition-transform duration-200" 
+                      className="w-full h-full object-cover transition-transform duration-200" 
                       style={{ transform: `scale(${avatarZoom})` }} 
                     />
                   ) : (
@@ -720,12 +759,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </div>
 
                 {isEditingNamesList ? (
-                  <Reorder.Group
-                    axis="y"
-                    values={profilePresets}
-                    onReorder={reorderProfilePresets}
-                    className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/20 scrollbar-track-transparent"
-                  >
+                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/20 scrollbar-track-transparent">
                     <div className="flex items-center justify-between pb-1">
                       <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                         Gerenciar e reordenar perfis
@@ -734,65 +768,123 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         <GripVertical className="w-3 h-3 inline" /> Arraste o ícone para reordenar
                       </span>
                     </div>
-                    {profilePresets.map((preset) => (
-                      <PresetReorderItem
-                        key={preset.id}
-                        preset={preset}
-                        onEdit={(presetToEdit) => {
-                          setEditingPresetId(presetToEdit.id);
-                          setProfileName(presetToEdit.name);
-                          setIsCustomProfile(true);
-                          setCustomProfileName(presetToEdit.name);
-                          setAvatarTab(presetToEdit.avatar.type);
-                          if (presetToEdit.avatar.bgColor) setSelectedColor(presetToEdit.avatar.bgColor);
-                          else if (presetToEdit.avatar.type === 'color') setSelectedColor(presetToEdit.avatar.value);
-                          
-                          if (presetToEdit.avatar.type === 'emoji') setSelectedEmoji(presetToEdit.avatar.value);
-                          else if (presetToEdit.avatar.type === 'image') {
-                            setImageUrl(presetToEdit.avatar.value);
-                            setAvatarZoom(presetToEdit.avatar.zoom || 1);
-                          }
-                          
-                          setEmail(presetToEdit.email || '');
-                          setUsername(presetToEdit.username || '');
-                          setPassword(presetToEdit.password || '');
-                          setAccessLink(presetToEdit.accessLink || '');
-                          setDescription(presetToEdit.description || '');
-                          
-                          addToast(`Editando preset: ${presetToEdit.name}`, 'info');
-                          setTimeout(() => {
-                            customNameInputRef.current?.focus();
-                            customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }, 100);
-                        }}
-                        onDelete={(presetToDelete) => {
-                          deleteProfilePreset(presetToDelete.id);
-                          if (profileName === presetToDelete.name) {
-                            setProfileName(profilePresets[0]?.name || '');
-                          }
-                          if (editingPresetId === presetToDelete.id) {
-                            setEditingPresetId(null);
-                            setIsCustomProfile(false);
-                          }
-                        }}
-                      />
-                    ))}
+
+                    <Reorder.Group
+                      axis="y"
+                      values={profilePresets}
+                      onReorder={reorderProfilePresets}
+                      className="flex flex-col gap-2"
+                    >
+                      {profilePresets.map((preset, idx) => (
+                        <PresetReorderItem
+                          key={`reorder-item-${preset.id || idx}`}
+                          preset={preset}
+                          isEditing={editingPresetId === preset.id}
+                          liveAvatar={{
+                            type: avatarTab,
+                            value: avatarTab === 'image' ? imageUrl : avatarTab === 'emoji' ? selectedEmoji : selectedColor,
+                            bgColor: selectedColor,
+                            zoom: avatarTab === 'image' ? avatarZoom : undefined
+                          }}
+                          onEdit={(presetToEdit) => {
+                            setEditingPresetId(presetToEdit.id);
+                            setProfileName(presetToEdit.name);
+                            setIsCustomProfile(true);
+                            setCustomProfileName(presetToEdit.name);
+                            if (presetToEdit.avatar.bgColor) setSelectedColor(presetToEdit.avatar.bgColor);
+                            else if (presetToEdit.avatar.type === 'color') setSelectedColor(presetToEdit.avatar.value);
+                            
+                            const isImg = presetToEdit.avatar.type === 'image' || (presetToEdit.avatar.value && (
+                              presetToEdit.avatar.value.startsWith('http') ||
+                              presetToEdit.avatar.value.startsWith('data:') ||
+                              presetToEdit.avatar.value.startsWith('blob:') ||
+                              presetToEdit.avatar.value.startsWith('/')
+                            ));
+
+                            if (isImg && presetToEdit.avatar.value) {
+                              setAvatarTab('image');
+                              setImageUrl(presetToEdit.avatar.value);
+                              setAvatarZoom(presetToEdit.avatar.zoom || 1);
+                            } else if (presetToEdit.avatar.type === 'emoji') {
+                              setAvatarTab('emoji');
+                              setSelectedEmoji(presetToEdit.avatar.value);
+                              setImageUrl('');
+                            } else {
+                              setAvatarTab('color');
+                              setImageUrl('');
+                            }
+                            
+                            setEmail(presetToEdit.email || '');
+                            setUsername(presetToEdit.username || '');
+                            setPassword(presetToEdit.password || '');
+                            setAccessLink(presetToEdit.accessLink || '');
+                            setDescription(presetToEdit.description || '');
+                            
+                            addToast(`Editando preset: ${presetToEdit.name}`, 'info');
+                            setTimeout(() => {
+                              customNameInputRef.current?.focus();
+                              customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 100);
+                          }}
+                          onDelete={(presetToDelete) => {
+                            deleteProfilePreset(presetToDelete.id);
+                            if (profileName === presetToDelete.name) {
+                              setProfileName(profilePresets[0]?.name || '');
+                            }
+                            if (editingPresetId === presetToDelete.id) {
+                              setEditingPresetId(null);
+                              setIsCustomProfile(false);
+                            }
+                          }}
+                        />
+                      ))}
+                    </Reorder.Group>
 
                     {/* New/Edit Preset Form Integrated */}
                     {isCustomProfile && (
                       <div className="mt-2 p-3 rounded-xl border-2 border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-500/5 flex flex-col gap-3">
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                            {editingPresetId ? 'Nome do Preset (Editando)' : 'Nome do Novo Preset'}
-                          </label>
-                          <input
-                            ref={customNameInputRef}
-                            type="text"
-                            value={customProfileName}
-                            onChange={(e) => setCustomProfileName(e.target.value)}
-                            placeholder="Ex: Minha Empresa"
-                            className="w-full h-10 px-3 rounded-lg text-xs bg-white border border-indigo-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#13141c] dark:border-[#2a2d40] dark:text-neutral-200 shadow-sm"
-                          />
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                              {editingPresetId ? 'Nome do Preset (Editando)' : 'Nome do Novo Preset'}
+                            </label>
+                            {editingPresetId && (
+                              <span className="text-[9px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
+                                Modo Edição
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            {/* Live Avatar Preview Badge at the top of the edit section */}
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-md border-2 border-indigo-200 dark:border-indigo-500/30 overflow-hidden shrink-0"
+                              style={{
+                                backgroundColor: selectedColor,
+                              }}
+                              title="Visualização em tempo real do Avatar do perfil"
+                            >
+                              {avatarTab === 'emoji' && selectedEmoji ? (
+                                selectedEmoji
+                              ) : avatarTab === 'image' && imageUrl ? (
+                                <SmartImage
+                                  src={imageUrl}
+                                  alt="preview"
+                                  className="w-full h-full object-cover"
+                                  style={{ transform: `scale(${avatarZoom})` }}
+                                />
+                              ) : (
+                                (customProfileName || 'P').slice(0, 2).toUpperCase()
+                              )}
+                            </div>
+                            <input
+                              ref={customNameInputRef}
+                              type="text"
+                              value={customProfileName}
+                              onChange={(e) => setCustomProfileName(e.target.value)}
+                              placeholder="Ex: Minha Empresa"
+                              className="flex-1 h-10 px-3 rounded-lg text-xs bg-white border border-indigo-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#13141c] dark:border-[#2a2d40] dark:text-neutral-200 shadow-sm"
+                            />
+                          </div>
                         </div>
 
                         {/* Save Action for Presets */}
@@ -806,18 +898,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                               return;
                             }
 
+                            let finalAvatarType = avatarTab;
                             let avatarValue = '';
                             if (avatarTab === 'color') avatarValue = selectedColor;
                             else if (avatarTab === 'emoji') avatarValue = selectedEmoji;
-                            else avatarValue = imageUrl || '';
+                            else {
+                              if (imageUrl) {
+                                avatarValue = imageUrl;
+                              } else {
+                                finalAvatarType = 'color';
+                                avatarValue = selectedColor;
+                              }
+                            }
 
                             const presetData = {
                               name: nameToSave,
                               avatar: { 
-                                type: avatarTab, 
+                                type: finalAvatarType, 
                                 value: avatarValue, 
                                 bgColor: selectedColor, 
-                                zoom: avatarTab === 'image' ? avatarZoom : undefined 
+                                zoom: finalAvatarType === 'image' ? avatarZoom : undefined 
                               },
                               email, 
                               username, 
@@ -894,7 +994,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         Nenhum perfil salvo como padrão.
                       </p>
                     )}
-                  </Reorder.Group>
+                  </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 pt-0.5 transition-all duration-300">
                     {(showAllPresets ? profilePresets : profilePresets.slice(0, 8)).map((preset) => {
@@ -914,14 +1014,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             setIsCustomProfile(false);
                             setProfileName(preset.name);
                             // Apply preset avatar
-                            setAvatarTab(preset.avatar.type);
                             if (preset.avatar.bgColor) setSelectedColor(preset.avatar.bgColor);
                             else if (preset.avatar.type === 'color') setSelectedColor(preset.avatar.value);
                             
-                            if (preset.avatar.type === 'emoji') setSelectedEmoji(preset.avatar.value);
-                            else if (preset.avatar.type === 'image') {
+                            const isImg = preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:')));
+
+                            if (isImg && preset.avatar.value) {
+                              setAvatarTab('image');
                               setImageUrl(preset.avatar.value);
                               setAvatarZoom(preset.avatar.zoom || 1);
+                            } else if (preset.avatar.type === 'emoji') {
+                              setAvatarTab('emoji');
+                              setSelectedEmoji(preset.avatar.value);
+                              setImageUrl('');
+                            } else {
+                              setAvatarTab('color');
+                              setImageUrl('');
                             }
                             
                             // Apply extra fields
@@ -940,17 +1048,24 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           }`}
                         >
                           <div 
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm overflow-hidden text-white"
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm overflow-hidden text-white shrink-0"
                             style={{
-                              backgroundColor: isSel 
-                                ? 'rgba(255,255,255,0.2)' 
-                                : preset.avatar.type === 'image' && preset.avatar.value ? 'transparent' : chipBgColor
+                              backgroundColor: isSel ? 'rgba(255,255,255,0.2)' : (
+                                ((preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:') || preset.avatar.value.startsWith('/')))) && preset.avatar.value)
+                                  ? 'transparent'
+                                  : chipBgColor
+                              )
                             }}
                           >
                             {preset.avatar.type === 'emoji' && preset.avatar.value ? (
                               preset.avatar.value
-                            ) : preset.avatar.type === 'image' && preset.avatar.value ? (
-                              <SmartImage src={preset.avatar.value} alt="" className="w-full h-full object-cover rounded-full" style={{ transform: `scale(${preset.avatar.zoom || 1})` }} />
+                            ) : (preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:')))) && preset.avatar.value ? (
+                              <SmartImage
+                                src={preset.avatar.value}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                style={{ transform: `scale(${preset.avatar.zoom || 1})` }}
+                              />
                             ) : (
                               preset.name ? preset.name.slice(0, 2).toUpperCase() : 'PF'
                             )}
@@ -1002,7 +1117,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 {/* Save/Update as Preset Button removed from here as per user request */}
               </div>
 
-              {/* E-mail Input */}
+              {!isEditingNamesList && (
+                <>
+                  {/* E-mail Input */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
                   E-mail <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
@@ -1102,6 +1219,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   />
                 </div>
               </div>
+            </>
+          )}
 
               {/* Avatar options tabs */}
               <div className="flex flex-col gap-2 pt-1">
