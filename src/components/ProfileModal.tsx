@@ -1117,7 +1117,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 {/* Save/Update as Preset Button removed from here as per user request */}
               </div>
 
-              {!isEditingNamesList && (
+              {(!isEditingNamesList || isCustomProfile) && (
                 <>
                   {/* E-mail Input */}
               <div className="flex flex-col gap-1.5">
@@ -1223,7 +1223,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           )}
 
               {/* Avatar options tabs */}
-              <div className="flex flex-col gap-2 pt-1">
+              {(!isEditingNamesList || isCustomProfile) && (
+                <div className="flex flex-col gap-2 pt-1">
                 <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
                   Avatar do perfil
                 </label>
@@ -1570,6 +1571,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   )}
                 </div>
               </div>
+            )}
             </div>
           )}
         </div>

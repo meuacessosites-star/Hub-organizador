@@ -1035,7 +1035,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   {purchase.bundleItems.slice(0, 3).map((item, idx) => {
                                     const itemStatus = item.status || 'pedido_feito';
                                     return (
-                                      <span key={item.id ? `${item.id}-${idx}` : `bi-${purchase.id}-${idx}-${item.name}`} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
+                                      <span key={item.id ? `${item.id}-${idx}` : `bi-${purchase.id}-${idx}`} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
                                         <button
                                           type="button"
                                           onClick={(e) => cycleBundleItemStatus(e, purchase, idx)}

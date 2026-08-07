@@ -890,7 +890,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                             const itemStatus = item.status || 'pedido_feito';
                             const hasPrice = item.price !== undefined && item.price !== null && item.price > 0;
                             return (
-                              <div key={item.id ? `${item.id}-${idx}` : `bi-${purchase.id}-${idx}-${item.name}`} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
+                              <div key={item.id ? `${item.id}-${idx}` : `bi-${purchase.id}-${idx}`} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
                                 <div className="flex items-center gap-2 max-w-[200px]">
                                   <button
                                     type="button"
