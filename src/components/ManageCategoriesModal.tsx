@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Category } from '../types';
-import { X, Plus, Trash2, FolderPlus, Palette, Pencil, Check } from 'lucide-react';
+import { X, Plus, Trash2, FolderPlus, Palette, Pencil, Check, Square, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { CategoryIcon } from './CategoryIcon';
@@ -14,9 +14,7 @@ interface ManageCategoriesModalProps {
   isOpen: boolean;
   onClose: () => void;
   categories: Category[];
-  onAddCategory: (category: Omit<Category, 'id' | 'isCustom'>) => void;
-  onUpdateCategory: (id: string, updated: Partial<Category>) => void;
-  onDeleteCategory: (id: string) => void;
+  onSave: (newCategories: Category[]) => void;
 }
 
 const PRESET_EMOJIS = ['💼', '💰', '🎬', '🛍️', '📁', '💻', '🎮', '💡', '🏠', '✈️', '🍿', '🔑'];
@@ -82,11 +80,10 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
   isOpen,
   onClose,
   categories,
-  onAddCategory,
-  onUpdateCategory,
-  onDeleteCategory,
+  onSave,
 }) => {
   const { addToast } = useToast();
+  const [localCategories, setLocalCategories] = useState<Category[]>([]);
   const [newCatName, setNewCatName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('📁');
   const [selectedColor, setSelectedColor] = useState('#8b5cf6');
@@ -96,12 +93,20 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [showColorWheel, setShowColorWheel] = useState(false);
 
+  const [showBulkSelect, setShowBulkSelect] = useState(false);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+
   // Close color wheel when opening modal or changing categories
   useEffect(() => {
     if (isOpen) {
+      setLocalCategories([...categories]);
       setShowColorWheel(false);
+      setShowBulkSelect(false);
+      setSelectedCategoryIds(new Set());
+      setShowBulkDeleteConfirm(false);
     }
-  }, [isOpen, editingCategoryId]);
+  }, [isOpen, categories]);
 
   const colorWheelRef = useRef<HTMLCanvasElement>(null);
   const colorWheelContainerRef = useRef<HTMLDivElement>(null);
@@ -300,20 +305,20 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
     if (!newCatName.trim()) return;
 
     if (editingCategoryId) {
-      onUpdateCategory(editingCategoryId, {
-        name: newCatName.trim(),
-        icon: selectedIcon,
-        color: selectedColor,
-      });
-      addToast(`Categoria "${newCatName.trim()}" atualizada com sucesso! 📝`, 'success');
+      setLocalCategories(prev => prev.map(c => c.id === editingCategoryId ? { ...c, name: newCatName.trim(), icon: selectedIcon, color: selectedColor } : c));
+      addToast(`Categoria "${newCatName.trim()}" atualizada localmente! Salve para confirmar. 📝`, 'info');
       setEditingCategoryId(null);
     } else {
-      onAddCategory({
+      const randomSuffix = Math.random().toString(36).substring(2, 9);
+      const newCat: Category = {
+        id: `cat-${Date.now()}-${randomSuffix}`,
         name: newCatName.trim(),
         icon: selectedIcon,
         color: selectedColor,
-      });
-      addToast(`Categoria "${newCatName.trim()}" criada com sucesso! 📁`, 'success');
+        isCustom: true
+      };
+      setLocalCategories(prev => [...prev, newCat]);
+      addToast(`Categoria "${newCatName.trim()}" adicionada localmente! Salve para confirmar. 📁`, 'info');
     }
 
     setNewCatName('');
@@ -583,12 +588,102 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
           </form>
 
           {/* Current list of categories */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold text-neutral-500 select-none">
-              Categorias Existentes
-            </span>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-500 select-none">
+                Categorias Existentes
+              </span>
+
+              {localCategories.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {showBulkSelect ? (
+                    <div className="flex items-center gap-1.5">
+                      {showBulkDeleteConfirm ? (
+                        <div className="flex items-center gap-1.5 bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl text-xs">
+                          <span className="font-bold text-rose-600 dark:text-rose-400 mr-1 text-[10px]">Excluir {selectedCategoryIds.size} itens?</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLocalCategories(prev => prev.filter(c => !selectedCategoryIds.has(c.id)));
+                              addToast(`${selectedCategoryIds.size} categoria(s) marcada(s) para exclusão! Salve para confirmar.`, 'info');
+                              setSelectedCategoryIds(new Set());
+                              setShowBulkSelect(false);
+                              setShowBulkDeleteConfirm(false);
+                            }}
+                            className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer"
+                          >
+                            Sim
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowBulkDeleteConfirm(false)}
+                            className="px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold text-[9px] uppercase tracking-wider hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+                          >
+                            Não
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {selectedCategoryIds.size === localCategories.length ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCategoryIds(new Set())}
+                              className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                            >
+                              Manualmente
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCategoryIds(new Set(localCategories.map(c => c.id)))}
+                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+                            >
+                              Selecionar tudo
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedCategoryIds.size > 0) {
+                                setShowBulkDeleteConfirm(true);
+                              } else {
+                                addToast('Nenhuma categoria selecionada', 'warning');
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                          >
+                            Excluir ({selectedCategoryIds.size})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowBulkSelect(false);
+                              setSelectedCategoryIds(new Set());
+                              setShowBulkDeleteConfirm(false);
+                            }}
+                            className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowBulkSelect(true)}
+                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+                    >
+                      Selecionar vários
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1.5 select-text">
-              {categories.map((cat) => {
+              {localCategories.map((cat) => {
                 const isSystem = !cat.isCustom;
                 const slugName = cat.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
                 return (
@@ -598,18 +693,66 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                     data-testid={`manage-category-row-${slugName}`}
                     role="button"
                     tabIndex={0}
-                      onKeyDown={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        handleStartEdit(cat);
+                        if (showBulkSelect) {
+                          setSelectedCategoryIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(cat.id)) {
+                              next.delete(cat.id);
+                            } else {
+                              next.add(cat.id);
+                            }
+                            return next;
+                          });
+                        } else {
+                          handleStartEdit(cat);
+                        }
                       }
                     }}
                     onClick={() => {
-                      handleStartEdit(cat);
+                      if (showBulkSelect) {
+                        setSelectedCategoryIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(cat.id)) {
+                            next.delete(cat.id);
+                          } else {
+                            next.add(cat.id);
+                          }
+                          return next;
+                        });
+                      } else {
+                        handleStartEdit(cat);
+                      }
                     }}
                     className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-white/[0.06] bg-neutral-50 dark:bg-[#080808] select-none cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-200 dark:hover:bg-[#151722] dark:hover:border-indigo-900/50 transition-all duration-150 focus:ring-2 focus:ring-indigo-500/50 outline-none"
                   >
                     <div className="flex items-center gap-2.5">
+                      {showBulkSelect && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCategoryIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(cat.id)) {
+                                next.delete(cat.id);
+                              } else {
+                                next.add(cat.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="p-1 rounded hover:bg-black/[0.08] dark:hover:bg-white/[0.08] text-neutral-400 hover:text-indigo-400 transition-colors cursor-pointer shrink-0"
+                        >
+                          {selectedCategoryIds.has(cat.id) ? (
+                            <CheckSquare className="w-4 h-4 text-indigo-500" />
+                          ) : (
+                            <Square className="w-4 h-4 text-neutral-400" />
+                          )}
+                        </button>
+                      )}
                       <CategoryIcon icon={cat.icon} className="w-4 h-4" />
                       <span data-testid={`manage-category-item-name-${cat.id}`} className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                         {cat.name}
@@ -630,8 +773,8 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                                 if (editingCategoryId === cat.id) {
                                   handleCancelEdit();
                                 }
-                                onDeleteCategory(cat.id);
-                                addToast(`Categoria "${cat.name}" excluída com sucesso! 🗑️`, 'info');
+                                setLocalCategories(prev => prev.filter(c => c.id !== cat.id));
+                                addToast(`Categoria "${cat.name}" marcada para exclusão! Salve para confirmar. 🗑️`, 'info');
                                 setDeletingCategoryId(null);
                               }}
                               className="px-1.5 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[9px] font-bold cursor-pointer transition-colors"
@@ -694,12 +837,24 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-neutral-200 dark:border-white/[0.08] flex items-center justify-end bg-neutral-50 dark:bg-[#0d0d0d] select-none">
+        <div className="px-6 py-4 border-t border-neutral-200 dark:border-white/[0.08] flex items-center justify-end gap-3 bg-neutral-50 dark:bg-[#0d0d0d] select-none">
           <button
+            type="button"
             onClick={onClose}
-            className="px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer"
+            className="px-4 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer transition-all dark:border-[#2c2e42] dark:hover:bg-neutral-800 dark:text-neutral-400"
           >
-            Fechar
+            Sair sem salvar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onSave(localCategories);
+              addToast('Alterações de categorias salvas com sucesso! ✨', 'success');
+              onClose();
+            }}
+            className="px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer shadow-md"
+          >
+            Salvar
           </button>
         </div>
       </motion.div>

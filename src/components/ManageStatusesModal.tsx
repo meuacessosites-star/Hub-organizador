@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Status } from '../types';
-import { X, Plus, Trash2, ShieldCheck, Palette, Pencil, Check } from 'lucide-react';
+import { X, Plus, Trash2, ShieldCheck, Palette, Pencil, Check, Square, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 
@@ -13,9 +13,7 @@ interface ManageStatusesModalProps {
   isOpen: boolean;
   onClose: () => void;
   statuses: Status[];
-  onAddStatus: (status: Omit<Status, 'id' | 'isCustom'>) => void;
-  onUpdateStatus: (id: string, updated: Partial<Status>) => void;
-  onDeleteStatus: (id: string) => void;
+  onSave: (newStatuses: Status[]) => void;
 }
 
 const PRESET_COLORS = ['#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#f43f5e', '#64748b', '#06b6d4', '#ec4899'];
@@ -80,11 +78,10 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
   isOpen,
   onClose,
   statuses,
-  onAddStatus,
-  onUpdateStatus,
-  onDeleteStatus,
+  onSave,
 }) => {
   const { addToast } = useToast();
+  const [localStatuses, setLocalStatuses] = useState<Status[]>([]);
   const [newStatusLabel, setNewStatusLabel] = useState('');
   const [selectedColor, setSelectedColor] = useState('#3b82f6');
   const [colorHexInput, setColorHexInput] = useState('3b82f6');
@@ -93,11 +90,19 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
   const [deletingStatusId, setDeletingStatusId] = useState<string | null>(null);
   const [showColorWheel, setShowColorWheel] = useState(false);
 
+  const [showBulkSelect, setShowBulkSelect] = useState(false);
+  const [selectedStatusIds, setSelectedStatusIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
+      setLocalStatuses([...statuses]);
       setShowColorWheel(false);
+      setShowBulkSelect(false);
+      setSelectedStatusIds(new Set());
+      setShowBulkDeleteConfirm(false);
     }
-  }, [isOpen, editingStatusId]);
+  }, [isOpen, statuses]);
 
   const colorWheelRef = useRef<HTMLCanvasElement>(null);
   const colorWheelContainerRef = useRef<HTMLDivElement>(null);
@@ -291,18 +296,19 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
     if (!newStatusLabel.trim()) return;
 
     if (editingStatusId) {
-      onUpdateStatus(editingStatusId, {
-        label: newStatusLabel.trim(),
-        color: selectedColor,
-      });
-      addToast(`Status "${newStatusLabel.trim()}" atualizado com sucesso! 📝`, 'success');
+      setLocalStatuses(prev => prev.map(s => s.id === editingStatusId ? { ...s, label: newStatusLabel.trim(), color: selectedColor } : s));
+      addToast(`Status "${newStatusLabel.trim()}" atualizado localmente! Salve para confirmar. 📝`, 'info');
       setEditingStatusId(null);
     } else {
-      onAddStatus({
+      const randomSuffix = Math.random().toString(36).substring(2, 9);
+      const newStatus: Status = {
+        id: `status-${Date.now()}-${randomSuffix}`,
         label: newStatusLabel.trim(),
         color: selectedColor,
-      });
-      addToast(`Status "${newStatusLabel.trim()}" criado com sucesso! ✨`, 'success');
+        isCustom: true
+      };
+      setLocalStatuses(prev => [...prev, newStatus]);
+      addToast(`Status "${newStatusLabel.trim()}" adicionado localmente! Salve para confirmar. ✨`, 'info');
     }
 
     setNewStatusLabel('');
@@ -493,12 +499,102 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
           </form>
 
           {/* Current list of statuses */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold text-neutral-500 select-none">
-              Status Existentes
-            </span>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-500 select-none">
+                Status Existentes
+              </span>
+
+              {localStatuses.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {showBulkSelect ? (
+                    <div className="flex items-center gap-1.5">
+                      {showBulkDeleteConfirm ? (
+                        <div className="flex items-center gap-1.5 bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl text-xs">
+                          <span className="font-bold text-rose-600 dark:text-rose-400 mr-1 text-[10px]">Excluir {selectedStatusIds.size} itens?</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLocalStatuses(prev => prev.filter(s => !selectedStatusIds.has(s.id)));
+                              addToast(`${selectedStatusIds.size} status marcado(s) para exclusão! Salve para confirmar.`, 'info');
+                              setSelectedStatusIds(new Set());
+                              setShowBulkSelect(false);
+                              setShowBulkDeleteConfirm(false);
+                            }}
+                            className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer"
+                          >
+                            Sim
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowBulkDeleteConfirm(false)}
+                            className="px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold text-[9px] uppercase tracking-wider hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+                          >
+                            Não
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {selectedStatusIds.size === localStatuses.length ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedStatusIds(new Set())}
+                              className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                            >
+                              Manualmente
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedStatusIds(new Set(localStatuses.map(s => s.id)))}
+                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+                            >
+                              Selecionar tudo
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedStatusIds.size > 0) {
+                                setShowBulkDeleteConfirm(true);
+                              } else {
+                                addToast('Nenhum status selecionado', 'warning');
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                          >
+                            Excluir ({selectedStatusIds.size})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowBulkSelect(false);
+                              setSelectedStatusIds(new Set());
+                              setShowBulkDeleteConfirm(false);
+                            }}
+                            className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowBulkSelect(true)}
+                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+                    >
+                      Selecionar vários
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1.5 select-text">
-              {statuses.map((status, idx) => {
+              {localStatuses.map((status, idx) => {
                 const isSystem = !status.isCustom;
                 return (
                   <div
@@ -506,6 +602,29 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
                     className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-white/[0.06] bg-neutral-50 dark:bg-[#080808]"
                   >
                     <div className="flex items-center gap-2.5">
+                      {showBulkSelect && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedStatusIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(status.id)) {
+                                next.delete(status.id);
+                              } else {
+                                next.add(status.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="p-1 rounded hover:bg-black/[0.08] dark:hover:bg-white/[0.08] text-neutral-400 hover:text-indigo-400 transition-colors cursor-pointer shrink-0"
+                        >
+                          {selectedStatusIds.has(status.id) ? (
+                            <CheckSquare className="w-4 h-4 text-indigo-500" />
+                          ) : (
+                            <Square className="w-4 h-4 text-neutral-400" />
+                          )}
+                        </button>
+                      )}
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: status.color }} />
                       <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                         {status.label}
@@ -519,8 +638,8 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              onDeleteStatus(status.id);
-                              addToast(`Status "${status.label}" excluído com sucesso!`, 'info');
+                              setLocalStatuses(prev => prev.filter(s => s.id !== status.id));
+                              addToast(`Status "${status.label}" marcado para exclusão! Salve para confirmar.`, 'info');
                               setDeletingStatusId(null);
                             }}
                             className="px-1.5 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[9px] font-bold cursor-pointer"
@@ -566,12 +685,24 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-neutral-200 dark:border-white/[0.08] flex items-center justify-end bg-neutral-50 dark:bg-[#0d0d0d] select-none">
+        <div className="px-6 py-4 border-t border-neutral-200 dark:border-white/[0.08] flex items-center justify-end gap-3 bg-neutral-50 dark:bg-[#0d0d0d] select-none">
           <button
+            type="button"
             onClick={onClose}
-            className="px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer"
+            className="px-4 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer transition-all dark:border-[#2c2e42] dark:hover:bg-neutral-800 dark:text-neutral-400"
           >
-            Fechar
+            Sair sem salvar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onSave(localStatuses);
+              addToast('Alterações de status salvas com sucesso! ✨', 'success');
+              onClose();
+            }}
+            className="px-5 h-10 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer shadow-md"
+          >
+            Salvar
           </button>
         </div>
       </motion.div>

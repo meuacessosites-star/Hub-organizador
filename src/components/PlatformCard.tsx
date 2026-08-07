@@ -29,6 +29,8 @@ import {
   CreditCard,
   ShoppingBag,
   Mail,
+  Square,
+  CheckSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FullScreenCarousel } from './FullScreenCarousel';
@@ -130,6 +132,9 @@ interface PlatformCardProps {
   searchQuery?: string;
   activeMatchProfileId?: string;
   currentUserUid?: string;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 const highlightText = (text: string, highlight?: string) => {
@@ -169,6 +174,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
   searchQuery = '',
   activeMatchProfileId = '',
   currentUserUid,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelect,
 }) => {
   // SECURE RESOURCE AUTHORIZATION CHECK: Return 403 Permissão Negada with NO sensitive fields if ownership is breached
   if (!currentUserUid || (platform.ownerId && platform.ownerId !== currentUserUid)) {
@@ -339,7 +347,11 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     <div
       id={`platform-card-${platform.id}`}
       data-testid={`platform-card-${platform.id}`}
-      className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-white/[0.06] rounded-2xl overflow-hidden transition-all duration-500 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.7)] hover:border-neutral-300 dark:hover:border-white/[0.12] group"
+      className={`bg-white dark:bg-[#121212] border rounded-2xl overflow-hidden transition-all duration-500 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.7)] hover:border-neutral-300 dark:hover:border-white/[0.12] group ${
+        isSelectionMode && isSelected
+          ? 'ring-2 ring-indigo-500/50 border-indigo-500 dark:border-indigo-500/70'
+          : 'border-neutral-200 dark:border-white/[0.06]'
+      }`}
     >
       {/* Card Header (always visible) */}
       <div
@@ -347,6 +359,24 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
         className="p-6 flex items-center justify-between cursor-pointer select-none transition-colors hover:bg-neutral-50 dark:hover:bg-white/[0.02]"
       >
         <div className="flex items-center gap-4">
+          {isSelectionMode && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSelect?.();
+              }}
+              className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer shrink-0"
+              title={isSelected ? "Desmarcar" : "Selecionar"}
+            >
+              {isSelected ? (
+                <CheckSquare className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              ) : (
+                <Square className="w-5 h-5 text-neutral-305 dark:text-neutral-600" />
+              )}
+            </button>
+          )}
+
           {/* Logo container - Standardized App Icon Style (Squircle) */}
           <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
             {currentLogoUrl && !imageError ? (

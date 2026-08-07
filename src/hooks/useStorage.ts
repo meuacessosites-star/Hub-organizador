@@ -953,6 +953,51 @@ export function useStorage() {
     });
   }, [fbSet]);
 
+  const saveStatuses = useCallback(async (newStatuses: Status[]) => {
+    const currentStatuses = statusesRef.current;
+    const deleted = currentStatuses.filter(cs => !newStatuses.some(ns => ns.id === cs.id));
+    
+    setStatuses(newStatuses);
+    statusesRef.current = newStatuses;
+    
+    for (const s of newStatuses) {
+      await fbSet('statuses', s.id, s);
+    }
+    for (const s of deleted) {
+      await fbDelete('statuses', s.id);
+    }
+  }, [fbSet, fbDelete]);
+
+  const saveCategories = useCallback(async (newCategories: Category[]) => {
+    const currentCategories = categoriesRef.current;
+    const deleted = currentCategories.filter(cc => !newCategories.some(nc => nc.id === cc.id));
+    
+    setCategories(newCategories);
+    categoriesRef.current = newCategories;
+    
+    for (const c of newCategories) {
+      await fbSet('categories', c.id, c);
+    }
+    for (const c of deleted) {
+      await fbDelete('categories', c.id);
+    }
+  }, [fbSet, fbDelete]);
+
+  const saveProfilePresets = useCallback(async (newPresets: ProfilePreset[]) => {
+    const currentPresets = profilePresetsRef.current;
+    const deleted = currentPresets.filter(cp => !newPresets.some(np => np.id === cp.id));
+    
+    setProfilePresets(newPresets);
+    profilePresetsRef.current = newPresets;
+    
+    for (const p of newPresets) {
+      await fbSet('profilePresets', p.id, p);
+    }
+    for (const p of deleted) {
+      await fbDelete('profilePresets', p.id);
+    }
+  }, [fbSet, fbDelete]);
+
   const importData = useCallback(async (data: any) => {
     if (!user) return;
     isClearingRef.current = true;
@@ -1050,23 +1095,23 @@ export function useStorage() {
 
   return useMemo(() => ({
     tags, addTag, updateTag, deleteTag,
-    categories, addCategory, updateCategory, deleteCategory,
+    categories, addCategory, updateCategory, deleteCategory, saveCategories,
     platforms, addPlatform, updatePlatform, deletePlatform,
     addProfile, updateProfile, deleteProfile,
     addPurchase, updatePurchase, deletePurchase,
-    statuses, addStatus, updateStatus, deleteStatus,
-    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset, reorderProfilePresets,
+    statuses, addStatus, updateStatus, deleteStatus, saveStatuses,
+    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset, reorderProfilePresets, saveProfilePresets,
     importData,
     clearAllData,
     isDemoActive, setDemoActive,
   }), [
     tags, addTag, updateTag, deleteTag,
-    categories, addCategory, updateCategory, deleteCategory,
+    categories, addCategory, updateCategory, deleteCategory, saveCategories,
     platforms, addPlatform, updatePlatform, deletePlatform,
     addProfile, updateProfile, deleteProfile,
     addPurchase, updatePurchase, deletePurchase,
-    statuses, addStatus, updateStatus, deleteStatus,
-    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset, reorderProfilePresets,
+    statuses, addStatus, updateStatus, deleteStatus, saveStatuses,
+    profilePresets, addProfilePreset, updateProfilePreset, deleteProfilePreset, reorderProfilePresets, saveProfilePresets,
     importData,
     clearAllData,
     isDemoActive, setDemoActive

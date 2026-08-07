@@ -23,12 +23,15 @@ import {
   Plus,
   CreditCard,
   Receipt,
+  Square,
+  CheckSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { getPlatformColor, getInitials, getDomainFromInput, getLogoUrl } from '../utils/logoHelper';
 import { SmartImage } from './SmartImage';
 import { CategoryChartPanel } from './CategoryChartPanel';
+import { useToast } from '../context/ToastContext';
 
 interface PurchasesViewProps {
   platforms: Platform[];
@@ -42,6 +45,7 @@ interface PurchasesViewProps {
   onClearHighlight?: () => void;
   initialSearchQuery?: string;
   onClearInitialSearch?: () => void;
+  onDeletePurchase: (platformId: string, purchaseId: string) => void;
 }
 
 const formatImageUrl = (url: string) => {
@@ -296,7 +300,42 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
   onAddPurchase,
   highlightedPurchaseId,
   onClearHighlight,
+  onDeletePurchase,
 }) => {
+  const { addToast } = useToast();
+
+  // Bulk purchase select states
+  const [showPurchaseBulkSelect, setShowPurchaseBulkSelect] = useState(false);
+  const [selectedPurchaseKeys, setSelectedPurchaseKeys] = useState<Set<string>>(new Set());
+  const [showPurchaseBulkDeleteConfirm, setShowPurchaseBulkDeleteConfirm] = useState(false);
+
+  const handleToggleSelectPurchase = (platformId: string, purchaseId: string) => {
+    const key = `${platformId}:${purchaseId}`;
+    setSelectedPurchaseKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const handleBulkDeletePurchases = () => {
+    if (selectedPurchaseKeys.size === 0) return;
+    
+    selectedPurchaseKeys.forEach((key) => {
+      const [platformId, purchaseId] = key.split(':');
+      onDeletePurchase(platformId, purchaseId);
+    });
+
+    addToast(`${selectedPurchaseKeys.size} compra(s) excluída(s) com sucesso! 🗑️`, 'info');
+    setSelectedPurchaseKeys(new Set());
+    setShowPurchaseBulkSelect(false);
+    setShowPurchaseBulkDeleteConfirm(false);
+  };
+
   // Filters State
   const [search, setSearch] = useState('');
 
@@ -593,7 +632,85 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Bulk Select Trigger / Actions */}
+            {showPurchaseBulkSelect ? (
+              <div className="flex items-center gap-2">
+                {showPurchaseBulkDeleteConfirm ? (
+                  <div className="flex items-center gap-2 bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 px-3 h-11 rounded-xl text-xs">
+                    <span className="font-bold text-rose-600 dark:text-rose-400 text-[11px]">Excluir {selectedPurchaseKeys.size} compras?</span>
+                    <button
+                      type="button"
+                      onClick={handleBulkDeletePurchases}
+                      className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Sim
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPurchaseBulkDeleteConfirm(false)}
+                      className="px-2.5 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold text-[10px] uppercase tracking-wider hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+                    >
+                      Não
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {selectedPurchaseKeys.size === filteredPurchases.length ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPurchaseKeys(new Set())}
+                        className="h-11 px-4 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                      >
+                        Manualmente
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPurchaseKeys(new Set(filteredPurchases.map(p => `${p.platformId}:${p.id}`)))}
+                        className="h-11 px-4 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+                      >
+                        Selecionar tudo
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedPurchaseKeys.size > 0) {
+                          setShowPurchaseBulkDeleteConfirm(true);
+                        } else {
+                          addToast('Nenhuma compra selecionada', 'warning');
+                        }
+                      }}
+                      className="h-11 px-4 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                    >
+                      Excluir Selecionadas ({selectedPurchaseKeys.size})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPurchaseBulkSelect(false);
+                        setSelectedPurchaseKeys(new Set());
+                        setShowPurchaseBulkDeleteConfirm(false);
+                      }}
+                      className="h-11 px-4 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                    >
+                      Cancelar
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowPurchaseBulkSelect(true)}
+                className="h-11 px-4 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+              >
+                Selecionar várias
+              </button>
+            )}
+
             {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -758,14 +875,36 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                   className={`bg-[#0d0d0d] border rounded-2xl overflow-hidden transition-all duration-300 shadow-[0_15px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] hover:border-white/[0.1] flex flex-col group ${
                     highlightedPurchaseId === purchase.id
                       ? 'border-indigo-500 ring-2 ring-indigo-500/50 shadow-[0_0_20px_rgba(79,70,229,0.3)]'
-                      : 'border-white/[0.05]'
+                      : showPurchaseBulkSelect && selectedPurchaseKeys.has(`${purchase.platformId}:${purchase.id}`)
+                        ? 'border-indigo-500 ring-2 ring-indigo-500/45 shadow-[0_0_15px_rgba(79,70,229,0.25)]'
+                        : 'border-white/[0.05]'
                   }`}
                 >
                   {/* Card Header (Date & Tags) */}
                   <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.03] bg-white/[0.01]">
-                    <span className="font-mono text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">
-                      {new Date(purchase.date).toLocaleDateString('pt-BR')}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {showPurchaseBulkSelect && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleToggleSelectPurchase(purchase.platformId, purchase.id);
+                          }}
+                          className="p-1 rounded hover:bg-white/[0.08] text-neutral-400 hover:text-indigo-400 transition-colors cursor-pointer shrink-0"
+                          title="Selecionar compra"
+                        >
+                          {selectedPurchaseKeys.has(`${purchase.platformId}:${purchase.id}`) ? (
+                            <CheckSquare className="w-4 h-4 text-indigo-400" />
+                          ) : (
+                            <Square className="w-4 h-4 text-neutral-600" />
+                          )}
+                        </button>
+                      )}
+                      <span className="font-mono text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">
+                        {new Date(purchase.date).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide max-w-[70%]">
                       {purchase.tags && purchase.tags.length > 0 ? (
                         purchase.tags.map((tId, idx) => {

@@ -7,7 +7,7 @@ import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Profile, Platform, ProfileAvatar, ProfilePreset } from '../types';
-import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload, RefreshCw, GripVertical } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload, RefreshCw, GripVertical, Square, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
@@ -113,12 +113,14 @@ const getIndicatorCoords = (color: string, radius: number = 64) => {
 interface PresetReorderItemProps {
   preset: ProfilePreset;
   isEditing?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
   liveAvatar?: ProfileAvatar;
   onEdit: (preset: ProfilePreset) => void;
   onDelete: (preset: ProfilePreset) => void;
 }
 
-const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing, liveAvatar, onEdit, onDelete }) => {
+const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing, isSelected, onToggleSelect, liveAvatar, onEdit, onDelete }) => {
   const dragControls = useDragControls();
 
   const activeAvatar = isEditing && liveAvatar ? liveAvatar : preset.avatar;
@@ -158,6 +160,22 @@ const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing
       >
         <GripVertical className="w-4 h-4" />
       </div>
+
+      {/* Select Checkbox for bulk deletion */}
+      {onToggleSelect && (
+        <button
+          type="button"
+          onClick={onToggleSelect}
+          className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer shrink-0"
+          title="Selecionar para exclusão em massa"
+        >
+          {isSelected ? (
+            <CheckSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          ) : (
+            <Square className="w-4 h-4 text-neutral-300 dark:text-neutral-600" />
+          )}
+        </button>
+      )}
 
       <div 
         className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0 overflow-hidden"
@@ -219,7 +237,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const isEditMode = !!profile;
   const { addToast } = useToast();
   const { user } = useAuth();
-  const { profilePresets, addProfilePreset, deleteProfilePreset, updateProfilePreset, reorderProfilePresets } = useStorage();
+  const { profilePresets, saveProfilePresets } = useStorage();
+  
+  const [localProfilePresets, setLocalProfilePresets] = useState<ProfilePreset[]>([]);
+  const [selectedPresetIds, setSelectedPresetIds] = useState<Set<string>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLocalProfilePresets([...profilePresets]);
+      setSelectedPresetIds(new Set());
+      setShowBulkDelete(false);
+    }
+  }, [isOpen, profilePresets]);
 
   useEffect(() => {
     if (isOpen && openPresetsManager) {
@@ -230,20 +260,20 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   
   const movePresetUp = (index: number) => {
     if (index <= 0) return;
-    const newPresets = [...profilePresets];
+    const newPresets = [...localProfilePresets];
     const temp = newPresets[index];
     newPresets[index] = newPresets[index - 1];
     newPresets[index - 1] = temp;
-    reorderProfilePresets(newPresets);
+    setLocalProfilePresets(newPresets);
   };
 
   const movePresetDown = (index: number) => {
-    if (index >= profilePresets.length - 1) return;
-    const newPresets = [...profilePresets];
+    if (index >= localProfilePresets.length - 1) return;
+    const newPresets = [...localProfilePresets];
     const temp = newPresets[index];
     newPresets[index] = newPresets[index + 1];
     newPresets[index + 1] = temp;
-    reorderProfilePresets(newPresets);
+    setLocalProfilePresets(newPresets);
   };
   
   const getProfileNamesKey = () => user ? `hub_user_${user.uid}_profile_names` : 'hub_profile_names';
@@ -515,28 +545,34 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     };
 
     if (isEditMode && profile) {
-      onEdit(profile.id, {
-        name: finalProfileName,
-        username,
-        email,
-        password,
-        accessLink,
-        description,
-        avatar: avatarObj,
-      });
+      if (onEdit) {
+        onEdit(profile.id, {
+          name: finalProfileName,
+          username,
+          email,
+          password,
+          accessLink,
+          description,
+          avatar: avatarObj,
+        });
+      }
+      saveProfilePresets(localProfilePresets);
       addToast(`Conta "${finalProfileName}" atualizada com sucesso! 👤`, 'success');
       setIsEditingInView(false);
       onClose();
     } else {
-      onSave({
-        name: finalProfileName,
-        username,
-        email,
-        password,
-        accessLink,
-        description,
-        avatar: avatarObj,
-      });
+      if (onSave) {
+        onSave({
+          name: finalProfileName,
+          username,
+          email,
+          password,
+          accessLink,
+          description,
+          avatar: avatarObj,
+        });
+      }
+      saveProfilePresets(localProfilePresets);
       addToast(`Conta "${finalProfileName}" criada com sucesso! ✨`, 'success');
       onClose();
     }
@@ -760,25 +796,80 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
                 {isEditingNamesList ? (
                   <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/20 scrollbar-track-transparent">
-                    <div className="flex items-center justify-between pb-1">
-                      <span className="text-[9px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
-                        Gerenciar e reordenar perfis
-                      </span>
-                      <span className="text-[9px] font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                        <GripVertical className="w-3 h-3 inline" /> Arraste o ícone para reordenar
-                      </span>
+                    <div className="flex flex-col gap-2 pb-2.5 border-b border-neutral-200/50 dark:border-white/[0.05]">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                          Gerenciar e reordenar perfis
+                        </span>
+                        <span className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1 shrink-0">
+                          <GripVertical className="w-3 h-3 inline" /> Arraste o ícone para reordenar
+                        </span>
+                      </div>
+                      
+                      {/* Action buttons row placed below the header */}
+                      <div className="flex items-center gap-2">
+                        {showBulkDelete ? (
+                          <>
+                            {selectedPresetIds.size > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setLocalProfilePresets(prev => prev.filter(p => !selectedPresetIds.has(p.id)));
+                                  addToast(`${selectedPresetIds.size} perfil(is) marcado(s) para exclusão! Salve para confirmar.`, 'info');
+                                  setSelectedPresetIds(new Set());
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Excluir Selecionados ({selectedPresetIds.size})
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowBulkDelete(false);
+                                setSelectedPresetIds(new Set());
+                              }}
+                              className="px-3 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 text-[11px] font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowBulkDelete(true)}
+                            className="px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                          >
+                            <CheckSquare className="w-3.5 h-3.5" />
+                            Selecionar vários
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <Reorder.Group
                       axis="y"
-                      values={profilePresets}
-                      onReorder={reorderProfilePresets}
+                      values={localProfilePresets}
+                      onReorder={setLocalProfilePresets}
                       className="flex flex-col gap-2"
                     >
-                      {profilePresets.map((preset, idx) => (
+                      {localProfilePresets.map((preset, idx) => (
                         <PresetReorderItem
                           key={`reorder-item-${preset.id || idx}`}
                           preset={preset}
+                          isSelected={selectedPresetIds.has(preset.id)}
+                          onToggleSelect={showBulkDelete ? () => {
+                            setSelectedPresetIds(prev => {
+                              const next = new Set(prev);
+                              if (next.has(preset.id)) {
+                                next.delete(preset.id);
+                              } else {
+                                next.add(preset.id);
+                              }
+                              return next;
+                            });
+                          } : undefined}
                           isEditing={editingPresetId === preset.id}
                           liveAvatar={{
                             type: avatarTab,
@@ -827,14 +918,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             }, 100);
                           }}
                           onDelete={(presetToDelete) => {
-                            deleteProfilePreset(presetToDelete.id);
+                            setLocalProfilePresets(prev => prev.filter(p => p.id !== presetToDelete.id));
                             if (profileName === presetToDelete.name) {
-                              setProfileName(profilePresets[0]?.name || '');
+                              setProfileName(localProfilePresets.find(p => p.id !== presetToDelete.id)?.name || '');
                             }
                             if (editingPresetId === presetToDelete.id) {
                               setEditingPresetId(null);
                               setIsCustomProfile(false);
                             }
+                            addToast(`Preset "${presetToDelete.name}" removido localmente! Salve para confirmar.`, 'info');
                           }}
                         />
                       ))}
@@ -912,6 +1004,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             }
 
                             const presetData = {
+                              id: editingPresetId || `preset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                               name: nameToSave,
                               avatar: { 
                                 type: finalAvatarType, 
@@ -927,11 +1020,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             };
 
                             if (editingPresetId) {
-                              updateProfilePreset(editingPresetId, presetData);
-                              addToast(`Preset "${nameToSave}" atualizado!`, 'success');
+                              setLocalProfilePresets(prev => prev.map(p => p.id === editingPresetId ? presetData : p));
+                              addToast(`Preset "${nameToSave}" atualizado localmente! Salve para confirmar.`, 'info');
                             } else {
-                              addProfilePreset(presetData);
-                              addToast(`Novo preset "${nameToSave}" criado!`, 'success');
+                              setLocalProfilePresets(prev => [...prev, presetData]);
+                              addToast(`Novo preset "${nameToSave}" adicionado localmente! Salve para confirmar.`, 'info');
                             }
                             setEditingPresetId(null);
                             setIsCustomProfile(false);
@@ -989,7 +1082,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       </button>
                     )}
                     
-                    {profilePresets.length === 0 && !isCustomProfile && (
+                    {localProfilePresets.length === 0 && !isCustomProfile && (
                       <p className="text-[10px] text-neutral-500 text-center py-4">
                         Nenhum perfil salvo como padrão.
                       </p>
@@ -997,7 +1090,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 pt-0.5 transition-all duration-300">
-                    {(showAllPresets ? profilePresets : profilePresets.slice(0, 8)).map((preset) => {
+                    {(showAllPresets ? localProfilePresets : localProfilePresets.slice(0, 8)).map((preset) => {
                       const isSel = profileName === preset.name && !isCustomProfile;
                       const isHex = (val?: string) => val && /^#([0-9A-F]{3}){1,2}$/i.test(val);
                       const chipBgColor = isHex(preset.avatar.bgColor) 
@@ -1075,13 +1168,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       );
                     })}
 
-                    {profilePresets.length > 8 && (
+                    {localProfilePresets.length > 8 && (
                       <button
                         type="button"
                         onClick={() => setShowAllPresets(!showAllPresets)}
                         className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors uppercase tracking-wider cursor-pointer bg-indigo-500/5 hover:bg-indigo-500/10"
                       >
-                        {showAllPresets ? 'Ver menos' : `+${profilePresets.length - 8} outros`}
+                        {showAllPresets ? 'Ver menos' : `+${localProfilePresets.length - 8} outros`}
                       </button>
                     )}
 
@@ -1612,13 +1705,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
           <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
             {openPresetsManager ? (
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full sm:w-auto px-6 h-10 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer shadow-md"
-              >
-                Concluir
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full sm:w-auto px-5 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer transition-all whitespace-nowrap dark:border-[#2c2e42] dark:hover:bg-[#1a1b26] dark:text-neutral-400"
+                >
+                  Sair sem salvar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    saveProfilePresets(localProfilePresets);
+                    addToast('Configurações de perfis salvas com sucesso! ✨', 'success');
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto px-6 h-10 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer shadow-md"
+                >
+                  Salvar
+                </button>
+              </>
             ) : isEditMode && !isEditingInView ? (
               /* View State Actions */
               <>

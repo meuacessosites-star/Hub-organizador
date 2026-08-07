@@ -124,6 +124,36 @@ export default function App() {
     }
   }, [user, signOut]);
 
+  // Bulk platform select states
+  const [showPlatformBulkSelect, setShowPlatformBulkSelect] = useState(false);
+  const [selectedPlatformIds, setSelectedPlatformIds] = useState<Set<string>>(new Set());
+  const [showPlatformBulkDeleteConfirm, setShowPlatformBulkDeleteConfirm] = useState(false);
+
+  const handleToggleSelectPlatform = useCallback((platformId: string) => {
+    setSelectedPlatformIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(platformId)) {
+        next.delete(platformId);
+      } else {
+        next.add(platformId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleBulkDeletePlatforms = useCallback(() => {
+    if (selectedPlatformIds.size === 0) return;
+
+    selectedPlatformIds.forEach((id) => {
+      deletePlatform(id);
+    });
+    
+    addToast(`${selectedPlatformIds.size} plataforma(s) excluída(s) com sucesso! 🗑️`, 'info');
+    setSelectedPlatformIds(new Set());
+    setShowPlatformBulkSelect(false);
+    setShowPlatformBulkDeleteConfirm(false);
+  }, [selectedPlatformIds, deletePlatform, addToast]);
+
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
   const [highlightedPurchaseId, setHighlightedPurchaseId] = useState<string | null>(null);
@@ -519,6 +549,87 @@ export default function App() {
                     <h2 className="text-xs font-bold font-sans tracking-wide text-neutral-500 dark:text-neutral-200 uppercase flex items-center gap-1.5">
                       <span>{subHeaderString}</span>
                     </h2>
+
+                    {filteredPlatforms.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        {showPlatformBulkSelect ? (
+                          <div className="flex items-center gap-2">
+                            {showPlatformBulkDeleteConfirm ? (
+                              <div className="flex items-center gap-2 bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl text-xs">
+                                <span className="font-bold text-rose-600 dark:text-rose-400 mr-1 text-[11px]">Excluir {selectedPlatformIds.size} plataformas?</span>
+                                <button
+                                  type="button"
+                                  onClick={handleBulkDeletePlatforms}
+                                  className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                                >
+                                  Sim
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPlatformBulkDeleteConfirm(false)}
+                                  className="px-2.5 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold text-[10px] uppercase tracking-wider hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+                                >
+                                  Não
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                {selectedPlatformIds.size === filteredPlatforms.length ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPlatformIds(new Set())}
+                                    className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                                  >
+                                    Manualmente
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPlatformIds(new Set(filteredPlatforms.map(p => p.id)))}
+                                    className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+                                  >
+                                    Selecionar tudo
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (selectedPlatformIds.size > 0) {
+                                      setShowPlatformBulkDeleteConfirm(true);
+                                    } else {
+                                      addToast('Nenhuma plataforma selecionada', 'warning');
+                                    }
+                                  }}
+                                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                                >
+                                  Excluir Selecionados ({selectedPlatformIds.size})
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setShowPlatformBulkSelect(false);
+                                    setSelectedPlatformIds(new Set());
+                                    setShowPlatformBulkDeleteConfirm(false);
+                                  }}
+                                  className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                                >
+                                  Cancelar
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowPlatformBulkSelect(true)}
+                            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+                          >
+                            Selecionar vários
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Platform Grid Layout */}
@@ -568,6 +679,9 @@ export default function App() {
                               searchQuery={searchQuery}
                               activeMatchProfileId={activeMatch?.profileId}
                               currentUserUid={user?.uid}
+                              isSelectionMode={showPlatformBulkSelect}
+                              isSelected={selectedPlatformIds.has(plat.id)}
+                              onToggleSelect={() => handleToggleSelectPlatform(plat.id)}
                             />
                           );
                         })}
@@ -593,6 +707,7 @@ export default function App() {
                     onAddPurchase={handleOpenAddPurchase}
                     highlightedPurchaseId={highlightedPurchaseId}
                     onClearHighlight={handleClearHighlight}
+                    onDeletePurchase={deletePurchase}
                   />
                 </motion.div>
               )}
