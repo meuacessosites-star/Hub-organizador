@@ -56,15 +56,36 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   }, [src]);
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    // Also notify any parent-provided onError handler
+    if (imgProps.onError) {
+      try {
+        imgProps.onError(e);
+      } catch (err) {
+        console.error('Error in parent onError handler:', err);
+      }
+    }
+
     let nextCandidate = getNextFallbackUrl(currentSrc, src || undefined);
     
     // Cycle through fallback candidates until finding one not tried yet
-    while (nextCandidate && triedUrls.has(nextCandidate)) {
+    let loopCount = 0;
+    const localVisited = new Set<string>();
+    while (nextCandidate && triedUrls.has(nextCandidate) && loopCount < 10) {
+      if (localVisited.has(nextCandidate)) {
+        nextCandidate = null;
+        break;
+      }
+      localVisited.add(nextCandidate);
       nextCandidate = getNextFallbackUrl(nextCandidate, src || undefined);
+      loopCount++;
     }
 
     if (nextCandidate && !triedUrls.has(nextCandidate)) {
-      setTriedUrls((prev) => new Set(prev).add(nextCandidate!));
+      setTriedUrls((prev) => {
+        const next = new Set(prev);
+        next.add(nextCandidate!);
+        return next;
+      });
       setCurrentSrc(nextCandidate);
       setLoading(true);
     } else {
