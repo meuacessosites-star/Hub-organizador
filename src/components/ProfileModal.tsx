@@ -223,6 +223,20 @@ const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing
   );
 };
 
+const EMAIL_DOMAINS = [
+  'gmail.com',
+  'outlook.com',
+  'hotmail.com',
+  'yahoo.com.br',
+  'yahoo.com',
+  'icloud.com',
+  'uol.com.br',
+  'bol.com.br',
+  'terra.com.br',
+  'outlook.com.br',
+  'hotmail.com.br'
+];
+
 export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
   onClose,
@@ -285,6 +299,42 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [customProfileName, setCustomProfileName] = useState('');
   const customNameInputRef = useRef<HTMLInputElement>(null);
   const [isCustomProfile, setIsCustomProfile] = useState(false);
+  const [showEmailSuggestions, setShowEmailSuggestions] = useState(false);
+  const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
+  const emailSuggestionsRef = useRef<HTMLDivElement>(null);
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    const atIndex = val.indexOf('@');
+    if (atIndex > -1) {
+      const localPart = val.substring(0, atIndex);
+      const domainPart = val.substring(atIndex + 1).toLowerCase();
+      
+      if (localPart && !localPart.includes(' ')) {
+        const filteredDomains = EMAIL_DOMAINS.filter(domain => 
+          domain.startsWith(domainPart)
+        );
+        
+        const suggestions = filteredDomains.map(domain => `${localPart}@${domain}`);
+        setEmailSuggestions(suggestions);
+        setShowEmailSuggestions(suggestions.length > 0);
+      } else {
+        setShowEmailSuggestions(false);
+      }
+    } else {
+      setShowEmailSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emailSuggestionsRef.current && !emailSuggestionsRef.current.contains(event.target as Node)) {
+        setShowEmailSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -334,6 +384,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   useEffect(() => {
     setShowColorWheel(false); // Reset color wheel state
     setShowAllPresets(false);
+    setShowEmailSuggestions(false);
     if (profile) {
       if (isEditMode) {
         setIsEditingInView(startInEditMode);
@@ -1180,7 +1231,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => setIsCustomProfile(true)}
+                      onClick={() => {
+                        setIsCustomProfile(true);
+                        setCustomProfileName(isCustomProfile ? customProfileName : profileName);
+                        setTimeout(() => {
+                          customNameInputRef.current?.focus();
+                          customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 50);
+                      }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                         isCustomProfile
                           ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/20'
@@ -1192,44 +1250,79 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </div>
                 )}
 
-                {isCustomProfile && !isEditingNamesList && (
-                  <div className="flex flex-col gap-2 mt-1.5">
-                    <div className="flex gap-2">
-                      <input
-                        ref={customNameInputRef}
-                        type="text"
-                        value={customProfileName}
-                        onChange={(e) => setCustomProfileName(e.target.value)}
-                        placeholder="Nome do perfil personalizado (para este uso)"
-                        className="flex-1 h-11 px-4 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
-                      />
-                    </div>
-                  </div>
-                )}
-
                 {/* Save/Update as Preset Button removed from here as per user request */}
               </div>
 
               {!isEditingNamesList && (
                 <>
-                  {/* E-mail Input */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                  E-mail <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
-                    <Mail className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="exemplo@email.com"
-                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
-                  />
-                </div>
-              </div>
+                  {/* Nome do Perfil Input (Sempre Visível) */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                      Nome do perfil / Identificação <span className="text-[10px] font-normal text-rose-500 dark:text-rose-400">(obrigatório)</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                        <User className="w-4 h-4" />
+                      </span>
+                      <input
+                        ref={customNameInputRef}
+                        type="text"
+                        value={isCustomProfile ? customProfileName : profileName}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (isCustomProfile) {
+                            setCustomProfileName(val);
+                          } else {
+                            setProfileName(val);
+                            setCustomProfileName(val);
+                            setIsCustomProfile(true);
+                          }
+                        }}
+                        placeholder="Ex: Pessoal, Trabalho, Romulo..."
+                        className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                      />
+                    </div>
+                  </div>
+
+                  {/* E-mail Input com Sugestões de Domínio */}
+                  <div className="flex flex-col gap-1.5 relative">
+                    <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                      E-mail <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                        <Mail className="w-4 h-4" />
+                      </span>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => handleEmailChange(e.target.value)}
+                        placeholder="exemplo@email.com"
+                        className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                      />
+                    </div>
+
+                    {showEmailSuggestions && emailSuggestions.length > 0 && (
+                      <div 
+                        ref={emailSuggestionsRef}
+                        className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#131520] border border-neutral-200 dark:border-[#2a2d40] rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-neutral-100 dark:divide-[#2a2d40]"
+                      >
+                        {emailSuggestions.map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            type="button"
+                            onClick={() => {
+                              setEmail(suggestion);
+                              setShowEmailSuggestions(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 font-mono transition-colors cursor-pointer"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
               {/* Usuário Input */}
               <div className="flex flex-col gap-1.5">
