@@ -112,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const cred = EmailAuthProvider.credential(pendingEmail, pendingPassword);
         await linkWithCredential(currentUser, cred);
         console.log(`[AuthContext] Senha vinculada com sucesso à conta do Google (${currentUser.email})`);
+        
         if (pendingName && (!currentUser.displayName || currentUser.displayName === currentUser.email?.split('@')[0])) {
           await updateProfile(currentUser, { displayName: pendingName });
         }

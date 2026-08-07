@@ -439,6 +439,7 @@ export default function App() {
           onCloseMobile={handleCloseSidebarMobile}
           onBackToLogin={handleSignOut}
           onShowTutorial={handleShowTutorial}
+          onUserProfile={() => setIsUserProfileOpen(true)}
         />
 
         {/* Main Content Area */}

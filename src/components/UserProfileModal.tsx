@@ -1,8 +1,8 @@
 import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle, Sparkles, Download, Shield } from 'lucide-react';
-import { User, updateProfile as firebaseUpdateProfile } from 'firebase/auth';
+import { X, LogOut, Camera, Type, Image as ImageIcon, Smile, Save, Check, Loader2, Palette, Trash2, AlertTriangle, Sparkles, Download, Shield, Eye, EyeOff, Key } from 'lucide-react';
+import { User, updateProfile as firebaseUpdateProfile, updatePassword as firebaseUpdatePassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth, UserProfileData } from '../context/AuthContext';
@@ -127,6 +127,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [linkPasswordInput, setLinkPasswordInput] = useState('');
   const [isLinkingPassword, setIsLinkingPassword] = useState(false);
 
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showLinkPassword, setShowLinkPassword] = useState(false);
+
   const hasPasswordProvider = user?.providerData?.some(p => p.providerId === 'password');
   const hasGoogleProvider = user?.providerData?.some(p => p.providerId === 'google.com');
 
@@ -146,6 +154,40 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       addToast(err.message || 'Erro ao vincular senha.', 'error');
     } finally {
       setIsLinkingPassword(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!newPasswordInput.trim() || !confirmPasswordInput.trim()) {
+      addToast('Por favor, preencha todos os campos de senha.', 'error');
+      return;
+    }
+    if (newPasswordInput.length < 6) {
+      addToast('A nova senha deve ter pelo menos 6 caracteres.', 'error');
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      addToast('As senhas digitadas não coincidem.', 'error');
+      return;
+    }
+    if (!user) return;
+
+    setIsUpdatingPassword(true);
+    try {
+      await firebaseUpdatePassword(user, newPasswordInput);
+      addToast('Senha atualizada com sucesso! 🎉', 'success');
+      
+      setNewPasswordInput('');
+      setConfirmPasswordInput('');
+    } catch (err: any) {
+      console.error(err);
+      if (err.code === 'auth/requires-recent-login') {
+        addToast('Por motivos de segurança, você precisa ter feito login recentemente para alterar sua senha. Por favor, saia da conta e entre novamente antes de tentar de novo.', 'error');
+      } else {
+        addToast(err.message || 'Erro ao atualizar senha.', 'error');
+      }
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -897,25 +939,113 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     </div>
 
                     {!hasPasswordProvider && (
-                      <div className="space-y-2 pt-1">
-                        <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
-                          Você criou esta conta pelo Google. Cadastre uma senha abaixo para poder entrar tanto pelo Google quanto digitando e-mail e senha:
-                        </p>
-                        <div className="flex gap-2">
-                          <input
-                            type="password"
-                            placeholder="Digite uma nova senha (mín. 6 caract.)"
-                            value={linkPasswordInput}
-                            onChange={(e) => setLinkPasswordInput(e.target.value)}
-                            className="flex-1 h-9 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"
-                          />
+                      <div className="space-y-3 pt-1">
+                        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300">
+                          <p className="text-[11px] font-semibold flex items-center gap-1.5 mb-1">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            Acesso Exclusivo via Google
+                          </p>
+                          <p className="text-[10px] leading-relaxed opacity-90">
+                            Você entrou usando sua conta do Google. Sugerimos cadastrar uma senha abaixo para poder entrar na mesma conta tanto usando o Google quanto digitando seu e-mail e senha diretamente no site!
+                          </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type={showLinkPassword ? "text" : "password"}
+                              placeholder="Criar senha para esta conta"
+                              value={linkPasswordInput}
+                              onChange={(e) => setLinkPasswordInput(e.target.value)}
+                              className="w-full h-9 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg pl-3 pr-9 text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-neutral-800 dark:text-neutral-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowLinkPassword(!showLinkPassword)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+                              title={showLinkPassword ? "Ocultar senha" : "Ver senha"}
+                            >
+                              {showLinkPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
                           <button
                             type="button"
                             disabled={isLinkingPassword || !linkPasswordInput.trim()}
                             onClick={handleLinkPasswordInModal}
-                            className="h-9 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs disabled:opacity-50 transition-all cursor-pointer shrink-0"
+                            className="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs disabled:opacity-50 transition-all cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
                           >
-                            {isLinkingPassword ? 'Vinculando...' : 'Vincular'}
+                            {isLinkingPassword ? (
+                              <>
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Vinculando...
+                              </>
+                            ) : (
+                              'Vincular Senha'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {hasPasswordProvider && (
+                      <div className="space-y-4 pt-2 border-t border-neutral-200/40 dark:border-neutral-800/40 mt-2">
+                        {/* Change Password Form */}
+                        <div className="space-y-2.5">
+                          <label className="text-neutral-600 dark:text-neutral-400 text-[10px] font-bold uppercase tracking-wider block">
+                            Trocar Senha da Conta:
+                          </label>
+                          
+                          {/* New Password */}
+                          <div className="relative">
+                            <input
+                              type={showNewPassword ? "text" : "password"}
+                              placeholder="Digite a nova senha (mín. 6 caract.)"
+                              value={newPasswordInput}
+                              onChange={(e) => setNewPasswordInput(e.target.value)}
+                              className="w-full h-9 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg pl-3 pr-9 text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-neutral-800 dark:text-neutral-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+                              title={showNewPassword ? "Ocultar senha" : "Ver senha"}
+                            >
+                              {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+
+                          {/* Confirm Password */}
+                          <div className="relative">
+                            <input
+                              type={showConfirmPassword ? "text" : "password"}
+                              placeholder="Confirme a nova senha"
+                              value={confirmPasswordInput}
+                              onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                              className="w-full h-9 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg pl-3 pr-9 text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-neutral-800 dark:text-neutral-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+                              title={showConfirmPassword ? "Ocultar senha" : "Ver senha"}
+                            >
+                              {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={isUpdatingPassword || !newPasswordInput.trim() || !confirmPasswordInput.trim()}
+                            onClick={handleUpdatePassword}
+                            className="w-full h-9 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                          >
+                            {isUpdatingPassword ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                Alterando senha...
+                              </>
+                            ) : (
+                              'Confirmar e Atualizar Senha'
+                            )}
                           </button>
                         </div>
                       </div>

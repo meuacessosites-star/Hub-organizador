@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Category, Platform } from '../types';
-import { LayoutGrid, Settings2, X, Search, User } from 'lucide-react';
+import { LayoutGrid, Settings2, X, Search, User, ChevronUp, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from './Logo';
 import { CategoryIcon } from './CategoryIcon';
@@ -23,6 +23,7 @@ interface SidebarProps {
   onCloseMobile?: () => void;
   onBackToLogin: () => void;
   onShowTutorial?: () => void;
+  onUserProfile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -37,9 +38,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   onBackToLogin,
   onShowTutorial,
+  onUserProfile,
 }) => {
   const [categorySearch, setCategorySearch] = useState('');
   const { user, userProfile, isGuest } = useAuth();
+  
+  const navRef = useRef<HTMLElement>(null);
+
+  const scrollSidebarUp = () => {
+    if (navRef.current) {
+      navRef.current.scrollBy({ top: -150, behavior: 'smooth' });
+    }
+  };
+
+  const scrollSidebarDown = () => {
+    if (navRef.current) {
+      navRef.current.scrollBy({ top: 150, behavior: 'smooth' });
+    }
+  };
 
   const getSidebarAvatarContent = () => {
     if (!user) return null;
@@ -150,7 +166,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Top Part */}
-        <div className="flex flex-col py-6">
+        <div className="flex flex-col py-6 flex-1 min-h-0">
           {/* Brand Logo & Mobile Close button */}
           <div className="flex items-center justify-between px-6 mb-8">
             <div className="flex items-center gap-3">
@@ -197,7 +213,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          <nav className="flex flex-col px-3 gap-1 max-h-[55vh] overflow-y-auto custom-scrollbar">
+          <nav 
+            ref={navRef}
+            className="flex flex-col px-3 gap-1 flex-1 overflow-y-auto custom-scrollbar scroll-smooth min-h-0"
+          >
             {/* Default "Todas" */}
             {categorySearch === '' && (
               <button
@@ -274,7 +293,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Bottom Part */}
-        <div className="flex flex-col border-t border-neutral-200 dark:border-white/5 p-4 gap-3">
+        <div className="flex flex-col border-t border-neutral-200 dark:border-white/5 p-4 gap-3 shrink-0">
           {onManageProfiles && (
             <button
               id="sidebar-manage-profiles-btn"
@@ -314,7 +333,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           {/* User Profile Info Card */}
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-neutral-100/50 dark:bg-neutral-900/40 border border-neutral-200/40 dark:border-neutral-800/40 mt-1 select-none">
+          <div 
+            onClick={() => {
+              if (onUserProfile) {
+                onUserProfile();
+                if (onCloseMobile) onCloseMobile();
+              }
+            }}
+            title="Clique para gerenciar e personalizar sua conta"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-neutral-100/50 dark:bg-neutral-900/40 border border-neutral-200/40 dark:border-neutral-800/40 mt-1 select-none hover:bg-neutral-200/50 hover:border-neutral-300 dark:hover:bg-neutral-800/60 dark:hover:border-neutral-700 transition-all duration-200 cursor-pointer"
+          >
             {user ? (
               <>
                 <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden relative">
@@ -350,10 +378,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          <div id="sidebar-stats-container" className="px-3 py-1 font-mono text-[11px] leading-relaxed text-neutral-500 border-t border-neutral-200 dark:border-[#1e202c] pt-3">
-            <div className="font-semibold">{totalPlatforms} plataformas</div>
-            <div className="text-[10px]">
-              {totalProfiles} {totalProfiles === 1 ? 'conta cadastrada' : 'contas cadastradas'}
+          <div id="sidebar-stats-container" className="px-3 py-1 font-mono text-[11px] leading-relaxed text-neutral-500 border-t border-neutral-200 dark:border-[#1e202c] pt-3 flex items-center justify-between select-none">
+            <div>
+              <div className="font-semibold text-neutral-600 dark:text-neutral-400">{totalPlatforms} plataformas</div>
+              <div className="text-[10px] text-neutral-500 dark:text-neutral-500">
+                {totalProfiles} {totalProfiles === 1 ? 'conta cadastrada' : 'contas cadastradas'}
+              </div>
+            </div>
+
+            {/* Scroll Buttons for Sidebar */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={scrollSidebarUp}
+                className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+                title="Subir menu"
+                aria-label="Subir menu"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+              <button
+                onClick={scrollSidebarDown}
+                className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+                title="Descer menu"
+                aria-label="Descer menu"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>

@@ -15,12 +15,12 @@ const DEFAULT_TAGS: Tag[] = [
 ];
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'compras', name: 'Compras', icon: 'ShoppingBag', color: '#3b82f6' },
-  { id: 'assinaturas', name: 'Assinaturas', icon: 'CreditCard', color: '#8b5cf6' },
-  { id: 'estudos', name: 'Estudos', icon: 'GraduationCap', color: '#10b981' },
-  { id: 'trabalho', name: 'Trabalho', icon: 'Briefcase', color: '#f59e0b' },
-  { id: 'entretenimento', name: 'Entretenimento', icon: 'Gamepad2', color: '#ec4899' },
-  { id: 'outros', name: 'Outros', icon: 'LayoutGrid', color: '#6b7280' },
+  { id: 'compras', name: 'Compras', icon: '🛒', color: '#3b82f6' },
+  { id: 'assinaturas', name: 'Assinaturas', icon: '💳', color: '#8b5cf6' },
+  { id: 'estudos', name: 'Estudos', icon: '📚', color: '#10b981' },
+  { id: 'trabalho', name: 'Trabalho', icon: '💼', color: '#f59e0b' },
+  { id: 'entretenimento', name: 'Entretenimento', icon: '🎮', color: '#ec4899' },
+  { id: 'outros', name: 'Outros', icon: '📁', color: '#6b7280' },
 ];
 
 const DEFAULT_STATUSES: Status[] = [
@@ -51,12 +51,12 @@ const DEMO_TAGS: Tag[] = [
 ];
 
 const DEMO_CATEGORIES: Category[] = [
-  { id: 'compras', name: 'Compras', icon: 'ShoppingBag', color: '#3b82f6' },
-  { id: 'assinaturas', name: 'Assinaturas', icon: 'CreditCard', color: '#8b5cf6' },
-  { id: 'estudos', name: 'Estudos', icon: 'GraduationCap', color: '#10b981' },
-  { id: 'trabalho', name: 'Trabalho', icon: 'Briefcase', color: '#f59e0b' },
-  { id: 'entretenimento', name: 'Entretenimento', icon: 'Gamepad2', color: '#ec4899' },
-  { id: 'outros', name: 'Outros', icon: 'LayoutGrid', color: '#6b7280' },
+  { id: 'compras', name: 'Compras', icon: '🛒', color: '#3b82f6' },
+  { id: 'assinaturas', name: 'Assinaturas', icon: '💳', color: '#8b5cf6' },
+  { id: 'estudos', name: 'Estudos', icon: '📚', color: '#10b981' },
+  { id: 'trabalho', name: 'Trabalho', icon: '💼', color: '#f59e0b' },
+  { id: 'entretenimento', name: 'Entretenimento', icon: '🎮', color: '#ec4899' },
+  { id: 'outros', name: 'Outros', icon: '📁', color: '#6b7280' },
 ];
 
 const DEMO_STATUSES: Status[] = [

@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { getPlatformColor, getInitials, getDomainFromInput, getLogoUrl } from '../utils/logoHelper';
 import { SmartImage } from './SmartImage';
+import { CategoryChartPanel } from './CategoryChartPanel';
 
 interface PurchasesViewProps {
   platforms: Platform[];
@@ -486,7 +487,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
     });
 
     return result;
-  }, [allPurchases, search, platformFilter, profileFilter, statusFilter, tagFilter, tags, sortOrder]);
+  }, [allPurchases, search, platformFilter, profileFilter, statusFilter, tagFilter, tags, sortOrder, startDate, endDate]);
 
   // Dynamic Bento stats calculation
   const stats = useMemo(() => {
@@ -567,6 +568,13 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Expense Chart Dashboard */}
+      <CategoryChartPanel
+        filteredPurchases={filteredPurchases}
+        categories={categories}
+        platforms={platforms}
+      />
 
       {/* Control Panel: Search & Filters Toggle */}
       <div className="bg-white dark:bg-[#0d0d0d] p-4 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex flex-col gap-4 overflow-visible relative z-[40]">

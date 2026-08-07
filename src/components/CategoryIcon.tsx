@@ -4,15 +4,6 @@
  */
 
 import React from 'react';
-import { 
-  ShoppingBag, 
-  CreditCard, 
-  GraduationCap, 
-  Briefcase, 
-  Gamepad2, 
-  LayoutGrid,
-  FolderOpen
-} from 'lucide-react';
 
 interface CategoryIconProps {
   icon: string;
@@ -25,21 +16,22 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ icon, className = "w
 
   switch (trimmedIcon) {
     case 'ShoppingBag':
-      return <ShoppingBag className={className} />;
+      return <span className="select-none leading-none inline-block text-sm">🛒</span>;
     case 'CreditCard':
-      return <CreditCard className={className} />;
+      return <span className="select-none leading-none inline-block text-sm">💳</span>;
     case 'GraduationCap':
-      return <GraduationCap className={className} />;
+      return <span className="select-none leading-none inline-block text-sm">📚</span>;
     case 'Briefcase':
-      return <Briefcase className={className} />;
+      return <span className="select-none leading-none inline-block text-sm">💼</span>;
     case 'Gamepad2':
-      return <Gamepad2 className={className} />;
+      return <span className="select-none leading-none inline-block text-sm">🎮</span>;
     case 'LayoutGrid':
-      return <LayoutGrid className={className} />;
+      return <span className="select-none leading-none inline-block text-sm">📁</span>;
     case 'FolderOpen':
-      return <FolderOpen className={className} />;
+      return <span className="select-none leading-none inline-block text-sm">📁</span>;
     default:
       // Fallback for custom emojis and other custom icons
       return <span className="select-none leading-none inline-block">{trimmedIcon}</span>;
   }
 };
+
