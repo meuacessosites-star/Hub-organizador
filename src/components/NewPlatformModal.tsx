@@ -374,9 +374,14 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                         const val = e.target.value;
                         setPlatformUrl(val);
                         if (urlError) setUrlError('');
-                        if ((!platformName.trim() || platformName === 'Plataforma') && val.includes('.')) {
+                        
+                        // Extract name part from URL and pre-fill the name
+                        if (val.includes('.')) {
                           const inferredName = getPlatformNameFromUrl(val);
-                          if (inferredName) setPlatformName(inferredName);
+                          // Pre-fill if current name is empty, is the default placeholder, or is short (<= 3 chars, e.g. "Pt" or "br")
+                          if (inferredName && (!platformName.trim() || platformName === 'Plataforma' || platformName.length <= 3)) {
+                            setPlatformName(inferredName);
+                          }
                         }
                       }}
                       placeholder="exemplo.com"
@@ -397,7 +402,6 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                             src={computedLogoUrl}
                             alt=""
                             className="w-4 h-4 object-contain"
-                            onError={() => setLogoPreviewErrorCount(prev => prev + 1)}
                           />
                         ) : (
                           <span className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400">

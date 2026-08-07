@@ -77,6 +77,19 @@ export const getNextFallbackUrl = (currentSrc: string, originalUrl?: string): st
     raw = decodeURIComponent(currentSrc.split('corsproxy.io/?')[1] || '');
   }
 
+  // If Clearbit logo fails, immediately transition to Google Favicon as the next main fallback
+  if (raw.includes('logo.clearbit.com')) {
+    try {
+      const parts = raw.split('logo.clearbit.com/');
+      const domain = parts[1]?.split('?')[0];
+      if (domain && domain.includes('.')) {
+        return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   // 1. Try wsrv.nl CDN proxy first (works globally and on static hosts like Vercel)
   if (!currentSrc.includes('wsrv.nl/?url=')) {
     if (raw && raw.startsWith('http')) {

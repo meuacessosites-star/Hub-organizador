@@ -113,9 +113,24 @@ export function getPlatformNameFromUrl(url: string): string {
       outlook: 'Outlook',
       hotmail: 'Hotmail',
       yahoo: 'Yahoo',
+      aliexpress: 'AliExpress',
+      shopee: 'Shopee',
+      mercadolivre: 'Mercado Livre',
     };
 
-    const namePart = domain.split('.')[0].toLowerCase();
+    const parts = domain.split('.');
+    const ignoredSubdomains = new Set([
+      'www', 'pt', 'br', 'es', 'en', 'm', 'login', 'app', 'play', 'mail', 
+      'admin', 'portal', 'account', 'accounts', 'security', 'my', 'web', 'mobile'
+    ]);
+
+    let namePart = parts[0].toLowerCase();
+    
+    // If first part is a common subdomain, use the second part
+    if (ignoredSubdomains.has(namePart) && parts.length > 1) {
+      namePart = parts[1].toLowerCase();
+    }
+
     if (prettyNames[namePart]) {
       return prettyNames[namePart];
     }
