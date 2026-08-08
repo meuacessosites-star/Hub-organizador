@@ -25,6 +25,7 @@ interface ProfileModalProps {
   onDelete?: (profileId: string) => void;
   startInEditMode?: boolean;
   openPresetsManager?: boolean;
+  onManageProfiles?: () => void;
 }
 
 const PRESET_PROFILE_NAMES = [
@@ -247,6 +248,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onDelete,
   startInEditMode = false,
   openPresetsManager = false,
+  onManageProfiles,
 }) => {
   const isEditMode = !!profile;
   const { addToast } = useToast();
@@ -838,491 +840,177 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </label>
                   <button
                     type="button"
-                    onClick={() => setIsEditingNamesList(!isEditingNamesList)}
+                    onClick={() => {
+                      if (onManageProfiles) {
+                        onManageProfiles();
+                        onClose();
+                      }
+                    }}
                     className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    {isEditingNamesList ? '✓ Concluir' : '⚙️ Gerenciar'}
+                    ⚙️ Gerenciar
                   </button>
                 </div>
 
-                {isEditingNamesList ? (
-                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-[#2a2d40]/60 dark:bg-[#111219]/50 max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500/20 scrollbar-track-transparent">
-                    <div className="flex flex-col gap-2 pb-2.5 border-b border-neutral-200/50 dark:border-white/[0.05]">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
-                          Gerenciar e reordenar perfis
-                        </span>
-                        <span className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1 shrink-0">
-                          <GripVertical className="w-3 h-3 inline" /> Arraste o ícone para reordenar
-                        </span>
-                      </div>
-                      
-                      {/* Action buttons row placed below the header */}
-                      <div className="flex items-center gap-2">
-                        {showBulkDelete ? (
-                          <>
-                            {selectedPresetIds.size > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setLocalProfilePresets(prev => prev.filter(p => !selectedPresetIds.has(p.id)));
-                                  addToast(`${selectedPresetIds.size} perfil(is) marcado(s) para exclusão! Salve para confirmar.`, 'info');
-                                  setSelectedPresetIds(new Set());
-                                }}
-                                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Excluir Selecionados ({selectedPresetIds.size})
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowBulkDelete(false);
-                                setSelectedPresetIds(new Set());
-                              }}
-                              className="px-3 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 text-[11px] font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all cursor-pointer"
-                            >
-                              Cancelar
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setShowBulkDelete(true)}
-                            className="px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
-                          >
-                            <CheckSquare className="w-3.5 h-3.5" />
-                            Selecionar vários
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                <div className="flex flex-wrap gap-2 pt-0.5 transition-all duration-300">
+                  {(showAllPresets ? localProfilePresets : localProfilePresets.slice(0, 8)).map((preset, idx) => {
+                    const isSel = profileName === preset.name && !isCustomProfile;
+                    const isHex = (val?: string) => val && /^#([0-9A-F]{3}){1,2}$/i.test(val);
+                    const chipBgColor = isHex(preset.avatar.bgColor) 
+                      ? preset.avatar.bgColor 
+                      : isHex(preset.avatar.value) 
+                        ? preset.avatar.value 
+                        : '#6366f1';
 
-                    <Reorder.Group
-                      axis="y"
-                      values={localProfilePresets}
-                      onReorder={setLocalProfilePresets}
-                      className="flex flex-col gap-2"
-                    >
-                      {localProfilePresets.map((preset, idx) => (
-                        <PresetReorderItem
-                          key={`reorder-item-${preset.id || idx}`}
-                          preset={preset}
-                          isSelected={selectedPresetIds.has(preset.id)}
-                          onToggleSelect={showBulkDelete ? () => {
-                            setSelectedPresetIds(prev => {
-                              const next = new Set(prev);
-                              if (next.has(preset.id)) {
-                                next.delete(preset.id);
-                              } else {
-                                next.add(preset.id);
-                              }
-                              return next;
-                            });
-                          } : undefined}
-                          isEditing={editingPresetId === preset.id}
-                          liveAvatar={{
-                            type: avatarTab,
-                            value: avatarTab === 'image' ? imageUrl : avatarTab === 'emoji' ? selectedEmoji : selectedColor,
-                            bgColor: selectedColor,
-                            zoom: avatarTab === 'image' ? avatarZoom : undefined
-                          }}
-                          onEdit={(presetToEdit) => {
-                            setEditingPresetId(presetToEdit.id);
-                            setProfileName(presetToEdit.name);
-                            setIsCustomProfile(true);
-                            setCustomProfileName(presetToEdit.name);
-                            if (presetToEdit.avatar.bgColor) setSelectedColor(presetToEdit.avatar.bgColor);
-                            else if (presetToEdit.avatar.type === 'color') setSelectedColor(presetToEdit.avatar.value);
-                            
-                            const isImg = presetToEdit.avatar.type === 'image' || (presetToEdit.avatar.value && (
-                              presetToEdit.avatar.value.startsWith('http') ||
-                              presetToEdit.avatar.value.startsWith('data:') ||
-                              presetToEdit.avatar.value.startsWith('blob:') ||
-                              presetToEdit.avatar.value.startsWith('/')
-                            ));
-
-                            if (isImg && presetToEdit.avatar.value) {
-                              setAvatarTab('image');
-                              setImageUrl(presetToEdit.avatar.value);
-                              setAvatarZoom(presetToEdit.avatar.zoom || 1);
-                            } else if (presetToEdit.avatar.type === 'emoji') {
-                              setAvatarTab('emoji');
-                              setSelectedEmoji(presetToEdit.avatar.value);
-                              setImageUrl('');
-                            } else {
-                              setAvatarTab('color');
-                              setImageUrl('');
-                            }
-                            
-                            setEmail(presetToEdit.email || '');
-                            setUsername(presetToEdit.username || '');
-                            setPassword(presetToEdit.password || '');
-                            setAccessLink(presetToEdit.accessLink || '');
-                            setDescription(presetToEdit.description || '');
-                            
-                            addToast(`Editando preset: ${presetToEdit.name}`, 'info');
-                            setTimeout(() => {
-                              customNameInputRef.current?.focus();
-                              customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }, 100);
-                          }}
-                          onDelete={(presetToDelete) => {
-                            setLocalProfilePresets(prev => prev.filter(p => p.id !== presetToDelete.id));
-                            if (profileName === presetToDelete.name) {
-                              setProfileName(localProfilePresets.find(p => p.id !== presetToDelete.id)?.name || '');
-                            }
-                            if (editingPresetId === presetToDelete.id) {
-                              setEditingPresetId(null);
-                              setIsCustomProfile(false);
-                            }
-                            addToast(`Preset "${presetToDelete.name}" removido localmente! Salve para confirmar.`, 'info');
-                          }}
-                        />
-                      ))}
-                    </Reorder.Group>
-
-                    {/* New/Edit Preset Form Integrated */}
-                    {isCustomProfile && (
-                      <div className="mt-2 p-3 rounded-xl border-2 border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-500/5 flex flex-col gap-3">
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                              {editingPresetId ? 'Nome do Preset (Editando)' : 'Nome do Novo Preset'}
-                            </label>
-                            {editingPresetId && (
-                              <span className="text-[9px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
-                                Modo Edição
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2.5">
-                            {/* Live Avatar Preview Badge at the top of the edit section */}
-                            <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-md border-2 border-indigo-200 dark:border-indigo-500/30 overflow-hidden shrink-0"
-                              style={{
-                                backgroundColor: selectedColor,
-                              }}
-                              title="Visualização em tempo real do Avatar do perfil"
-                            >
-                              {avatarTab === 'emoji' && selectedEmoji ? (
-                                selectedEmoji
-                              ) : avatarTab === 'image' && imageUrl ? (
-                                <SmartImage
-                                  src={imageUrl}
-                                  alt="preview"
-                                  className="w-full h-full object-cover"
-                                  style={{ transform: `scale(${avatarZoom})` }}
-                                />
-                              ) : (
-                                (customProfileName || 'P').slice(0, 2).toUpperCase()
-                              )}
-                            </div>
-                            <input
-                              ref={customNameInputRef}
-                              type="text"
-                              value={customProfileName}
-                              onChange={(e) => setCustomProfileName(e.target.value)}
-                              placeholder="Ex: Minha Empresa"
-                              className="flex-1 h-10 px-3 rounded-lg text-xs bg-white border border-indigo-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#13141c] dark:border-[#2a2d40] dark:text-neutral-200 shadow-sm"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Save Action for Presets */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const nameToSave = customProfileName.trim();
-                            if (!nameToSave) {
-                              addToast('O preset precisa de um nome.', 'error');
-                              customNameInputRef.current?.focus();
-                              return;
-                            }
-
-                            let finalAvatarType = avatarTab;
-                            let avatarValue = '';
-                            if (avatarTab === 'color') avatarValue = selectedColor;
-                            else if (avatarTab === 'emoji') avatarValue = selectedEmoji;
-                            else {
-                              if (imageUrl) {
-                                avatarValue = imageUrl;
-                              } else {
-                                finalAvatarType = 'color';
-                                avatarValue = selectedColor;
-                              }
-                            }
-
-                            const presetData = {
-                              id: editingPresetId || `preset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                              name: nameToSave,
-                              avatar: { 
-                                type: finalAvatarType, 
-                                value: avatarValue, 
-                                bgColor: selectedColor, 
-                                zoom: finalAvatarType === 'image' ? avatarZoom : undefined 
-                              },
-                              email, 
-                              username, 
-                              password, 
-                              accessLink, 
-                              description
-                            };
-
-                            if (editingPresetId) {
-                              setLocalProfilePresets(prev => prev.map(p => p.id === editingPresetId ? presetData : p));
-                              addToast(`Preset "${nameToSave}" atualizado localmente! Salve para confirmar.`, 'info');
-                            } else {
-                              setLocalProfilePresets(prev => [...prev, presetData]);
-                              addToast(`Novo preset "${nameToSave}" adicionado localmente! Salve para confirmar.`, 'info');
-                            }
-                            setEditingPresetId(null);
-                            setIsCustomProfile(false);
-                          }}
-                          className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer border flex items-center justify-center gap-2 ${
-                            editingPresetId 
-                              ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500' 
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
-                          }`}
-                        >
-                          {editingPresetId ? <RefreshCw className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5 fill-current" />}
-                          {editingPresetId ? 'Atualizar' : 'Salvar'}
-                        </button>
-                        
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCustomProfile(false);
-                            setEditingPresetId(null);
-                            setCustomProfileName('');
-                          }}
-                          className="text-[10px] font-bold text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 uppercase tracking-wider text-center"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    )}
-
-                    {!isCustomProfile && (
+                    return (
                       <button
+                        key={`preset-chip-${preset.id || idx}-${idx}`}
                         type="button"
                         onClick={() => {
-                          setEditingPresetId(null);
-                          setProfileName('');
-                          setIsCustomProfile(true);
-                          setCustomProfileName('');
-                          setEmail('');
-                          setUsername('');
-                          setPassword('');
-                          setAccessLink('');
-                          setDescription('');
-                          setAvatarTab('emoji');
-                          setSelectedEmoji('👤');
-                          setImageUrl('');
-                          setAvatarZoom(1);
-                          addToast('Preencha os dados e salve como novo padrão!', 'info');
-                          setTimeout(() => {
-                            customNameInputRef.current?.focus();
-                            customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }, 100);
+                          setIsCustomProfile(false);
+                          setProfileName(preset.name);
+                          // Apply preset avatar
+                          if (preset.avatar.bgColor) setSelectedColor(preset.avatar.bgColor);
+                          else if (preset.avatar.type === 'color') setSelectedColor(preset.avatar.value);
+                          
+                          const isImg = preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:')));
+
+                          if (isImg && preset.avatar.value) {
+                            setAvatarTab('image');
+                            setImageUrl(preset.avatar.value);
+                            setAvatarZoom(preset.avatar.zoom || 1);
+                          } else if (preset.avatar.type === 'emoji') {
+                            setAvatarTab('emoji');
+                            setSelectedEmoji(preset.avatar.value);
+                            setImageUrl('');
+                          } else {
+                            setAvatarTab('color');
+                            setImageUrl('');
+                          }
+                          
+                          // Apply extra fields
+                          if (preset.email) setEmail(preset.email);
+                          if (preset.username) setUsername(preset.username);
+                          if (preset.password) setPassword(preset.password);
+                          if (preset.accessLink) setAccessLink(preset.accessLink);
+                          if (preset.description) setDescription(preset.description);
+                          
+                          addToast(`Preset "${preset.name}" aplicado!`, 'info');
                         }}
-                        className="w-full py-2.5 rounded-lg border border-dashed border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-50 dark:hover:bg-indigo-500/5 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                        className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
+                          isSel
+                            ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/20'
+                            : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-600 border-transparent dark:bg-[#111219] dark:hover:bg-neutral-800/80 dark:text-neutral-400'
+                        }`}
                       >
-                        <span>Adicionar novo</span>
-                      </button>
-                    )}
-                    
-                    {localProfilePresets.length === 0 && !isCustomProfile && (
-                      <p className="text-[10px] text-neutral-500 text-center py-4">
-                        Nenhum perfil salvo como padrão.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2 pt-0.5 transition-all duration-300">
-                    {(showAllPresets ? localProfilePresets : localProfilePresets.slice(0, 8)).map((preset) => {
-                      const isSel = profileName === preset.name && !isCustomProfile;
-                      const isHex = (val?: string) => val && /^#([0-9A-F]{3}){1,2}$/i.test(val);
-                      const chipBgColor = isHex(preset.avatar.bgColor) 
-                        ? preset.avatar.bgColor 
-                        : isHex(preset.avatar.value) 
-                          ? preset.avatar.value 
-                          : '#6366f1';
-
-                      return (
-                        <button
-                          key={`preset-chip-${preset.id}`}
-                          type="button"
-                          onClick={() => {
-                            setIsCustomProfile(false);
-                            setProfileName(preset.name);
-                            // Apply preset avatar
-                            if (preset.avatar.bgColor) setSelectedColor(preset.avatar.bgColor);
-                            else if (preset.avatar.type === 'color') setSelectedColor(preset.avatar.value);
-                            
-                            const isImg = preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:')));
-
-                            if (isImg && preset.avatar.value) {
-                              setAvatarTab('image');
-                              setImageUrl(preset.avatar.value);
-                              setAvatarZoom(preset.avatar.zoom || 1);
-                            } else if (preset.avatar.type === 'emoji') {
-                              setAvatarTab('emoji');
-                              setSelectedEmoji(preset.avatar.value);
-                              setImageUrl('');
-                            } else {
-                              setAvatarTab('color');
-                              setImageUrl('');
-                            }
-                            
-                            // Apply extra fields
-                            if (preset.email) setEmail(preset.email);
-                            if (preset.username) setUsername(preset.username);
-                            if (preset.password) setPassword(preset.password);
-                            if (preset.accessLink) setAccessLink(preset.accessLink);
-                            if (preset.description) setDescription(preset.description);
-                            
-                            addToast(`Preset "${preset.name}" aplicado!`, 'info');
+                        <div 
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm overflow-hidden text-white shrink-0"
+                          style={{
+                            backgroundColor: isSel ? 'rgba(255,255,255,0.2)' : (
+                              ((preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:') || preset.avatar.value.startsWith('/')))) && preset.avatar.value)
+                                ? 'transparent'
+                                : chipBgColor
+                            )
                           }}
-                          className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
-                            isSel
-                              ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/20'
-                              : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-600 border-transparent dark:bg-[#111219] dark:hover:bg-neutral-800/80 dark:text-neutral-400'
-                          }`}
                         >
-                          <div 
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm overflow-hidden text-white shrink-0"
-                            style={{
-                              backgroundColor: isSel ? 'rgba(255,255,255,0.2)' : (
-                                ((preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:') || preset.avatar.value.startsWith('/')))) && preset.avatar.value)
-                                  ? 'transparent'
-                                  : chipBgColor
-                              )
-                            }}
-                          >
-                            {preset.avatar.type === 'emoji' && preset.avatar.value ? (
-                              preset.avatar.value
-                            ) : (preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:')))) && preset.avatar.value ? (
-                              <SmartImage
-                                src={preset.avatar.value}
-                                alt=""
-                                className="w-full h-full object-cover"
-                                style={{ transform: `scale(${preset.avatar.zoom || 1})` }}
-                              />
-                            ) : (
-                              preset.name ? preset.name.slice(0, 2).toUpperCase() : 'PF'
-                            )}
-                          </div>
-                          {preset.name}
-                        </button>
-                      );
-                    })}
-
-                    {localProfilePresets.length > 8 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllPresets(!showAllPresets)}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors uppercase tracking-wider cursor-pointer bg-indigo-500/5 hover:bg-indigo-500/10"
-                      >
-                        {showAllPresets ? 'Ver menos' : `+${localProfilePresets.length - 8} outros`}
+                          {preset.avatar.type === 'emoji' && preset.avatar.value ? (
+                            preset.avatar.value
+                          ) : (preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:')))) && preset.avatar.value ? (
+                            <SmartImage
+                              src={preset.avatar.value}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              style={{ transform: `scale(${preset.avatar.zoom || 1})` }}
+                            />
+                          ) : (
+                            preset.name ? preset.name.slice(0, 2).toUpperCase() : 'PF'
+                          )}
+                        </div>
+                        {preset.name}
                       </button>
-                    )}
+                    );
+                  })}
 
+                  {localProfilePresets.length > 8 && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsCustomProfile(true);
-                        setCustomProfileName(isCustomProfile ? customProfileName : profileName);
-                        setTimeout(() => {
-                          customNameInputRef.current?.focus();
-                          customNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }, 50);
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
-                        isCustomProfile
-                          ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/20'
-                          : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-600 border-transparent dark:bg-[#111219] dark:hover:bg-neutral-800/80 dark:text-neutral-400'
-                      }`}
+                      onClick={() => setShowAllPresets(!showAllPresets)}
+                      className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors uppercase tracking-wider cursor-pointer bg-indigo-500/5 hover:bg-indigo-500/10"
                     >
-                      ✏️ Personalizado
+                      {showAllPresets ? 'Ver menos' : `+${localProfilePresets.length - 8} outros`}
                     </button>
-                  </div>
-                )}
-
-                {/* Save/Update as Preset Button removed from here as per user request */}
+                  )}
+                </div>
               </div>
 
-              {!isEditingNamesList && (
-                <>
-                  {/* Nome do Perfil Input (Sempre Visível) */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                      Nome do perfil / Identificação <span className="text-[10px] font-normal text-rose-500 dark:text-rose-400">(obrigatório)</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
-                        <User className="w-4 h-4" />
-                      </span>
-                      <input
-                        ref={customNameInputRef}
-                        type="text"
-                        value={isCustomProfile ? customProfileName : profileName}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (isCustomProfile) {
-                            setCustomProfileName(val);
-                          } else {
-                            setProfileName(val);
-                            setCustomProfileName(val);
-                            setIsCustomProfile(true);
-                          }
+              {/* Nome do Perfil Input (Sempre Visível) */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  Nome do perfil / Identificação <span className="text-[10px] font-normal text-rose-500 dark:text-rose-400">(obrigatório)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                    <User className="w-4 h-4" />
+                  </span>
+                  <input
+                    ref={customNameInputRef}
+                    type="text"
+                    value={isCustomProfile ? customProfileName : profileName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (isCustomProfile) {
+                        setCustomProfileName(val);
+                      } else {
+                        setProfileName(val);
+                        setCustomProfileName(val);
+                        setIsCustomProfile(true);
+                      }
+                    }}
+                    placeholder="Ex: Pessoal, Trabalho, Romulo..."
+                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                  />
+                </div>
+              </div>
+
+              {/* E-mail Input com Sugestões de Domínio */}
+              <div className="flex flex-col gap-1.5 relative">
+                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  E-mail <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                    <Mail className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    placeholder="exemplo@email.com"
+                    className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                  />
+                </div>
+
+                {showEmailSuggestions && emailSuggestions.length > 0 && (
+                  <div 
+                    ref={emailSuggestionsRef}
+                    className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#131520] border border-neutral-200 dark:border-[#2a2d40] rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-neutral-100 dark:divide-[#2a2d40]"
+                  >
+                    {emailSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => {
+                          setEmail(suggestion);
+                          setShowEmailSuggestions(false);
                         }}
-                        placeholder="Ex: Pessoal, Trabalho, Romulo..."
-                        className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
-                      />
-                    </div>
-                  </div>
-
-                  {/* E-mail Input com Sugestões de Domínio */}
-                  <div className="flex flex-col gap-1.5 relative">
-                    <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                      E-mail <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
-                        <Mail className="w-4 h-4" />
-                      </span>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => handleEmailChange(e.target.value)}
-                        placeholder="exemplo@email.com"
-                        className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
-                      />
-                    </div>
-
-                    {showEmailSuggestions && emailSuggestions.length > 0 && (
-                      <div 
-                        ref={emailSuggestionsRef}
-                        className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#131520] border border-neutral-200 dark:border-[#2a2d40] rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-neutral-100 dark:divide-[#2a2d40]"
+                        className="w-full text-left px-4 py-2 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 font-mono transition-colors cursor-pointer"
                       >
-                        {emailSuggestions.map((suggestion) => (
-                          <button
-                            key={suggestion}
-                            type="button"
-                            onClick={() => {
-                              setEmail(suggestion);
-                              setShowEmailSuggestions(false);
-                            }}
-                            className="w-full text-left px-4 py-2 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 font-mono transition-colors cursor-pointer"
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                        {suggestion}
+                      </button>
+                    ))}
                   </div>
+                )}
+              </div>
 
               {/* Usuário Input */}
               <div className="flex flex-col gap-1.5">
@@ -1343,10 +1031,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </div>
               </div>
 
-              {/* Password */}
+              {/* Senha Input */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                  Senha (opcional)
+                  Senha <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
@@ -1356,7 +1044,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Salvar senha..."
+                    placeholder="Senha..."
                     className="w-full h-11 pl-10 pr-11 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
                   />
                   <button
@@ -1372,7 +1060,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               {/* Link de acesso */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                  Link de login (opcional)
+                  Link de acesso <span className="text-[10px] font-normal text-neutral-400">(opcional)</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
@@ -1388,7 +1076,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </div>
               </div>
 
-              {/* Description */}
+              {/* Rascunho / Descrição */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
                   Rascunho / Descrição
@@ -1400,360 +1088,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Anotações, observações, informações extras... sem limite de caracteres."
-                    className="w-full h-20 pl-10 pr-4 py-2.5 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 resize-none"
+                    placeholder="Anotações, observações..."
+                    className="w-full h-24 pl-10 pr-4 py-2.5 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 resize-none"
                   />
-                </div>
-              </div>
-            </>
-          )}
-
-              {/* Avatar options tabs */}
-              <div className="flex flex-col gap-2 pt-1">
-                <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                  Avatar do perfil
-                </label>
-
-                <div className="flex rounded-lg bg-neutral-100 p-1 border border-neutral-200/80 max-w-xs dark:bg-[#111219] dark:border-[#25283a]">
-                  <button
-                    type="button"
-                    onClick={() => setAvatarTab('color')}
-                    className={`flex-1 py-1 px-3 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${
-                      avatarTab === 'color'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
-                    }`}
-                  >
-                    <Palette className="w-3.5 h-3.5" />
-                    <span>Cor</span>
-                  </button>
-                  <button
-                    type="button"
-                    id="profile-emoji-tab-btn"
-                    data-testid="profile-emoji-tab-btn"
-                    aria-label="Emoji"
-                    onClick={() => setAvatarTab('emoji')}
-                    className={`flex-1 py-1 px-3 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${
-                      avatarTab === 'emoji'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
-                    }`}
-                  >
-                    <Smile className="w-3.5 h-3.5" />
-                    <span>Emoji</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAvatarTab('image')}
-                    className={`flex-1 py-1 px-3 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${
-                      avatarTab === 'image'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
-                    }`}
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Imagem</span>
-                  </button>
-                </div>
-
-                {/* Sub Panel */}
-                <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/60 flex flex-col items-center dark:border-[#25283a] dark:bg-[#14151f]">
-                  {(avatarTab === 'color' || avatarTab === 'emoji') && (
-                    <div className="flex flex-col items-center gap-4 w-full">
-                      
-                      {/* Unified Preview for Emoji / Letter */}
-                      {avatarTab === 'emoji' && (
-                        <div 
-                          className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-inner select-none mb-1 text-white border border-black/10"
-                          style={{ backgroundColor: selectedColor }}
-                        >
-                          {selectedEmoji || '👤'}
-                        </div>
-                      )}
-
-                      {/* Unified Color Input */}
-                      <div className="flex items-center gap-3 w-full max-w-xs">
-                        <button
-                          type="button"
-                          onClick={() => setShowColorWheel(!showColorWheel)}
-                          className="w-10 h-10 rounded-xl border border-neutral-300 shadow-md flex items-center justify-center text-xs text-white dark:border-[#25283a]/80 shrink-0 hover:scale-105 active:scale-95 transition-all cursor-pointer relative group"
-                          style={{ backgroundColor: selectedColor }}
-                          title="Abrir/Fechar roda de cores"
-                        >
-                          <Palette className="w-4.5 h-4.5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] opacity-80 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                        <input
-                          type="text"
-                          value={selectedColor}
-                          onChange={(e) => setSelectedColor(e.target.value)}
-                          placeholder="#000000"
-                          className="flex-1 h-10 px-3 rounded-xl text-xs bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 font-mono dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
-                        />
-                      </div>
-
-                      {/* Color Wheel (Toggled & Animated) */}
-                      <AnimatePresence>
-                        {showColorWheel && (
-                          <motion.div
-                            ref={colorWheelContainerRef}
-                            initial={{ opacity: 0, scale: 0.9, height: 0, marginTop: 0 }}
-                            animate={{ opacity: 1, scale: 1, height: 'auto', marginTop: 8 }}
-                            exit={{ opacity: 0, scale: 0.9, height: 0, marginTop: 0 }}
-                            transition={{ type: 'spring', damping: 22, stiffness: 180 }}
-                            className="overflow-hidden flex flex-col items-center gap-4 w-full"
-                          >
-                            <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider self-center select-none flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                              Arraste na roda para escolher a cor
-                            </span>
-                            <div className="relative w-32 h-32 flex items-center justify-center select-none touch-none">
-                              {/* Pulsing attention halo ripple */}
-                              <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
-                              <div
-                                ref={colorWheelRef}
-                                id="profile-color-wheel-canvas"
-                                data-testid="profile-color-wheel-canvas"
-                                onMouseDown={handleMouseDown}
-                                onMouseMove={handleMouseMove}
-                                onMouseUp={handleMouseUpOrLeave}
-                                onMouseLeave={handleMouseUpOrLeave}
-                                onTouchStart={handleTouchStart}
-                                onTouchMove={handleTouchMove}
-                                onTouchEnd={handleTouchEnd}
-                                className="rounded-full cursor-crosshair border border-neutral-300 shadow-md dark:border-neutral-700 touch-none z-10 w-full h-full"
-                                style={{
-                                  background: `
-                                    radial-gradient(circle, #fff 0%, transparent 100%),
-                                    conic-gradient(from 180deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)
-                                  `
-                                }}
-                              />
-                              <div
-                                className="absolute w-8 h-8 rounded-full border-2 border-white shadow-md pointer-events-none flex items-center justify-center font-bold text-white uppercase"
-                                style={{ backgroundColor: selectedColor }}
-                              >
-                                {avatarTab === 'color' ? (
-                                  <span className="text-[10px]">{(isCustomProfile ? customProfileName : profileName).slice(0, 2).toUpperCase() || 'PE'}</span>
-                                ) : (
-                                  <span className="text-base">{selectedEmoji || '👤'}</span>
-                                )}
-                              </div>
-
-                              {/* Dynamic line indicator (pauzinho) and handle circle */}
-                              {(() => {
-                                const coords = getIndicatorCoords(selectedColor, 64);
-                                return (
-                                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
-                                    <line
-                                      x1={64}
-                                      y1={64}
-                                      x2={coords.x}
-                                      y2={coords.y}
-                                      stroke="white"
-                                      strokeWidth="2.5"
-                                      strokeLinecap="round"
-                                      className="shadow-sm drop-shadow-[0_1.5px_2.5px_rgba(0,0,0,0.6)]"
-                                    />
-                                    <circle
-                                      cx={coords.x}
-                                      cy={coords.y}
-                                      r="5"
-                                      fill={selectedColor}
-                                      stroke="white"
-                                      strokeWidth="2"
-                                      className="shadow-md"
-                                    />
-                                  </svg>
-                                );
-                              })()}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      <div className="flex flex-wrap items-center justify-center gap-2">
-                        {PRESET_COLORS.map((col, idx) => (
-                          <button
-                            key={`profile-color-${col}-${idx}`}
-                            type="button"
-                            onClick={() => setSelectedColor(col)}
-                            className="w-6 h-6 rounded-full border border-black/40 flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all cursor-pointer"
-                            style={{ backgroundColor: col }}
-                          >
-                            {selectedColor.toLowerCase() === col.toLowerCase() && (
-                              <div className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {avatarTab === 'emoji' && (
-                    <div className="flex flex-col items-center gap-3.5 w-full mt-4 pt-4 border-t border-neutral-200 dark:border-[#2a2d40]">
-                      <div className="grid grid-cols-5 gap-2 max-w-xs justify-center w-full">
-                        {PRESET_EMOJIS.map((em, idx) => (
-                          <button
-                            key={`profile-emoji-${em}-${idx}`}
-                            type="button"
-                            id={`profile-preset-emoji-${em}`}
-                            data-testid={`profile-preset-emoji-${em}`}
-                            onClick={() => setSelectedEmoji(em)}
-                            className={`w-8 h-8 text-lg rounded-lg flex items-center justify-center transition-all hover:bg-neutral-200 cursor-pointer dark:hover:bg-neutral-800 ${
-                              selectedEmoji === em
-                                ? 'bg-indigo-600/30 border border-indigo-500 scale-110'
-                                : 'bg-white border border-neutral-200 dark:bg-[#111219] dark:border-[#2a2d40]'
-                            }`}
-                          >
-                            {em}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="w-full max-w-[220px] mt-1 text-center">
-                        <label className="block text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-1.5 select-none">
-                          Ou digite seu emoji / letra
-                        </label>
-                        <input
-                          type="text"
-                          maxLength={8}
-                          value={selectedEmoji}
-                          onChange={(e) => setSelectedEmoji(e.target.value)}
-                          placeholder="Cole ou digite aqui..."
-                          className="w-full h-9 px-3 rounded-lg text-center text-xs bg-neutral-100 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 dark:bg-[#13141c] dark:border-[#25283a] dark:text-neutral-200 dark:placeholder-neutral-600"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {avatarTab === 'image' && (
-                    <div className="flex flex-col items-center gap-4 w-full select-none">
-                      <div 
-                        className="w-16 h-16 rounded-full border-2 border-indigo-500/20 overflow-hidden flex items-center justify-center shadow-lg transition-colors bg-white dark:bg-black"
-                      >
-                        {imageUrl ? (
-                          <SmartImage 
-                            src={imageUrl} 
-                            alt="Avatar preview" 
-                            className="w-full h-full object-cover transition-transform duration-200"
-                            style={{ transform: `scale(${avatarZoom})` }} 
-                          />
-                        ) : (
-                          <ImageIcon className="w-6 h-6 text-neutral-500" />
-                        )}
-                      </div>
-
-                      {imageUrl && (
-                        <div className="w-full max-w-[240px] flex flex-col gap-3 px-2">
-                          <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center px-0.5">
-                              <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Ajustar Zoom</span>
-                              <div className="flex items-center gap-1">
-                                <input
-                                   type="text"
-                                   inputMode="numeric"
-                                   value={zoomInput}
-                                   onChange={(e) => {
-                                     const str = e.target.value.replace(/\D/g, '');
-                                     setZoomInput(str);
-                                     if (str === '') return;
-                                     const val = parseInt(str);
-                                     if (!isNaN(val) && val >= 20 && val <= 500) {
-                                       setAvatarZoom(val / 100);
-                                     }
-                                   }}
-                                   onFocus={() => setIsZoomFocused(true)}
-                                   onBlur={() => {
-                                     setIsZoomFocused(false);
-                                     const val = parseInt(zoomInput);
-                                     if (zoomInput === '' || isNaN(val)) {
-                                       setZoomInput(String(Math.round(avatarZoom * 100)));
-                                     } else {
-                                       const clamped = Math.max(20, Math.min(500, val));
-                                       setZoomInput(String(clamped));
-                                       setAvatarZoom(clamped / 100);
-                                     }
-                                   }}
-                                   className="w-12 h-6 px-1 text-right text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
-                                   title="Digite o zoom manually"
-                                 />
-                                <span className="text-[10px] font-mono text-indigo-500">%</span>
-                              </div>
-                            </div>
-                            <input
-                              type="range"
-                              min="0.2"
-                              max="5"
-                              step="0.01"
-                              value={avatarZoom}
-                              onChange={(e) => setAvatarZoom(parseFloat(e.target.value))}
-                              className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-1.5">
-                            <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-0.5">Cor de Fundo</span>
-                            <div className="flex flex-wrap justify-center gap-1.5 relative">
-                              {['#7c5cfc', '#ff5c5c', '#5cff9d', '#5cd6ff', '#ffb85c', '#ff5cd6', '#333333', '#ffffff'].map((color, idx) => (
-                                <button
-                                  key={`profile-bgcol-${color}-${idx}`}
-                                  type="button"
-                                  onClick={() => setSelectedColor(color)}
-                                  className={`w-6 h-6 rounded-full border transition-all cursor-pointer ${
-                                    selectedColor === color ? 'border-indigo-500 scale-110 shadow-sm' : 'border-neutral-300 dark:border-neutral-700 hover:scale-105'
-                                  }`}
-                                  style={{ backgroundColor: color }}
-                                />
-                              ))}
-                              
-                              <button
-                                type="button"
-                                onClick={() => setShowColorWheel(!showColorWheel)}
-                                className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
-                                  showColorWheel ? 'border-indigo-500 scale-110' : 'border-neutral-300 dark:border-neutral-700'
-                                }`}
-                                style={{ background: 'conic-gradient(red, yellow, green, cyan, blue, magenta, red)' }}
-                                title="Cor personalizada"
-                              >
-                                <Palette className="w-3 h-3 text-white drop-shadow-sm" />
-                              </button>
-
-                              {showColorWheel && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-white dark:bg-[#1a1b26] rounded-xl shadow-2xl border border-neutral-200 dark:border-[#2a2d40] z-50">
-                                  <HexColorPicker color={selectedColor} onChange={setSelectedColor} />
-                                  <div className="mt-2 flex gap-2">
-                                    <input 
-                                      type="text" 
-                                      value={selectedColor} 
-                                      onChange={(e) => setSelectedColor(e.target.value)}
-                                      className="flex-1 px-2 py-1 text-[10px] font-mono border rounded dark:bg-neutral-900 dark:border-neutral-700"
-                                    />
-                                    <button onClick={() => setShowColorWheel(false)} className="px-2 py-1 text-[10px] bg-indigo-600 text-white rounded cursor-pointer">OK</button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex flex-col items-center gap-2 mt-1">
-                        <label className="cursor-pointer px-4 py-2 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 font-semibold text-xs transition-all border border-indigo-500/20 flex items-center gap-2">
-                          <Upload className="w-3.5 h-3.5" />
-                          {imageUrl ? 'Trocar imagem' : 'Escolher arquivo de imagem'}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="hidden"
-                          />
-                        </label>
-                        <span className="text-[10px] text-neutral-500">
-                          Formato JPG, PNG ou GIF. Máximo 5MB.
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

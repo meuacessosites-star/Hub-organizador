@@ -16,8 +16,8 @@ interface SidebarProps {
   platforms: Platform[];
   selectedCategory: string;
   setSelectedCategory: (id: string) => void;
-  onManageCategories: () => void;
-  onManageStatuses: () => void;
+  onManageCategories?: () => void;
+  onManageStatuses?: () => void;
   onManageProfiles?: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
@@ -300,37 +300,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => {
                 onManageProfiles();
                 if (onCloseMobile) onCloseMobile();
-              }}
+               }}
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer"
             >
               <User className="w-4 h-4" />
               <span>Gerenciar perfis</span>
             </button>
           )}
-
-          <button
-            id="sidebar-manage-status-btn"
-            onClick={() => {
-              onManageStatuses();
-              if (onCloseMobile) onCloseMobile();
-            }}
-            className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer"
-          >
-            <Settings2 className="w-4 h-4" />
-            <span>Gerenciar status</span>
-          </button>
-
-          <button
-            id="sidebar-manage-categories-btn"
-            onClick={() => {
-              onManageCategories();
-              if (onCloseMobile) onCloseMobile();
-            }}
-            className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer"
-          >
-            <Settings2 className="w-4 h-4" />
-            <span>Gerenciar categorias</span>
-          </button>
 
           {/* User Profile Info Card */}
           <div 
