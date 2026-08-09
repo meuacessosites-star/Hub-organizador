@@ -7,12 +7,12 @@ import { resizeImage } from "../utils/imageHelper";
 import React, { useState, useEffect, useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Profile, Platform, ProfileAvatar, ProfilePreset } from '../types';
-import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload, RefreshCw, GripVertical, Square, CheckSquare } from 'lucide-react';
+import { X, User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, Palette, Smile, Image as ImageIcon, Copy, Check, Trash2, Bookmark, Pencil, Upload, RefreshCw, GripVertical, Square, CheckSquare, Plus } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
-import { useStorage } from '../hooks/useStorage';
+import { useStorage, deduplicatePresets } from '../hooks/useStorage';
 import { SmartImage } from './SmartImage';
 
 interface ProfileModalProps {
@@ -117,14 +117,16 @@ interface PresetReorderItemProps {
   isSelected?: boolean;
   onToggleSelect?: () => void;
   liveAvatar?: ProfileAvatar;
+  liveName?: string;
   onEdit: (preset: ProfilePreset) => void;
   onDelete: (preset: ProfilePreset) => void;
 }
 
-const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing, isSelected, onToggleSelect, liveAvatar, onEdit, onDelete }) => {
+const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing, isSelected, onToggleSelect, liveAvatar, liveName, onEdit, onDelete }) => {
   const dragControls = useDragControls();
 
   const activeAvatar = isEditing && liveAvatar ? liveAvatar : preset.avatar;
+  const activeName = isEditing && liveName !== undefined ? liveName : preset.name;
 
   const isHex = (val?: string) => val && /^#([0-9A-F]{3}){1,2}$/i.test(val);
   const bgColor = isHex(activeAvatar?.bgColor) 
@@ -189,15 +191,15 @@ const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing
         ) : isImg && activeAvatar?.value ? (
           <SmartImage
             src={activeAvatar.value}
-            alt={preset.name}
+            alt={activeName}
             className="w-full h-full object-cover"
             style={{ transform: `scale(${activeAvatar.zoom || 1})` }}
           />
         ) : (
-          <span className="text-white font-bold">{preset.name ? preset.name.slice(0, 2).toUpperCase() : 'PF'}</span>
+          <span className="text-white font-bold">{activeName ? activeName.slice(0, 2).toUpperCase() : 'PF'}</span>
         )}
       </div>
-      <span className="flex-1 text-xs font-medium truncate">{preset.name}</span>
+      <span className="flex-1 text-xs font-medium truncate">{activeName}</span>
       <div className="flex items-center gap-1">
         <button
           type="button"
@@ -253,26 +255,59 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const isEditMode = !!profile;
   const { addToast } = useToast();
   const { user } = useAuth();
-  const { profilePresets, saveProfilePresets } = useStorage();
+  const { platforms, profilePresets, saveProfilePresets, addProfilePreset } = useStorage();
   
   const [localProfilePresets, setLocalProfilePresets] = useState<ProfilePreset[]>([]);
   const [selectedPresetIds, setSelectedPresetIds] = useState<Set<string>>(new Set());
   const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [isEditingNamesList, setIsEditingNamesList] = useState(false);
+  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
+  const prevIsOpenRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
-      setLocalProfilePresets([...profilePresets]);
-      setSelectedPresetIds(new Set());
-      setShowBulkDelete(false);
-    }
-  }, [isOpen, profilePresets]);
+      const rawPresets: ProfilePreset[] = [];
 
-  useEffect(() => {
-    if (isOpen && openPresetsManager) {
-      setIsEditingNamesList(true);
-      setIsEditingInView(true);
+      (profilePresets || []).forEach(p => {
+        if (p && p.name) rawPresets.push(p);
+      });
+
+      (platforms || []).forEach(plat => {
+        (plat.profiles || []).forEach(prof => {
+          if (prof.name) {
+            rawPresets.push({
+              id: `preset-plat-${prof.id || Math.random().toString(36).substring(2, 7)}`,
+              name: prof.name,
+              avatar: prof.avatar || { type: 'color', value: prof.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
+            });
+          }
+        });
+      });
+
+      const combinedPresets = deduplicatePresets(rawPresets);
+
+      if (!prevIsOpenRef.current || openPresetsManager) {
+        setLocalProfilePresets(combinedPresets);
+        setSelectedPresetIds(new Set());
+        setShowBulkDelete(false);
+        
+        if (openPresetsManager) {
+          setIsEditingNamesList(true);
+          setIsEditingInView(true);
+          if (!editingPresetId || editingPresetId === 'new_preset_creation_mode') {
+            setEditingPresetId('new_preset_creation_mode');
+            setProfileName('');
+            setSelectedColor('#7c5cfc');
+            setSelectedEmoji('👤');
+            setImageUrl('');
+            setAvatarZoom(1);
+            setAvatarTab('color');
+          }
+        }
+      }
     }
-  }, [isOpen, openPresetsManager]);
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, openPresetsManager, profilePresets, platforms, editingPresetId]);
   
   const movePresetUp = (index: number) => {
     if (index <= 0) return;
@@ -294,8 +329,203 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   
   const getProfileNamesKey = () => user ? `hub_user_${user.uid}_profile_names` : 'hub_profile_names';
 
-  const [isEditingNamesList, setIsEditingNamesList] = useState(false);
-  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
+  const editingFormRef = useRef<HTMLDivElement>(null);
+  const profileNameInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSelectPresetForEditing = (preset: ProfilePreset) => {
+    setEditingPresetId(preset.id);
+    setProfileName(preset.name);
+    if (preset.avatar.bgColor) {
+      setSelectedColor(preset.avatar.bgColor);
+    } else if (preset.avatar.type === 'color') {
+      setSelectedColor(preset.avatar.value);
+    }
+    
+    if (preset.avatar.type === 'emoji') {
+      setAvatarTab('emoji');
+      setSelectedEmoji(preset.avatar.value);
+      setImageUrl('');
+    } else if (preset.avatar.type === 'image' || (preset.avatar.value && (preset.avatar.value.startsWith('http') || preset.avatar.value.startsWith('data:') || preset.avatar.value.startsWith('blob:')))) {
+      setAvatarTab('image');
+      setImageUrl(preset.avatar.value);
+      setAvatarZoom(preset.avatar.zoom || 1);
+    } else {
+      setAvatarTab('color');
+      setImageUrl('');
+    }
+
+    setTimeout(() => {
+      editingFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const handleNameChange = (newName: string) => {
+    setProfileName(newName);
+  };
+
+  const handleColorChange = (newColor: string) => {
+    setSelectedColor(newColor);
+  };
+
+  const handleEmojiChange = (newEmoji: string) => {
+    setSelectedEmoji(newEmoji);
+  };
+
+  const handleImageChange = (newUrl: string, zoomVal?: number) => {
+    setImageUrl(newUrl);
+    if (zoomVal !== undefined) {
+      setAvatarZoom(zoomVal);
+    }
+  };
+
+  const handleZoomChange = (newZoom: number) => {
+    setAvatarZoom(newZoom);
+  };
+
+  const handleAvatarTabChange = (newTab: 'color' | 'emoji' | 'image') => {
+    setAvatarTab(newTab);
+  };
+
+  const handleDeletePreset = (id: string) => {
+    const isEditingCurrent = editingPresetId === id;
+    const filtered = localProfilePresets.filter(p => p.id !== id);
+    setLocalProfilePresets(filtered);
+    saveProfilePresets(filtered);
+    addToast('Perfil removido com sucesso!', 'info');
+    if (isEditingCurrent) {
+      handleCreateNewPreset();
+    }
+  };
+
+  const handleCreateNewPreset = () => {
+    setEditingPresetId('new_preset_creation_mode');
+    setProfileName('');
+    setSelectedColor('#7c5cfc');
+    setSelectedEmoji('👤');
+    setImageUrl('');
+    setAvatarZoom(1);
+    setAvatarTab('color');
+    setTimeout(() => {
+      editingFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      profileNameInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleSaveExistingPreset = () => {
+    if (!editingPresetId || editingPresetId === 'new_preset_creation_mode') return;
+    if (!profileName.trim()) {
+      addToast('O nome do perfil é obrigatório.', 'error');
+      return;
+    }
+
+    let finalAvatarType = avatarTab;
+    let avatarValue = '';
+    if (avatarTab === 'color') {
+      avatarValue = selectedColor;
+    } else if (avatarTab === 'emoji') {
+      avatarValue = selectedEmoji;
+    } else {
+      if (imageUrl) {
+        avatarValue = imageUrl;
+      } else {
+        finalAvatarType = 'color';
+        avatarValue = selectedColor;
+      }
+    }
+
+    const updatedAvatar: ProfileAvatar = {
+      type: finalAvatarType,
+      value: avatarValue,
+      bgColor: selectedColor,
+      zoom: finalAvatarType === 'image' ? avatarZoom : undefined
+    };
+
+    const updatedList = localProfilePresets.map(p => {
+      if (p.id === editingPresetId) {
+        return {
+          ...p,
+          name: profileName.trim(),
+          avatar: updatedAvatar
+        };
+      }
+      return p;
+    });
+
+    setLocalProfilePresets(updatedList);
+    saveProfilePresets(updatedList);
+    addToast('Perfil atualizado com sucesso! ✨', 'success');
+
+    // Automatically reset to ready new creation mode
+    handleCreateNewPreset();
+  };
+
+  const handleSaveNewPreset = () => {
+    if (!profileName.trim()) {
+      addToast('O nome do perfil é obrigatório.', 'error');
+      return;
+    }
+
+    let finalAvatarType = avatarTab;
+    let avatarValue = '';
+    if (avatarTab === 'color') {
+      avatarValue = selectedColor;
+    } else if (avatarTab === 'emoji') {
+      avatarValue = selectedEmoji;
+    } else {
+      if (imageUrl) {
+        avatarValue = imageUrl;
+      } else {
+        finalAvatarType = 'color';
+        avatarValue = selectedColor;
+      }
+    }
+
+    const newPreset: ProfilePreset = {
+      id: `preset-${Date.now()}`,
+      name: profileName.trim(),
+      avatar: {
+        type: finalAvatarType,
+        value: avatarValue,
+        bgColor: selectedColor,
+        zoom: finalAvatarType === 'image' ? avatarZoom : undefined
+      }
+    };
+
+    const updatedList = [...localProfilePresets, newPreset];
+    setLocalProfilePresets(updatedList);
+    saveProfilePresets(updatedList);
+    addToast(`Perfil "${newPreset.name}" criado com sucesso! ✨`, 'success');
+
+    // Reset back to blank creation mode waiting for the next profile
+    handleCreateNewPreset();
+  };
+
+  const handleToggleSelectPreset = (id: string) => {
+    setSelectedPresetIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleBulkDeletePresets = () => {
+    const filtered = localProfilePresets.filter(p => !selectedPresetIds.has(p.id));
+    setLocalProfilePresets(filtered);
+    setSelectedPresetIds(new Set());
+    setShowBulkDelete(false);
+    addToast('Presets selecionados removidos temporariamente.', 'info');
+    if (editingPresetId && selectedPresetIds.has(editingPresetId)) {
+      if (filtered.length > 0) {
+        handleSelectPresetForEditing(filtered[0]);
+      } else {
+        setEditingPresetId(null);
+      }
+    }
+  };
 
   const [profileName, setProfileName] = useState('Pessoal');
   const [customProfileName, setCustomProfileName] = useState('');
@@ -597,6 +827,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       zoom: finalAvatarType === 'image' ? avatarZoom : undefined,
     };
 
+    if (finalProfileName && !profilePresets.some(p => p.name.trim().toLowerCase() === finalProfileName.trim().toLowerCase())) {
+      addProfilePreset({
+        name: finalProfileName,
+        avatar: avatarObj,
+      });
+    }
+
     if (isEditMode && profile) {
       if (onEdit) {
         onEdit(profile.id, {
@@ -609,7 +846,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           avatar: avatarObj,
         });
       }
-      saveProfilePresets(localProfilePresets);
       addToast(`Conta "${finalProfileName}" atualizada com sucesso! 👤`, 'success');
       setIsEditingInView(false);
       onClose();
@@ -625,7 +861,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           avatar: avatarObj,
         });
       }
-      saveProfilePresets(localProfilePresets);
       addToast(`Conta "${finalProfileName}" criada com sucesso! ✨`, 'success');
       onClose();
     }
@@ -654,7 +889,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
           <div>
             <h2 className="font-sans font-bold text-base text-neutral-900 dark:text-white flex items-center gap-2">
-              <span>{openPresetsManager ? 'Gerenciar Perfis Padrão (Presets)' : isEditMode ? 'Visualizar perfil' : 'Adicionar conta'}</span>
+              <span>{openPresetsManager ? 'Gerenciar Perfis Padrão' : isEditMode ? 'Visualizar perfil' : 'Adicionar conta'}</span>
               {platform && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-600/15 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-100 dark:border-transparent">
                   {platform.name}
@@ -679,7 +914,581 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
         {/* Content */}
         <div className="p-4 sm:p-6 max-h-[80vh] sm:max-h-[75vh] overflow-y-auto">
-          {isEditMode && !isEditingInView ? (
+          {openPresetsManager ? (
+            /* PRESETS MANAGER VIEW */
+            <div className="flex flex-col gap-4 select-none">
+              {/* Header row inside view */}
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                  Perfis padrão
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      saveProfilePresets(localProfilePresets);
+                      addToast('Configurações de perfis salvas com sucesso! ✨', 'success');
+                      onClose();
+                    }}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    ✓ Concluir
+                  </button>
+                </div>
+              </div>
+
+              {/* Reordering container box */}
+              <div className="bg-neutral-50/50 dark:bg-neutral-900/10 border border-neutral-150 dark:border-neutral-800/40 rounded-2xl p-4 flex flex-col">
+                <div className="flex flex-col gap-2.5 pb-2 border-b border-neutral-100 dark:border-neutral-800/40">
+                  {/* Top Row: Title and Drag Instruction perfectly aligned horizontally */}
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                      GERENCIAR E REORDENAR PERFIS
+                    </span>
+                    <span className="text-[10px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1">
+                      <GripVertical className="w-3.5 h-3.5" />
+                      <span>Arraste o ícone para reordenar</span>
+                    </span>
+                  </div>
+
+                  {/* Bottom Row: Selection button placed below */}
+                  <div className="flex justify-end w-full">
+                    {!showBulkDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowBulkDelete(true);
+                          setSelectedPresetIds(new Set());
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#13141c] hover:bg-neutral-50 dark:hover:bg-neutral-850/50 text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <CheckSquare className="w-3.5 h-3.5 text-neutral-400" />
+                        <span>Selecionar vários</span>
+                      </button>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedPresetIds(new Set(localProfilePresets.map(p => p.id)));
+                              addToast('Todos os perfis selecionados!', 'info');
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#13141c] hover:bg-neutral-50 dark:hover:bg-neutral-850/50 text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 flex items-center gap-1 cursor-pointer"
+                          >
+                            <CheckSquare className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Selecionar todos</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowBulkDelete(false);
+                              setSelectedPresetIds(new Set());
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100/50 dark:hover:bg-rose-900/30 text-[11px] font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5 text-rose-500" />
+                            <span>Cancelar</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bulk delete action button */}
+                {showBulkDelete && selectedPresetIds.size > 0 && (
+                  <div className="mt-2.5 p-2 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/35 rounded-xl flex items-center justify-between">
+                    <span className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold">
+                      {selectedPresetIds.size} {selectedPresetIds.size === 1 ? 'perfil selecionado' : 'perfis selecionados'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleBulkDeletePresets}
+                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold rounded-lg transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Excluir Selecionados</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Reorder list */}
+                <Reorder.Group
+                  axis="y"
+                  values={localProfilePresets}
+                  onReorder={setLocalProfilePresets}
+                  className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1 mt-3"
+                >
+                  {localProfilePresets.map((preset, idx) => {
+                    const isEditingThis = editingPresetId === preset.id;
+                    const liveAvatarObj: ProfileAvatar = {
+                      type: avatarTab,
+                      value: avatarTab === 'color' ? selectedColor : avatarTab === 'emoji' ? selectedEmoji : imageUrl,
+                      bgColor: selectedColor,
+                      zoom: avatarTab === 'image' ? avatarZoom : undefined
+                    };
+                    return (
+                      <PresetReorderItem
+                        key={`preset-reorder-${preset.id}-${idx}`}
+                        preset={preset}
+                        isEditing={isEditingThis}
+                        isSelected={selectedPresetIds.has(preset.id)}
+                        onToggleSelect={showBulkDelete ? () => handleToggleSelectPreset(preset.id) : undefined}
+                        liveAvatar={liveAvatarObj}
+                        liveName={profileName}
+                        onEdit={handleSelectPresetForEditing}
+                        onDelete={() => handleDeletePreset(preset.id)}
+                      />
+                    );
+                  })}
+                </Reorder.Group>
+
+                {localProfilePresets.length === 0 && (
+                  <div className="text-center py-8 text-xs text-neutral-400 dark:text-neutral-500 italic">
+                    Nenhum perfil cadastrado.
+                  </div>
+                )}
+              </div>
+
+              {/* Creation / Editing Form (Always open in Manager view) */}
+              <div ref={editingFormRef} className="flex flex-col gap-4 mt-2 bg-neutral-50/80 dark:bg-neutral-900/20 border border-neutral-200/80 dark:border-neutral-800/60 p-4 rounded-2xl shadow-sm">
+                {/* Header row for form: Title & Actions */}
+                <div className="flex items-center justify-between pb-2 border-b border-neutral-200/60 dark:border-neutral-800/50">
+                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                    {editingPresetId && editingPresetId !== 'new_preset_creation_mode' ? (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                        <span>Editando: <strong className="text-indigo-600 dark:text-indigo-400">{profileName || 'Perfil'}</strong></span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 text-indigo-500" />
+                        <span>Novo perfil</span>
+                      </>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {editingPresetId && editingPresetId !== 'new_preset_creation_mode' ? (
+                      <button
+                        type="button"
+                        onClick={handleCreateNewPreset}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 cursor-pointer transition-all flex items-center gap-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Cancelar</span>
+                      </button>
+                    ) : (
+                      profileName.trim() ? (
+                        <button
+                          type="button"
+                          onClick={handleCreateNewPreset}
+                          className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 cursor-pointer transition-all"
+                        >
+                          Limpar
+                        </button>
+                      ) : null
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (editingPresetId === 'new_preset_creation_mode' || !editingPresetId) {
+                          handleSaveNewPreset();
+                        } else {
+                          handleSaveExistingPreset();
+                        }
+                      }}
+                      disabled={!profileName.trim()}
+                      className="px-4 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm flex items-center gap-1.5 transition-all"
+                    >
+                      {editingPresetId === 'new_preset_creation_mode' || !editingPresetId ? (
+                        <>
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Salvar novo</span>
+                        </>
+                      ) : (
+                        <span>Salvar alterações</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preset Name Input */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                    Nome do perfil <span className="text-[10px] font-normal text-rose-500 dark:text-rose-400">(obrigatório)</span>
+                  </label>
+                  <input
+                    ref={profileNameInputRef}
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => editingPresetId === 'new_preset_creation_mode' ? setProfileName(e.target.value) : handleNameChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && profileName.trim()) {
+                        e.preventDefault();
+                        if (editingPresetId === 'new_preset_creation_mode' || !editingPresetId) {
+                          handleSaveNewPreset();
+                        } else {
+                          handleSaveExistingPreset();
+                        }
+                      }
+                    }}
+                    placeholder="Ex: INFINIX, XIAOMI, MEU MOTO G..."
+                    className="w-full h-11 px-4 rounded-xl text-sm bg-white border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                  />
+                </div>
+
+                  {/* Avatar Picker Section */}
+                  <div className="flex flex-col gap-3 pt-3 border-t border-neutral-100 dark:border-[#26283b]/40">
+                    <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                      Avatar do perfil
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAvatarTabChange('color')}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          avatarTab === 'color'
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                            : 'bg-white hover:bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400'
+                        }`}
+                      >
+                        <Palette className="w-3.5 h-3.5" />
+                        <span>Cor</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAvatarTabChange('emoji')}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          avatarTab === 'emoji'
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                            : 'bg-white hover:bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400'
+                        }`}
+                      >
+                        <Smile className="w-3.5 h-3.5" />
+                        <span>Emoji</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAvatarTabChange('image')}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          avatarTab === 'image'
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                            : 'bg-white hover:bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400'
+                        }`}
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Imagem</span>
+                      </button>
+                    </div>
+
+                    {/* Tab content */}
+                    <div className="mt-1">
+                      {avatarTab === 'color' && (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowColorWheel(!showColorWheel)}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 shadow-md cursor-pointer border border-neutral-200/50 transition-all active:scale-95 ${
+                                showColorWheel ? 'ring-2 ring-indigo-500 scale-105' : ''
+                              }`}
+                              style={{ backgroundColor: selectedColor }}
+                              title={showColorWheel ? "Fechar seletor de cores" : "Abrir seletor de cores"}
+                            >
+                              <Palette className="w-4 h-4" />
+                            </button>
+                            <input
+                              type="color"
+                              value={selectedColor.startsWith('#') && selectedColor.length === 7 ? selectedColor : '#6366f1'}
+                              onChange={(e) => handleColorChange(e.target.value)}
+                              className="w-10 h-10 rounded-xl cursor-pointer border border-neutral-200 dark:border-[#2a2d40] bg-neutral-50 dark:bg-[#111219] p-1 shrink-0"
+                              title="Seletor nativo do sistema"
+                            />
+                            <input
+                              type="text"
+                              value={selectedColor}
+                              onChange={(e) => handleColorChange(e.target.value)}
+                              placeholder="#ffffff"
+                              className="flex-1 h-10 px-3 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 font-mono"
+                            />
+                          </div>
+
+                          {showColorWheel && (
+                            <div ref={colorWheelContainerRef} className="p-4 bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-xl flex flex-col items-center gap-3">
+                              <div
+                                ref={colorWheelRef}
+                                className="relative w-32 h-32 rounded-full cursor-crosshair select-none touch-none overflow-hidden border border-neutral-200/60 dark:border-white/10"
+                                style={{
+                                  background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
+                                }}
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUpOrLeave}
+                                onMouseLeave={handleMouseUpOrLeave}
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                              >
+                                <div
+                                  className="absolute inset-0 rounded-full pointer-events-none"
+                                  style={{
+                                    background: 'radial-gradient(circle, white 0%, transparent 100%)',
+                                  }}
+                                />
+                                <div
+                                  className="absolute w-3 h-3 -ml-1.5 -mt-1.5 rounded-full border-2 border-white shadow-md pointer-events-none"
+                                  style={{
+                                    left: `${getIndicatorCoords(selectedColor, 64).x}px`,
+                                    top: `${getIndicatorCoords(selectedColor, 64).y}px`,
+                                    backgroundColor: selectedColor,
+                                  }}
+                                />
+                              </div>
+                              <span className="text-[10px] font-medium text-neutral-400">Arraste para escolher uma cor</span>
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap gap-2">
+                            {PRESET_COLORS.map((c) => (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => handleColorChange(c)}
+                                className={`w-6 h-6 rounded-full border border-neutral-200/40 cursor-pointer shadow-sm transition-transform hover:scale-110 ${
+                                  selectedColor === c ? 'ring-2 ring-indigo-500 scale-105' : ''
+                                }`}
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {avatarTab === 'emoji' && (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-xl shrink-0 shadow-inner">
+                              {selectedEmoji}
+                            </div>
+                            <input
+                              type="text"
+                              maxLength={2}
+                              value={selectedEmoji}
+                              onChange={(e) => handleEmojiChange(e.target.value)}
+                              className="w-full h-11 px-4 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-10 gap-2 p-2 bg-neutral-50 dark:bg-neutral-900/40 rounded-xl border border-neutral-150 dark:border-neutral-800/50">
+                            {PRESET_EMOJIS.map((em) => (
+                              <button
+                                key={em}
+                                type="button"
+                                onClick={() => handleEmojiChange(em)}
+                                className={`text-lg p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer ${
+                                  selectedEmoji === em ? 'bg-indigo-100 dark:bg-indigo-950/40 ring-1 ring-indigo-500' : ''
+                                }`}
+                              >
+                                {em}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {avatarTab === 'image' && (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden shrink-0 shadow-md transition-colors border border-neutral-200/50"
+                              style={{ backgroundColor: selectedColor || '#6366f1' }}
+                            >
+                              {imageUrl ? (
+                                <SmartImage
+                                  src={imageUrl}
+                                  alt="preview"
+                                  className="w-full h-full object-cover"
+                                  style={{ transform: `scale(${avatarZoom})` }}
+                                />
+                              ) : (
+                                <ImageIcon className="w-5 h-5 text-neutral-400" />
+                              )}
+                            </div>
+                            <input
+                              type="text"
+                              value={imageUrl}
+                              onChange={(e) => handleImageChange(e.target.value)}
+                              placeholder="Cole o URL da imagem..."
+                              className="w-full h-11 px-4 rounded-xl text-xs bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                            />
+                          </div>
+
+                          <div className="relative border-2 border-dashed border-neutral-200 dark:border-neutral-850 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 hover:border-indigo-500 transition-colors">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                            <Upload className="w-5 h-5 text-neutral-400" />
+                            <span className="text-xs text-neutral-500">Clique para enviar uma foto (max 5MB)</span>
+                          </div>
+
+                          {imageUrl && (
+                            <div className="flex flex-col gap-3">
+                              {/* Background color customization for image avatar */}
+                              <div className="flex flex-col gap-1.5 pt-1 border-t border-neutral-100 dark:border-neutral-800/50">
+                                <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">Cor de fundo da imagem</span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowColorWheel(!showColorWheel)}
+                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm cursor-pointer border border-neutral-200 dark:border-neutral-700 transition-all active:scale-95 ${
+                                      showColorWheel ? 'ring-2 ring-indigo-500 scale-105' : ''
+                                    }`}
+                                    style={{ backgroundColor: selectedColor }}
+                                    title={showColorWheel ? "Fechar seletor de cores" : "Abrir seletor de cores"}
+                                  >
+                                    <Palette className="w-3.5 h-3.5" />
+                                  </button>
+                                  <input
+                                    type="color"
+                                    value={selectedColor.startsWith('#') && selectedColor.length === 7 ? selectedColor : '#6366f1'}
+                                    onChange={(e) => setSelectedColor(e.target.value)}
+                                    className="w-7 h-7 rounded-md cursor-pointer border border-neutral-200 dark:border-neutral-700 bg-transparent p-0.5 shrink-0"
+                                    title="Seletor nativo do sistema"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={selectedColor}
+                                    onChange={(e) => setSelectedColor(e.target.value)}
+                                    placeholder="#6366f1"
+                                    className="w-20 h-7 px-2 rounded-lg text-xs font-mono bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
+                                    title="Digite o código HEX da cor (ex: #6366F1)"
+                                  />
+                                  <div className="flex flex-wrap gap-1.5 items-center">
+                                    {PRESET_COLORS.map((c) => (
+                                      <button
+                                        key={`img-bg-${c}`}
+                                        type="button"
+                                        onClick={() => setSelectedColor(c)}
+                                        className={`w-5 h-5 rounded-full border border-neutral-200/40 cursor-pointer shadow-sm transition-transform hover:scale-110 ${
+                                          selectedColor === c ? 'ring-2 ring-indigo-500 scale-105' : ''
+                                        }`}
+                                        style={{ backgroundColor: c }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {showColorWheel && (
+                                <div className="p-3 bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-xl flex flex-col items-center gap-2">
+                                  <div
+                                    ref={colorWheelRef}
+                                    className="relative w-28 h-28 rounded-full cursor-crosshair select-none touch-none overflow-hidden border border-neutral-200/60 dark:border-white/10"
+                                    style={{
+                                      background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
+                                    }}
+                                    onMouseDown={handleMouseDown}
+                                    onMouseMove={handleMouseMove}
+                                    onMouseUp={handleMouseUpOrLeave}
+                                    onMouseLeave={handleMouseUpOrLeave}
+                                    onTouchStart={handleTouchStart}
+                                    onTouchMove={handleTouchMove}
+                                    onTouchEnd={handleTouchEnd}
+                                  >
+                                    <div
+                                      className="absolute inset-0 rounded-full pointer-events-none"
+                                      style={{
+                                        background: 'radial-gradient(circle, white 0%, transparent 100%)',
+                                      }}
+                                    />
+                                    <div
+                                      className="absolute w-3 h-3 -ml-1.5 -mt-1.5 rounded-full border-2 border-white shadow-md pointer-events-none"
+                                      style={{
+                                        left: `${getIndicatorCoords(selectedColor, 56).x}px`,
+                                        top: `${getIndicatorCoords(selectedColor, 56).y}px`,
+                                        backgroundColor: selectedColor,
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] font-medium text-neutral-400">Arraste para escolher uma cor</span>
+                                </div>
+                              )}
+
+                              {/* Zoom Slider + Direct Input */}
+                              <div className="flex flex-col gap-1.5 pt-1 border-t border-neutral-100 dark:border-neutral-800/50">
+                                <div className="flex justify-between items-center text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">
+                                  <span>Zoom da Imagem</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700">
+                                      <input
+                                        type="number"
+                                        min="10"
+                                        max="500"
+                                        value={zoomInput}
+                                        onChange={(e) => {
+                                          const str = e.target.value;
+                                          setZoomInput(str);
+                                          const val = parseInt(str);
+                                          if (!isNaN(val) && val >= 10 && val <= 500) {
+                                            setAvatarZoom(val / 100);
+                                          }
+                                        }}
+                                        onBlur={() => {
+                                          const val = parseInt(zoomInput);
+                                          if (zoomInput === '' || isNaN(val)) {
+                                            setZoomInput(String(Math.round(avatarZoom * 100)));
+                                          } else {
+                                            const clamped = Math.max(10, Math.min(500, val));
+                                            setZoomInput(String(clamped));
+                                            setAvatarZoom(clamped / 100);
+                                          }
+                                        }}
+                                        className="w-10 text-center text-xs font-mono bg-transparent text-neutral-800 dark:text-neutral-200 focus:outline-none"
+                                        title="Digite o zoom de 10% a 500%"
+                                      />
+                                      <span className="text-[10px] text-neutral-500 font-mono">%</span>
+                                    </div>
+                                    <button 
+                                      type="button"
+                                      onClick={() => {
+                                        setAvatarZoom(1);
+                                        setZoomInput('100');
+                                      }}
+                                      className="text-[10px] text-indigo-500 hover:underline cursor-pointer font-normal"
+                                    >
+                                      Resetar
+                                    </button>
+                                  </div>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.1"
+                                  max="3"
+                                  step="0.01"
+                                  value={avatarZoom}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    setAvatarZoom(val);
+                                    setZoomInput(String(Math.round(val * 100)));
+                                  }}
+                                  className="w-full h-1 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+
+                </div>
+            </div>
+          ) : isEditMode && !isEditingInView ? (
             /* VIEW DETAILS MODE */
             <div className="flex flex-col gap-5 select-text">
               {/* Profile Avatar Card */}
@@ -1138,21 +1947,42 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <>
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={() => {
+                    if (editingPresetId === 'new_preset_creation_mode') {
+                      setEditingPresetId(localProfilePresets.length > 0 ? localProfilePresets[0].id : null);
+                      if (localProfilePresets.length > 0) {
+                        handleSelectPresetForEditing(localProfilePresets[0]);
+                      }
+                    } else {
+                      onClose();
+                    }
+                  }}
                   className="w-full sm:w-auto px-5 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer transition-all whitespace-nowrap dark:border-[#2c2e42] dark:hover:bg-[#1a1b26] dark:text-neutral-400"
                 >
-                  Sair sem salvar
+                  {editingPresetId === 'new_preset_creation_mode' ? 'Cancelar' : 'Sair sem salvar'}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    saveProfilePresets(localProfilePresets);
-                    addToast('Configurações de perfis salvas com sucesso! ✨', 'success');
-                    onClose();
+                    if (editingPresetId === 'new_preset_creation_mode') {
+                      handleSaveNewPreset();
+                    } else {
+                      saveProfilePresets(localProfilePresets);
+                      addToast('Configurações de perfis salvas com sucesso! ✨', 'success');
+                      onClose();
+                    }
                   }}
-                  className="w-full sm:w-auto px-6 h-10 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer shadow-md"
+                  disabled={editingPresetId === 'new_preset_creation_mode' && !profileName.trim()}
+                  className="w-full sm:w-auto px-6 h-10 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
                 >
-                  Salvar
+                  {editingPresetId === 'new_preset_creation_mode' ? (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>Salvar novo</span>
+                    </>
+                  ) : (
+                    <span>Salvar</span>
+                  )}
                 </button>
               </>
             ) : isEditMode && !isEditingInView ? (

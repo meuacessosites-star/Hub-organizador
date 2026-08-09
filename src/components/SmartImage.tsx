@@ -1,6 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ImageOff } from 'lucide-react';
 import { formatImageUrl, getNextFallbackUrl } from '../utils/imageProxy';
+
+// Global memory cache of successfully loaded and failed images for instant rendering across component remounts
+export const LOADED_IMAGE_CACHE = new Set<string>();
+export const FAILED_IMAGE_CACHE = new Set<string>();
+
+/**
+ * Preload an image URL into browser & JS memory cache
+ */
+export const preloadImage = (src?: string | null) => {
+  const formatted = formatImageUrl(src);
+  if (!formatted || LOADED_IMAGE_CACHE.has(formatted) || FAILED_IMAGE_CACHE.has(formatted)) return;
+  const img = new Image();
+  img.src = formatted;
+  img.onload = () => {
+    LOADED_IMAGE_CACHE.add(formatted);
+  };
+  img.onerror = () => {
+    FAILED_IMAGE_CACHE.add(formatted);
+  };
+};
+
+/**
+ * Batch preload multiple image URLs
+ */
+export const preloadImages = (srcs: (string | null | undefined)[]) => {
+  if (!srcs || !Array.isArray(srcs)) return;
+  srcs.forEach(preloadImage);
+};
 
 export interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src?: string | null;
@@ -30,11 +58,16 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   ...imgProps
 }) => {
   const initialFormatted = formatImageUrl(src);
+  const isPreLoaded = initialFormatted ? LOADED_IMAGE_CACHE.has(initialFormatted) : false;
+
   const [currentSrc, setCurrentSrc] = useState<string>(initialFormatted);
-  const [loading, setLoading] = useState<boolean>(!!initialFormatted);
+  const [loading, setLoading] = useState<boolean>(initialFormatted ? !isPreLoaded : false);
   const [error, setError] = useState<boolean>(!initialFormatted);
   const [triedUrls, setTriedUrls] = useState<Set<string>>(new Set([initialFormatted]));
 
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Check if image is already completed in DOM cache on mount or src change
   useEffect(() => {
     const formatted = formatImageUrl(src);
     if (!formatted) {
@@ -44,18 +77,30 @@ export const SmartImage: React.FC<SmartImageProps> = ({
       setTriedUrls(new Set());
     } else {
       setCurrentSrc(formatted);
-      setLoading(true);
+      const isCached = LOADED_IMAGE_CACHE.has(formatted);
+      setLoading(!isCached);
       setError(false);
       setTriedUrls(new Set([formatted]));
 
       const timer = setTimeout(() => {
         setLoading(false);
-      }, 2500);
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [src]);
 
+  // Synchronous check if browser already finished decoding this image
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      if (currentSrc) LOADED_IMAGE_CACHE.add(currentSrc);
+      setLoading(false);
+      setError(false);
+    }
+  }, [currentSrc]);
+
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    if (currentSrc) FAILED_IMAGE_CACHE.add(currentSrc);
+
     // Also notify any parent-provided onError handler
     if (imgProps.onError) {
       try {
@@ -70,7 +115,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
     // Cycle through fallback candidates until finding one not tried yet
     let loopCount = 0;
     const localVisited = new Set<string>();
-    while (nextCandidate && triedUrls.has(nextCandidate) && loopCount < 10) {
+    while (nextCandidate && (triedUrls.has(nextCandidate) || FAILED_IMAGE_CACHE.has(nextCandidate)) && loopCount < 10) {
       if (localVisited.has(nextCandidate)) {
         nextCandidate = null;
         break;
@@ -95,6 +140,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   };
 
   const handleImgLoad = () => {
+    if (currentSrc) LOADED_IMAGE_CACHE.add(currentSrc);
     setLoading(false);
     setError(false);
   };
@@ -140,13 +186,16 @@ export const SmartImage: React.FC<SmartImageProps> = ({
       {currentSrc && !error && (
         <img
           {...imgProps}
+          ref={imgRef}
           id={id}
           src={currentSrc}
           alt={alt}
+          loading={imgProps.loading || "lazy"}
+          decoding="async"
           referrerPolicy="no-referrer"
           onLoad={handleImgLoad}
           onError={handleImgError}
-          className={`relative z-10 ${className} ${fitClass} transition-opacity duration-300 ${
+          className={`relative z-10 ${className} ${fitClass} transition-opacity duration-150 ${
             loading ? 'opacity-0' : 'opacity-100'
           }`}
           style={style}

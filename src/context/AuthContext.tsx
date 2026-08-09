@@ -38,6 +38,7 @@ interface AuthContextType {
   isGuest: boolean;
   authError: string | null;
   linkSuccessMessage: string | null;
+  updateUserProfileLocally: (profileData: UserProfileData) => void;
   enterAsGuest: () => void;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -55,6 +56,7 @@ const AuthContext = createContext<AuthContextType>({
   isGuest: false,
   authError: null,
   linkSuccessMessage: null,
+  updateUserProfileLocally: () => {},
   enterAsGuest: () => {},
   signInWithGoogle: async () => {},
   signInWithEmail: async () => {},
@@ -402,6 +404,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await firebaseSignOut(auth);
   };
 
+  const updateUserProfileLocally = (profileData: UserProfileData) => {
+    setUserProfile((prev) => ({ ...(prev || {}), ...profileData }));
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -410,6 +416,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isGuest, 
       authError, 
       linkSuccessMessage,
+      updateUserProfileLocally,
       enterAsGuest, 
       signInWithGoogle, 
       signInWithEmail, 

@@ -5,7 +5,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Category, Platform } from '../types';
-import { LayoutGrid, Settings2, X, Search, User, ChevronUp, ChevronDown } from 'lucide-react';
+import { LayoutGrid, Settings2, X, Search, User, ChevronUp, ChevronDown, Tags, Sliders } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from './Logo';
 import { CategoryIcon } from './CategoryIcon';
@@ -305,6 +305,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <User className="w-4 h-4" />
               <span>Gerenciar perfis</span>
+            </button>
+          )}
+
+          {onManageStatuses && (
+            <button
+              id="sidebar-manage-statuses-btn"
+              onClick={() => {
+                onManageStatuses();
+                if (onCloseMobile) onCloseMobile();
+               }}
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer"
+            >
+              <Sliders className="w-4 h-4" />
+              <span>Gerenciar status</span>
+            </button>
+          )}
+
+          {onManageCategories && (
+            <button
+              id="sidebar-manage-categories-btn"
+              onClick={() => {
+                onManageCategories();
+                if (onCloseMobile) onCloseMobile();
+               }}
+              className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/30 transition-all duration-200 cursor-pointer"
+            >
+              <Tags className="w-4 h-4" />
+              <span>Gerenciar categorias</span>
             </button>
           )}
 

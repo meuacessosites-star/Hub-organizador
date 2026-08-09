@@ -131,6 +131,28 @@ const getDemoPlatforms = (userId: string): Platform[] => [
   }
 ];
 
+export function deduplicatePresets(presets: ProfilePreset[]): ProfilePreset[] {
+  const seenIds = new Set<string>();
+  const seenNames = new Set<string>();
+  const result: ProfilePreset[] = [];
+
+  (presets || []).forEach((p, idx) => {
+    if (!p || !p.name) return;
+    const nameKey = p.name.trim().toLowerCase();
+    if (seenNames.has(nameKey)) return;
+    seenNames.add(nameKey);
+
+    let uniqueId = p.id;
+    if (!uniqueId || seenIds.has(uniqueId)) {
+      uniqueId = `preset-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`;
+    }
+    seenIds.add(uniqueId);
+    result.push({ ...p, id: uniqueId });
+  });
+
+  return result;
+}
+
 export function useStorage() {
   const { user, loading: authLoading, isGuest } = useAuth();
   const { addToast } = useToast();
@@ -327,13 +349,29 @@ export function useStorage() {
     });
 
     setProfilePresets(() => {
-      const merged = [...DEFAULT_PROFILE_PRESETS];
-      localPresets.forEach(lp => {
-        const idx = merged.findIndex(m => m.id === lp.id);
-        if (idx !== -1) merged[idx] = lp;
-        else merged.push(lp);
+      const savedPresets = safeGetItem(`hub_user_${user.uid}_profile_presets`);
+      let basePresets: ProfilePreset[] = DEFAULT_PROFILE_PRESETS;
+      if (savedPresets) {
+        const parsed = safeParse(savedPresets, null);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          basePresets = parsed;
+        }
+      }
+
+      // Merge any custom profiles existing across user platforms
+      const merged = [...basePresets];
+      localPlats.forEach((plat: Platform) => {
+        (plat.profiles || []).forEach((prof: Profile) => {
+          if (prof.name) {
+            merged.push({
+              id: `preset-plat-${prof.id || Math.random().toString(36).substring(2, 7)}`,
+              name: prof.name,
+              avatar: prof.avatar || { type: 'color', value: prof.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
+            });
+          }
+        });
       });
-      return merged;
+      return deduplicatePresets(merged);
     });
 
     setPlatforms(localPlats);
@@ -451,6 +489,26 @@ export function useStorage() {
           setPlatforms(cloudPlats);
           platformsRef.current = cloudPlats;
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
+
+          // Ensure profilePresets incorporates all profiles from cloudPlats
+          const platProfiles: ProfilePreset[] = [];
+          cloudPlats.forEach((plat: Platform) => {
+            (plat.profiles || []).forEach((prof: Profile) => {
+              if (prof.name) {
+                platProfiles.push({
+                  id: `preset-plat-${prof.id || Math.random().toString(36).substring(2, 7)}`,
+                  name: prof.name,
+                  avatar: prof.avatar || { type: 'color', value: prof.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
+                });
+              }
+            });
+          });
+
+          if (platProfiles.length > 0) {
+            const merged = deduplicatePresets([...profilePresetsRef.current, ...platProfiles]);
+            setProfilePresets(merged);
+            profilePresetsRef.current = merged;
+          }
         } else {
           setPlatforms([]);
           platformsRef.current = [];
@@ -494,21 +552,41 @@ export function useStorage() {
         
         checkRemoteChangesAndNotify('profilePresets', snap);
 
-        if (!snap.empty) {
-          const cloudPresets = snap.docs.map(d => ({ ...d.data() as ProfilePreset, id: d.id }));
-          const unique: ProfilePreset[] = [];
-          const seen = new Set<string>();
-          cloudPresets.forEach(p => {
-            if (p.id && !seen.has(p.id)) {
-              seen.add(p.id);
-              unique.push(p);
+        // Extract profiles from existing platforms to ensure custom user profiles are never lost
+        const currentPlats = platformsRef.current || [];
+        const platProfiles: ProfilePreset[] = [];
+        currentPlats.forEach((plat: Platform) => {
+          (plat.profiles || []).forEach((prof: Profile) => {
+            if (prof.name) {
+              platProfiles.push({
+                id: `preset-plat-${prof.id || Math.random().toString(36).substring(2, 7)}`,
+                name: prof.name,
+                avatar: prof.avatar || { type: 'color', value: prof.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
+              });
             }
           });
+        });
+
+        if (!snap.empty) {
+          const cloudPresets = snap.docs.map(d => ({ ...d.data() as ProfilePreset, id: d.id }));
+          const unique = deduplicatePresets([...cloudPresets, ...platProfiles]);
+
           setProfilePresets(unique);
+          profilePresetsRef.current = unique;
           safeSetItem(`hub_user_${user.uid}_profile_presets`, JSON.stringify(unique));
         } else {
-          DEFAULT_PROFILE_PRESETS.forEach(p => fbSet('profilePresets', p.id, p));
-          setProfilePresets(DEFAULT_PROFILE_PRESETS);
+          const savedPresets = safeGetItem(`hub_user_${user.uid}_profile_presets`);
+          const localPresets = safeParse(savedPresets, null);
+          const baseList = (Array.isArray(localPresets) && localPresets.length > 0)
+            ? localPresets
+            : [...DEFAULT_PROFILE_PRESETS];
+
+          const initialPresets = deduplicatePresets([...baseList, ...platProfiles]);
+
+          initialPresets.forEach(p => fbSet('profilePresets', p.id, p));
+          setProfilePresets(initialPresets);
+          profilePresetsRef.current = initialPresets;
+          safeSetItem(`hub_user_${user.uid}_profile_presets`, JSON.stringify(initialPresets));
         }
       }, (err) => {
         handleFirestoreError(err, OperationType.GET, `users/${user.uid}/profilePresets`);
@@ -738,21 +816,43 @@ export function useStorage() {
       return next;
     });
     fbSet('platforms', newPlat.id, newPlat);
+
+    // Sync any custom profiles in the new platform into profilePresets
+    if (newPlat.profiles && newPlat.profiles.length > 0) {
+      let updatedPresets = [...profilePresetsRef.current];
+      let changed = false;
+      newPlat.profiles.forEach(prof => {
+        if (prof.name && !updatedPresets.some(p => p.name.trim().toLowerCase() === prof.name.trim().toLowerCase())) {
+          const newPreset: ProfilePreset = {
+            id: `preset-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            name: prof.name,
+            avatar: prof.avatar || { type: 'color', value: prof.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
+          };
+          updatedPresets.push(newPreset);
+          fbSet('profilePresets', newPreset.id, newPreset);
+          changed = true;
+        }
+      });
+      if (changed) {
+        setProfilePresets(updatedPresets);
+        profilePresetsRef.current = updatedPresets;
+      }
+    }
+
     return newPlat;
   }, [fbSet, user?.uid]);
 
   const updatePlatform = useCallback((id: string, updated: Partial<Platform>) => {
-    const currentPlatforms = platformsRef.current;
-    const plat = currentPlatforms.find(p => p.id === id);
-    if (!plat) return;
-
-    const newPlat = { ...plat, ...updated };
     setPlatforms((prev) => {
+      const plat = prev.find(p => p.id === id);
+      if (!plat) return prev;
+
+      const newPlat = { ...plat, ...updated };
       const next = prev.map((p) => (p.id === id ? newPlat : p));
       platformsRef.current = next;
+      fbSet('platforms', id, newPlat);
       return next;
     });
-    fbSet('platforms', id, newPlat);
   }, [fbSet]);
 
   const deletePlatform = useCallback((id: string) => {
@@ -769,54 +869,75 @@ export function useStorage() {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newProfile: Profile = { ...profile, id: `prof-${Date.now()}-${randomSuffix}` };
     
-    const currentPlatforms = platformsRef.current;
-    const plat = currentPlatforms.find(p => p.id === platformId);
-    if (!plat) return newProfile;
-
-    const newPlat = { ...plat, profiles: [...(plat.profiles || []), newProfile] };
     setPlatforms((prev) => {
+      const plat = prev.find(p => p.id === platformId);
+      if (!plat) return prev;
+
+      const newPlat = { ...plat, profiles: [...(plat.profiles || []), newProfile] };
       const next = prev.map((p) => (p.id === platformId ? newPlat : p));
       platformsRef.current = next;
+      fbSet('platforms', platformId, newPlat);
       return next;
     });
-    fbSet('platforms', platformId, newPlat);
+
+    // Automatically sync profile name to profilePresets if not already present
+    if (profile.name && !profilePresetsRef.current.some(p => p.name.trim().toLowerCase() === profile.name.trim().toLowerCase())) {
+      const newPreset: ProfilePreset = {
+        id: `preset-${Date.now()}-${randomSuffix}`,
+        name: profile.name,
+        avatar: profile.avatar || { type: 'color', value: profile.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
+      };
+      const updatedPresets = [...profilePresetsRef.current, newPreset];
+      setProfilePresets(updatedPresets);
+      profilePresetsRef.current = updatedPresets;
+      fbSet('profilePresets', newPreset.id, newPreset);
+    }
     
     return newProfile;
   }, [fbSet]);
 
   const updateProfile = useCallback((platformId: string, profileId: string, updated: Partial<Profile>) => {
-    const currentPlatforms = platformsRef.current;
-    const plat = currentPlatforms.find(p => p.id === platformId);
-    if (!plat) return;
-
-    const newProfiles = (plat.profiles || []).map((prof) => 
-      prof.id === profileId ? { ...prof, ...updated } : prof
-    );
-    const newPlat = { ...plat, profiles: newProfiles };
-    
     setPlatforms((prev) => {
+      const plat = prev.find(p => p.id === platformId);
+      if (!plat) return prev;
+
+      const newProfiles = (plat.profiles || []).map((prof) => 
+        prof.id === profileId ? { ...prof, ...updated } : prof
+      );
+      const newPlat = { ...plat, profiles: newProfiles };
       const next = prev.map((p) => (p.id === platformId ? newPlat : p));
       platformsRef.current = next;
+      fbSet('platforms', platformId, newPlat);
       return next;
     });
-    fbSet('platforms', platformId, newPlat);
+
+    if (updated.name && !profilePresetsRef.current.some(p => p.name.trim().toLowerCase() === updated.name!.trim().toLowerCase())) {
+      const newPreset: ProfilePreset = {
+        id: `preset-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        name: updated.name,
+        avatar: updated.avatar || { type: 'color', value: updated.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
+      };
+      const updatedPresets = [...profilePresetsRef.current, newPreset];
+      setProfilePresets(updatedPresets);
+      profilePresetsRef.current = updatedPresets;
+      fbSet('profilePresets', newPreset.id, newPreset);
+    }
   }, [fbSet]);
 
   const deleteProfile = useCallback((platformId: string, profileId: string) => {
-    const currentPlatforms = platformsRef.current;
-    const plat = currentPlatforms.find(p => p.id === platformId);
-    if (!plat) return;
-
-    const newProfiles = (plat.profiles || []).filter((prof) => prof.id !== profileId);
-    const newPurchases = (plat.purchases || []).filter((pur) => pur.profileId !== profileId);
-    const newPlat = { ...plat, profiles: newProfiles, purchases: newPurchases };
-
     setPlatforms((prev) => {
+      const plat = prev.find(p => p.id === platformId);
+      if (!plat) return prev;
+
+      const newProfiles = (plat.profiles || []).filter((prof) => prof.id !== profileId);
+      const newPurchases = (plat.purchases || []).filter((pur) => pur.profileId !== profileId);
+      const newPlat = { ...plat, profiles: newProfiles, purchases: newPurchases };
+
       const next = prev.map((p) => (p.id === platformId ? newPlat : p));
       platformsRef.current = next;
+      fbSet('platforms', platformId, newPlat);
       return next;
     });
-    fbSet('platforms', platformId, newPlat);
   }, [fbSet]);
 
   // Purchase CRUD
@@ -842,59 +963,56 @@ export function useStorage() {
     const randomSuffix = Math.random().toString(36).substring(2, 9);
     const newPurchase: Purchase = { ...purchase, id: `pur-${Date.now()}-${randomSuffix}`, date: purchase.date || new Date().toISOString() };
     
-    const currentPlatforms = platformsRef.current;
-    const plat = currentPlatforms.find(p => p.id === platformId);
-    if (!plat) return newPurchase;
-
-    const newPlat = { ...plat, purchases: [...(plat.purchases || []), newPurchase] };
     setPlatforms((prev) => {
+      const plat = prev.find(p => p.id === platformId);
+      if (!plat) return prev;
+
+      const newPlat = { ...plat, purchases: [...(plat.purchases || []), newPurchase] };
       const next = prev.map((p) => (p.id === platformId ? newPlat : p));
       platformsRef.current = next;
+      fbSet('platforms', platformId, newPlat);
       return next;
     });
-    fbSet('platforms', platformId, newPlat);
     
     return newPurchase;
   }, [fbSet, validatePurchaseData]);
 
   const updatePurchase = useCallback((platformId: string, purchaseId: string, updated: Partial<Purchase>) => {
-    const currentPlatforms = platformsRef.current;
-    const plat = currentPlatforms.find(p => p.id === platformId);
-    if (!plat) return;
-
-    const existingPur = plat.purchases.find(p => p.id === purchaseId);
-    if (existingPur) {
-      const mergedName = updated.productName !== undefined ? updated.productName : existingPur.productName;
-      const mergedOriginal = updated.originalPrice !== undefined ? updated.originalPrice : existingPur.originalPrice;
-      const mergedFinal = updated.finalPrice !== undefined ? updated.finalPrice : existingPur.finalPrice;
-      validatePurchaseData(mergedName, mergedOriginal, mergedFinal);
-    }
-    
-    const newPurchases = (plat.purchases || []).map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
-    const newPlat = { ...plat, purchases: newPurchases };
-
     setPlatforms((prev) => {
+      const plat = prev.find(p => p.id === platformId);
+      if (!plat) return prev;
+
+      const existingPur = (plat.purchases || []).find(p => p.id === purchaseId);
+      if (existingPur) {
+        const mergedName = updated.productName !== undefined ? updated.productName : existingPur.productName;
+        const mergedOriginal = updated.originalPrice !== undefined ? updated.originalPrice : existingPur.originalPrice;
+        const mergedFinal = updated.finalPrice !== undefined ? updated.finalPrice : existingPur.finalPrice;
+        validatePurchaseData(mergedName, mergedOriginal, mergedFinal);
+      }
+      
+      const newPurchases = (plat.purchases || []).map((pur) => pur.id === purchaseId ? { ...pur, ...updated } : pur);
+      const newPlat = { ...plat, purchases: newPurchases };
+
       const next = prev.map((p) => (p.id === platformId ? newPlat : p));
       platformsRef.current = next;
+      fbSet('platforms', platformId, newPlat);
       return next;
     });
-    fbSet('platforms', platformId, newPlat);
   }, [fbSet, validatePurchaseData]);
 
   const deletePurchase = useCallback((platformId: string, purchaseId: string) => {
-    const currentPlatforms = platformsRef.current;
-    const plat = currentPlatforms.find(p => p.id === platformId);
-    if (!plat) return;
-
-    const newPurchases = (plat.purchases || []).filter((pur) => pur.id !== purchaseId);
-    const newPlat = { ...plat, purchases: newPurchases };
-
     setPlatforms((prev) => {
+      const plat = prev.find(p => p.id === platformId);
+      if (!plat) return prev;
+
+      const newPurchases = (plat.purchases || []).filter((pur) => pur.id !== purchaseId);
+      const newPlat = { ...plat, purchases: newPurchases };
+
       const next = prev.map((p) => (p.id === platformId ? newPlat : p));
       platformsRef.current = next;
+      fbSet('platforms', platformId, newPlat);
       return next;
     });
-    fbSet('platforms', platformId, newPlat);
   }, [fbSet]);
 
   // Status CRUD
@@ -989,6 +1107,12 @@ export function useStorage() {
     
     setProfilePresets(newPresets);
     profilePresetsRef.current = newPresets;
+
+    if (user?.uid) {
+      safeSetItem(`hub_user_${user.uid}_profile_presets`, JSON.stringify(newPresets));
+    } else {
+      safeSetItem('hub_profile_presets', JSON.stringify(newPresets));
+    }
     
     for (const p of newPresets) {
       await fbSet('profilePresets', p.id, p);
@@ -996,7 +1120,7 @@ export function useStorage() {
     for (const p of deleted) {
       await fbDelete('profilePresets', p.id);
     }
-  }, [fbSet, fbDelete]);
+  }, [fbSet, fbDelete, user]);
 
   const importData = useCallback(async (data: any) => {
     if (!user) return;

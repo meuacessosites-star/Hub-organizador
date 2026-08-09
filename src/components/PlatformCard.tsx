@@ -35,7 +35,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { getInitials, getPlatformColor, getDomainFromInput, getLogoUrl } from '../utils/logoHelper';
-import { SmartImage } from './SmartImage';
+import { SmartImage, preloadImages } from './SmartImage';
 
 const formatImageUrl = (url: string) => {
   if (!url) return '';
@@ -275,7 +275,25 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     setUseGoogleFallback(false);
     setShowDeleteConfirm(false);
     setDeletingProfileId(null);
-  }, [platform.logoUrl, platform.name, platform.url]);
+
+    // Preload logo, profile avatars, and purchase images
+    const imagesToPreload: string[] = [];
+    if (platform.logoUrl) imagesToPreload.push(platform.logoUrl);
+    (platform.profiles || []).forEach((p) => {
+      if (p.avatar?.type === 'image' && p.avatar.value) {
+        imagesToPreload.push(p.avatar.value);
+      }
+    });
+    (platform.purchases || []).forEach((p) => {
+      if (p.image) imagesToPreload.push(p.image);
+      if (p.images && Array.isArray(p.images)) {
+        p.images.forEach((img) => {
+          if (img) imagesToPreload.push(img);
+        });
+      }
+    });
+    preloadImages(imagesToPreload);
+  }, [platform.logoUrl, platform.name, platform.url, platform.profiles, platform.purchases]);
 
   // Auto-expand any profiles matching the search query
   React.useEffect(() => {

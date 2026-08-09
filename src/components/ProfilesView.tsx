@@ -8,12 +8,12 @@ import { ProfilePreset, ProfileAvatar } from '../types';
 import { 
   User, Mail, Lock, Eye, EyeOff, Link, AlignLeft, 
   Trash2, Bookmark, Pencil, Upload, GripVertical, 
-  Square, CheckSquare, Plus, ArrowUp, ArrowDown, Search, Check, Copy
+  Square, CheckSquare, Plus, ArrowUp, ArrowDown, Search, Check, Copy, Palette
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { resizeImage } from '../utils/imageHelper';
-import { SmartImage } from './SmartImage';
+import { SmartImage, preloadImages } from './SmartImage';
 
 interface ProfilesViewProps {
   profilePresets: ProfilePreset[];
@@ -65,6 +65,17 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({
   const { addToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<ProfilePreset | null>(null);
+
+  // Preload image avatars for profile presets
+  useEffect(() => {
+    const avatarImages: string[] = [];
+    (profilePresets || []).forEach((p) => {
+      if (p.avatar?.type === 'image' && p.avatar.value) {
+        avatarImages.push(p.avatar.value);
+      }
+    });
+    preloadImages(avatarImages);
+  }, [profilePresets]);
   
   // Form states
   const [isNewMode, setIsNewMode] = useState(false);
@@ -82,6 +93,11 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({
   const [selectedEmoji, setSelectedEmoji] = useState('👤');
   const [imageUrl, setImageUrl] = useState('');
   const [avatarZoom, setAvatarZoom] = useState(1);
+  const [zoomInput, setZoomInput] = useState('100');
+
+  useEffect(() => {
+    setZoomInput(String(Math.round(avatarZoom * 100)));
+  }, [avatarZoom]);
 
   // Email auto suggestions
   const [showEmailSuggestions, setShowEmailSuggestions] = useState(false);
@@ -396,7 +412,7 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({
 
             return (
               <div
-                key={preset.id}
+                key={`pv-preset-${preset.id}-${idx}`}
                 onClick={() => {
                   if (isBulkDeleteMode) {
                     handleToggleSelectPreset(preset.id);
@@ -873,25 +889,105 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({
                       </div>
                     </div>
 
+                    {/* Image Avatar Background Color */}
+                    <div className="flex flex-col gap-1.5 mt-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/50">
+                      <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">Cor de Fundo da Imagem</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-7 h-7 rounded-full border border-neutral-200 dark:border-neutral-700 shrink-0 shadow-sm transition-transform flex items-center justify-center text-white relative overflow-hidden"
+                          style={{ backgroundColor: selectedColor }}
+                          title="Cor atual de fundo"
+                        >
+                          <Palette className="w-3.5 h-3.5" />
+                        </div>
+                        <input
+                          type="color"
+                          value={selectedColor.startsWith('#') && selectedColor.length === 7 ? selectedColor : '#6366f1'}
+                          onChange={(e) => setSelectedColor(e.target.value)}
+                          className="w-7 h-7 rounded-md cursor-pointer border border-neutral-200 dark:border-neutral-700 bg-transparent p-0.5 shrink-0"
+                          title="Abrir seletor de cores"
+                        />
+                        <input
+                          type="text"
+                          value={selectedColor}
+                          onChange={(e) => setSelectedColor(e.target.value)}
+                          placeholder="#6366f1"
+                          className="w-20 h-7 px-2 rounded text-xs font-mono bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
+                          title="Digite o código HEX da cor (ex: #6366F1)"
+                        />
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          {PRESET_COLORS.map((c) => (
+                            <button
+                              key={`pv-img-bg-${c}`}
+                              type="button"
+                              onClick={() => setSelectedColor(c)}
+                              className={`w-5 h-5 rounded-full border border-neutral-200/40 cursor-pointer shadow-sm transition-transform hover:scale-110 ${
+                                selectedColor === c ? 'ring-2 ring-indigo-500 scale-105' : ''
+                              }`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
                     {imageUrl && (
-                      <div className="flex flex-col gap-1.5 mt-1">
+                      <div className="flex flex-col gap-1.5 mt-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/50">
                         <div className="flex items-center justify-between text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">
-                          <span>Zoom da Imagem: {Math.round(avatarZoom * 100)}%</span>
-                          <button 
-                            type="button"
-                            onClick={() => setAvatarZoom(1)}
-                            className="text-[9px] text-indigo-500 hover:underline cursor-pointer"
-                          >
-                            Resetar
-                          </button>
+                          <span>Zoom da Imagem</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1 bg-white dark:bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700">
+                              <input
+                                type="number"
+                                min="10"
+                                max="500"
+                                value={zoomInput}
+                                onChange={(e) => {
+                                  const str = e.target.value;
+                                  setZoomInput(str);
+                                  const val = parseInt(str);
+                                  if (!isNaN(val) && val >= 10 && val <= 500) {
+                                    setAvatarZoom(val / 100);
+                                  }
+                                }}
+                                onBlur={() => {
+                                  const val = parseInt(zoomInput);
+                                  if (zoomInput === '' || isNaN(val)) {
+                                    setZoomInput(String(Math.round(avatarZoom * 100)));
+                                  } else {
+                                    const clamped = Math.max(10, Math.min(500, val));
+                                    setZoomInput(String(clamped));
+                                    setAvatarZoom(clamped / 100);
+                                  }
+                                }}
+                                className="w-10 text-center text-xs font-mono bg-transparent text-neutral-800 dark:text-neutral-200 focus:outline-none"
+                                title="Digite o zoom de 10% a 500%"
+                              />
+                              <span className="text-[10px] text-neutral-500 font-mono">%</span>
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setAvatarZoom(1);
+                                setZoomInput('100');
+                              }}
+                              className="text-[9px] text-indigo-500 hover:underline cursor-pointer"
+                            >
+                              Resetar
+                            </button>
+                          </div>
                         </div>
                         <input
                           type="range"
-                          min="0.5"
-                          max="2.5"
-                          step="0.05"
+                          min="0.1"
+                          max="3"
+                          step="0.01"
                           value={avatarZoom}
-                          onChange={(e) => setAvatarZoom(parseFloat(e.target.value))}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            setAvatarZoom(val);
+                            setZoomInput(String(Math.round(val * 100)));
+                          }}
                           className="w-full h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer dark:bg-neutral-700 accent-indigo-600"
                         />
                       </div>

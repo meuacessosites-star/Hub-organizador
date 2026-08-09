@@ -519,6 +519,8 @@ async function startServer() {
     return null;
   }
 
+  const proxiedImageCache = new Map<string, { buffer: Buffer; contentType: string; timestamp: number }>();
+
   apiRouter.get("/proxy-image", async (req, res) => {
     try {
       const imageUrl = req.query.url;
@@ -533,6 +535,14 @@ async function startServer() {
       }
       if (targetUrl.startsWith('http://')) {
         targetUrl = targetUrl.replace(/^http:\/\//i, 'https://');
+      }
+
+      // Check server-side memory cache first for lightning fast responses (<2ms)
+      const cached = proxiedImageCache.get(targetUrl);
+      if (cached && (Date.now() - cached.timestamp < 7 * 24 * 60 * 60 * 1000)) {
+        res.setHeader('Content-Type', cached.contentType);
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.send(cached.buffer);
       }
 
       const referer = getRefererForUrl(targetUrl);
@@ -589,9 +599,18 @@ async function startServer() {
       if (response && response.ok) {
         const contentType = response.headers.get('content-type') || 'image/jpeg';
         res.setHeader('Content-Type', contentType);
-        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         const arrayBuffer = await response.arrayBuffer();
-        return res.send(Buffer.from(arrayBuffer));
+        const buffer = Buffer.from(arrayBuffer);
+        
+        // Cache in memory
+        proxiedImageCache.set(targetUrl, { buffer, contentType, timestamp: Date.now() });
+        if (proxiedImageCache.size > 500) {
+          const firstKey = proxiedImageCache.keys().next().value;
+          if (firstKey) proxiedImageCache.delete(firstKey);
+        }
+
+        return res.send(buffer);
       }
 
       try {
@@ -600,9 +619,18 @@ async function startServer() {
         if (corsResp.ok) {
           const contentType = corsResp.headers.get('content-type') || 'image/jpeg';
           res.setHeader('Content-Type', contentType);
-          res.setHeader('Cache-Control', 'public, max-age=86400');
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
           const arrayBuffer = await corsResp.arrayBuffer();
-          return res.send(Buffer.from(arrayBuffer));
+          const buffer = Buffer.from(arrayBuffer);
+
+          // Cache in memory
+          proxiedImageCache.set(targetUrl, { buffer, contentType, timestamp: Date.now() });
+          if (proxiedImageCache.size > 500) {
+            const firstKey = proxiedImageCache.keys().next().value;
+            if (firstKey) proxiedImageCache.delete(firstKey);
+          }
+
+          return res.send(buffer);
         }
       } catch (e) {}
 

@@ -71,7 +71,7 @@ export default function App() {
 
   const [selectedCategory, setSelectedCategory] = useState('todas');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'platforms' | 'purchases' | 'profiles'>('platforms');
+  const [currentView, setCurrentView] = useState<'platforms' | 'purchases'>('platforms');
 
   useEffect(() => {
     setDemoActive(isTutorialActive);
@@ -101,7 +101,12 @@ export default function App() {
   }, []);
 
   const handleOpenManageProfiles = useCallback(() => {
-    setCurrentView('profiles');
+    setProfileModal({
+      isOpen: true,
+      platformId: null,
+      profile: null,
+      openPresetsManager: true,
+    });
   }, []);
 
   const handleOpenSidebarMobile = useCallback(() => {
@@ -532,22 +537,6 @@ export default function App() {
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>Compras</span>
               </button>
-              <button
-                id="view-selector-profiles"
-                data-testid="view-selector-profiles"
-                role="tab"
-                aria-selected={currentView === 'profiles'}
-                aria-label="Ver Perfis"
-                onClick={() => setCurrentView('profiles')}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
-                  currentView === 'profiles'
-                    ? 'bg-white dark:bg-[#141414] text-indigo-600 dark:text-indigo-400 shadow-md dark:shadow-[0_0_20px_rgba(79,70,229,0.15)] border border-neutral-200 dark:border-white/10'
-                    : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>Perfis</span>
-              </button>
             </div>
 
             <AnimatePresence mode="wait">
@@ -705,7 +694,7 @@ export default function App() {
                     )}
                   </AnimatePresence>
                 </motion.div>
-              ) : currentView === 'purchases' ? (
+              ) : (
                 <motion.div
                   key="purchases-view"
                   initial={{ opacity: 0, y: 10 }}
@@ -724,22 +713,6 @@ export default function App() {
                     highlightedPurchaseId={highlightedPurchaseId}
                     onClearHighlight={handleClearHighlight}
                     onDeletePurchase={deletePurchase}
-                  />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="profiles-view"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  <ProfilesView
-                    profilePresets={profilePresets}
-                    onAddPreset={addProfilePreset}
-                    onUpdatePreset={updateProfilePreset}
-                    onDeletePreset={deleteProfilePreset}
-                    onReorderPresets={reorderProfilePresets}
                   />
                 </motion.div>
               )}
@@ -799,7 +772,7 @@ export default function App() {
               onDelete={handleDeleteProfile}
               startInEditMode={profileModal.startInEditMode}
               openPresetsManager={profileModal.openPresetsManager}
-              onManageProfiles={() => setCurrentView('profiles')}
+              onManageProfiles={handleOpenManageProfiles}
             />
           )}
 

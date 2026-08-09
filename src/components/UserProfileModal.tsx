@@ -91,7 +91,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onSignOut,
   onStartTutorial,
 }) => {
-  const { userProfile, isGuest, linkPasswordToAccount } = useAuth();
+  const { userProfile, isGuest, linkPasswordToAccount, updateUserProfileLocally } = useAuth();
   const { 
     clearAllData, 
     platforms, 
@@ -447,6 +447,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         }
       };
 
+      // Immediately reflect changes in app state
+      updateUserProfileLocally(newProfile);
+
       if (!isGuest) {
         if (displayName !== user.displayName) {
           await firebaseUpdateProfile(user, { displayName });
@@ -720,16 +723,25 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       )}
 
                       {/* Unified Color Input */}
-                      <div className="flex items-center gap-3 w-full max-w-xs justify-center mx-auto">
+                      <div className="flex items-center gap-2 w-full max-w-xs justify-center mx-auto">
                         <button
                           type="button"
                           onClick={() => setShowColorWheel(!showColorWheel)}
-                          className="w-10 h-10 rounded-xl border border-neutral-300 shadow-md flex items-center justify-center text-xs text-white dark:border-[#25283a]/80 shrink-0 hover:scale-105 active:scale-95 transition-all cursor-pointer relative group"
+                          className={`w-10 h-10 rounded-xl border border-neutral-300 shadow-md flex items-center justify-center text-xs text-white dark:border-[#25283a]/80 shrink-0 hover:scale-105 active:scale-95 transition-all cursor-pointer relative group ${
+                            showColorWheel ? 'ring-2 ring-indigo-500' : ''
+                          }`}
                           style={{ backgroundColor: selectedColor }}
-                          title="Abrir/Fechar roda de cores"
+                          title={showColorWheel ? "Fechar seletor de cores" : "Abrir seletor de cores"}
                         >
                           <Palette className="w-4.5 h-4.5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] opacity-80 group-hover:opacity-100 transition-opacity" />
                         </button>
+                        <input
+                          type="color"
+                          value={selectedColor.startsWith('#') && selectedColor.length === 7 ? selectedColor : '#6366f1'}
+                          onChange={(e) => setSelectedColor(e.target.value)}
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-neutral-300 dark:border-[#25283a]/80 bg-neutral-100 dark:bg-[#1a1b26] p-1 shrink-0"
+                          title="Seletor nativo do sistema"
+                        />
                         <input
                           type="text"
                           value={selectedColor}
@@ -857,7 +869,53 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       </label>
 
                       {imageUrl && (
-                        <div className="w-full flex flex-col gap-2 pt-2 border-t border-neutral-200/50 dark:border-neutral-800/40">
+                        <div className="w-full flex flex-col gap-3 pt-2 border-t border-neutral-200/50 dark:border-neutral-800/40">
+                          {/* Background color customization for image avatar */}
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Cor de fundo da imagem</span>
+                            <div className="flex items-center gap-2 justify-center">
+                              <button
+                                type="button"
+                                onClick={() => setShowColorWheel(!showColorWheel)}
+                                className={`w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm border border-neutral-200 dark:border-neutral-700 transition-all active:scale-95 cursor-pointer ${
+                                  showColorWheel ? 'ring-2 ring-indigo-500 scale-105' : ''
+                                }`}
+                                style={{ backgroundColor: selectedColor }}
+                                title={showColorWheel ? "Fechar seletor de cores" : "Abrir seletor de cores"}
+                              >
+                                <Palette className="w-3.5 h-3.5" />
+                              </button>
+                              <input
+                                type="color"
+                                value={selectedColor.startsWith('#') && selectedColor.length === 7 ? selectedColor : '#6366f1'}
+                                onChange={(e) => setSelectedColor(e.target.value)}
+                                className="w-7 h-7 rounded-md cursor-pointer border border-neutral-200 dark:border-neutral-700 bg-transparent p-0.5 shrink-0"
+                                title="Seletor nativo do sistema"
+                              />
+                              <input
+                                type="text"
+                                value={selectedColor}
+                                onChange={(e) => setSelectedColor(e.target.value)}
+                                placeholder="#6366f1"
+                                className="w-20 h-7 px-2 rounded-lg text-xs font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
+                                title="Digite o código HEX da cor (ex: #6366F1)"
+                              />
+                              <div className="flex flex-wrap gap-1.5 items-center">
+                                {PRESET_COLORS.map((c) => (
+                                  <button
+                                    key={`upm-img-bg-${c}`}
+                                    type="button"
+                                    onClick={() => setSelectedColor(c)}
+                                    className={`w-5 h-5 rounded-full border border-neutral-200/40 cursor-pointer shadow-sm transition-transform hover:scale-110 ${
+                                      selectedColor === c ? 'ring-2 ring-indigo-500 scale-105' : ''
+                                    }`}
+                                    style={{ backgroundColor: c }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
                           <div className="flex justify-between items-center px-1">
                             <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Ajustar Zoom</span>
                            <div className="flex items-center gap-1">
@@ -894,7 +952,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                           </div>
                           <input
                             type="range"
-                            min="0.2"
+                            min="0.1"
                             max="5"
                             step="0.01"
                             value={avatarZoom}

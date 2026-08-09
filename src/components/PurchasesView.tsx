@@ -29,7 +29,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { getPlatformColor, getInitials, getDomainFromInput, getLogoUrl } from '../utils/logoHelper';
-import { SmartImage } from './SmartImage';
+import { SmartImage, preloadImages } from './SmartImage';
 import { CategoryChartPanel } from './CategoryChartPanel';
 import { useToast } from '../context/ToastContext';
 
@@ -434,6 +434,21 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
     });
     return list;
   }, [platforms]);
+
+  // Preload purchase images into browser/memory cache for instant rendering
+  React.useEffect(() => {
+    const imgs: string[] = [];
+    allPurchases.forEach((p) => {
+      if (p.image) imgs.push(p.image);
+      if (p.images && Array.isArray(p.images)) {
+        p.images.forEach((img) => {
+          if (img) imgs.push(img);
+        });
+      }
+      if (p.platformLogo) imgs.push(p.platformLogo);
+    });
+    preloadImages(imgs);
+  }, [allPurchases]);
 
   // Unique Tags
   const allTags = useMemo(() => {

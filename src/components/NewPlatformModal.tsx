@@ -666,11 +666,11 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-0.5">
-                    {profilePresets.map((preset) => {
+                    {profilePresets.map((preset, idx) => {
                       const isSel = profileName === preset.name;
                       return (
                         <button
-                          key={`preset-chip-${preset.id}`}
+                          key={`preset-chip-${preset.id}-${idx}`}
                           type="button"
                           onClick={() => {
                             setProfileName(preset.name);
