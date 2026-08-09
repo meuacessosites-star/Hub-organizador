@@ -1,3 +1,5 @@
+import { getGeneratedPlaceholderLogo } from './logoHelper';
+
 export const formatImageUrl = (url?: string | null): string => {
   if (!url) return '';
   const trimmed = url.trim();
@@ -45,7 +47,11 @@ export const formatImageUrl = (url?: string | null): string => {
     rawUrl.includes('google.com') ||
     rawUrl.includes('ggpht.com') ||
     rawUrl.includes('gravatar.com') ||
-    rawUrl.includes('githubusercontent.com')
+    rawUrl.includes('githubusercontent.com') ||
+    rawUrl.includes('t3.gstatic.com') ||
+    rawUrl.includes('logo.clearbit.com') ||
+    rawUrl.includes('simpleicons.org') ||
+    rawUrl.includes('unavatar.io')
   ) {
     return rawUrl;
   }
@@ -77,16 +83,82 @@ export const getNextFallbackUrl = (currentSrc: string, originalUrl?: string): st
     raw = decodeURIComponent(currentSrc.split('corsproxy.io/?')[1] || '');
   }
 
-  // If Clearbit logo fails, immediately transition to Google Favicon as the next main fallback
+  // 1. If vectorlogo or iconfinder fails, transition to Clearbit or Unavatar
+  if (raw.includes('vectorlogo.zone') || raw.includes('iconfinder.com')) {
+    try {
+      if (raw.includes('aliexpress')) {
+        return `https://unavatar.io/aliexpress.com?fallback=false`;
+      }
+      const parts = raw.split('logos/');
+      const slug = parts[1]?.split('/')[0];
+      if (slug) {
+        return `https://logo.clearbit.com/${slug}.com`;
+      }
+    } catch (e) {}
+  }
+
+  // 2. If Simple Icons fails, transition to Clearbit or Unavatar
+  if (raw.includes('simpleicons.org')) {
+    try {
+      const parts = raw.split('simpleicons.org/');
+      const slug = parts[1]?.split('?')[0]?.split('/')[0];
+      if (slug) {
+        return `https://unavatar.io/${slug}.com?fallback=false`;
+      }
+    } catch (e) {}
+  }
+
+  // 2. If Google s2 favicons API fails, transition to Unavatar
+  if (raw.includes('s2/favicons')) {
+    try {
+      const urlObj = new URL(raw);
+      const domain = urlObj.searchParams.get('domain');
+      if (domain) {
+        return `https://unavatar.io/${domain}?fallback=false`;
+      }
+    } catch (e) {}
+  }
+
+  // 2. If Unavatar fails, transition to Clearbit
+  if (raw.includes('unavatar.io')) {
+    try {
+      const parts = raw.split('unavatar.io/');
+      const domain = parts[1]?.split('?')[0];
+      if (domain) {
+        return `https://logo.clearbit.com/${domain}`;
+      }
+    } catch (e) {}
+  }
+
+  // 3. If Clearbit logo fails, transition to DuckDuckGo Favicon API
   if (raw.includes('logo.clearbit.com')) {
     try {
       const parts = raw.split('logo.clearbit.com/');
       const domain = parts[1]?.split('?')[0];
       if (domain && domain.includes('.')) {
-        return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
+        return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
       }
+    } catch (e) {}
+  }
+
+  // 4. If DuckDuckGo fails, transition to Google Favicon V2
+  if (raw.includes('duckduckgo.com')) {
+    try {
+      const parts = raw.split('ip3/');
+      const domain = parts[1]?.replace('.ico', '')?.split('?')[0];
+      if (domain) {
+        return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=404&url=https://${domain}&size=128`;
+      }
+    } catch (e) {}
+  }
+
+  // 5. If Google Favicon V2 fails, transition to generated SVG placeholder
+  if (raw.includes('faviconV2')) {
+    try {
+      const domain = (new URL(raw).searchParams.get('url') || '').replace(/^https?:\/\//, '').split('/')[0];
+      return getGeneratedPlaceholderLogo(domain);
     } catch (e) {
-      // ignore
+      return getGeneratedPlaceholderLogo(originalUrl || '');
     }
   }
 
@@ -113,6 +185,17 @@ export const getNextFallbackUrl = (currentSrc: string, originalUrl?: string): st
 
   if (originalUrl && originalUrl !== currentSrc && originalUrl.startsWith('http') && !originalUrl.includes('wsrv.nl')) {
     return originalUrl;
+  }
+
+  // Final fallback for logo requests: crisp generated SVG placeholder
+  if (
+    raw.includes('s2/favicons') ||
+    raw.includes('unavatar.io') ||
+    raw.includes('logo.clearbit.com') ||
+    raw.includes('simpleicons.org') ||
+    raw.includes('faviconV2')
+  ) {
+    return getGeneratedPlaceholderLogo(originalUrl || raw);
   }
 
   return null;

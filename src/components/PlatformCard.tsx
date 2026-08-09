@@ -336,7 +336,22 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     }
   }, [activeMatchProfileId, platform.profiles]);
 
-  const currentLogoUrl = platform.logoUrl || getLogoUrl(platform.name, platform.url, useGoogleFallback ? 1 : 0);
+  const isSystemGeneratedLogo = (url?: string | null): boolean => {
+    if (!url) return true;
+    return (
+      url.includes('logo.clearbit.com') ||
+      url.includes('t3.gstatic.com/favicon') ||
+      url.includes('s2/favicons') ||
+      url.includes('simpleicons.org') ||
+      url.includes('unavatar.io') ||
+      url.includes('vectorlogo.zone') ||
+      url.includes('iconfinder.com')
+    );
+  };
+
+  const currentLogoUrl = !platform.logoUrl || isSystemGeneratedLogo(platform.logoUrl)
+    ? getLogoUrl(platform.name, platform.url, useGoogleFallback ? 1 : 0)
+    : platform.logoUrl;
 
   const handleLogoError = () => {
     if (!useGoogleFallback && !currentLogoUrl.startsWith('data:')) {
@@ -396,18 +411,21 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
           )}
 
           {/* Logo container - Standardized App Icon Style (Squircle) */}
-          <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-sm dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
+          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-xs dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] border border-neutral-200 dark:border-white/10 group-hover:scale-105 transition-all duration-500">
             {currentLogoUrl && !imageError ? (
               <SmartImage
                 src={currentLogoUrl}
                 alt={platform.name}
-                className="w-full h-full object-cover pointer-events-none transition-transform duration-700 group-hover:scale-110"
+                className="w-full h-full object-contain p-1.5 pointer-events-none transition-transform duration-700 group-hover:scale-110"
+                onError={handleLogoError}
+                fallbackIcon={
+                  <div className="w-full h-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-800/80 text-neutral-800 dark:text-neutral-100 font-extrabold text-[14px] tracking-tight">
+                    {getInitials(platform.name)}
+                  </div>
+                }
               />
             ) : (
-              <div
-                className="w-full h-full flex items-center justify-center text-white font-extrabold text-[14px] tracking-tight"
-                style={{ backgroundColor: getPlatformColor(platform.name) }}
-              >
+              <div className="w-full h-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-800/80 text-neutral-800 dark:text-neutral-100 font-extrabold text-[14px] tracking-tight">
                 {getInitials(platform.name)}
               </div>
             )}

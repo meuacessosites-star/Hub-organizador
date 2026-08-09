@@ -7,28 +7,15 @@
  * Guesses or resolves a domain based on platform name or user-input URL.
  */
 export function getDomainFromInput(name: string, url?: string): string {
-  if (url) {
-    try {
-      const cleanUrl = url.trim().toLowerCase();
-      const withHttp = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-      const parsed = new URL(withHttp);
-      const host = parsed.hostname.replace('www.', '');
-      if (host && host.includes('.')) {
-        return host;
-      }
-    } catch {
-      // Fallback to name search
-    }
-  }
-
   const normalized = name.trim().toLowerCase();
-  
+
   // Custom manual mappings for popular platforms
   const mappings: { [key: string]: string } = {
     github: 'github.com',
     nubank: 'nubank.com.br',
     netflix: 'netflix.com',
     'mercado livre': 'mercadolivre.com.br',
+    mercadolivre: 'mercadolivre.com.br',
     spotify: 'spotify.com',
     notion: 'notion.so',
     figma: 'figma.com',
@@ -53,19 +40,68 @@ export function getDomainFromInput(name: string, url?: string): string {
     santander: 'santander.com.br',
     neon: 'neon.com.br',
     xp: 'xpi.com.br',
+    shopee: 'shopee.com.br',
+    aliexpress: 'aliexpress.com',
+    shein: 'shein.com',
+    americanas: 'americanas.com.br',
+    magalu: 'magazineluiza.com.br',
+    'magazine luiza': 'magazineluiza.com.br',
+    'casas bahia': 'casasbahia.com.br',
+    facebook: 'facebook.com',
+    instagram: 'instagram.com',
+    youtube: 'youtube.com',
+    twitter: 'twitter.com',
+    x: 'twitter.com',
+    linkedin: 'linkedin.com',
+    whatsapp: 'whatsapp.com',
+    telegram: 'telegram.org',
+    tiktok: 'tiktok.com',
+    ifood: 'ifood.com.br',
+    uber: 'uber.com',
   };
 
-  if (mappings[normalized]) {
-    return mappings[normalized];
+  // 1. Check custom manual mappings first (by substring or exact match)
+  const sortedMappingKeys = Object.keys(mappings).sort((a, b) => b.length - a.length);
+  for (const key of sortedMappingKeys) {
+    if (normalized.includes(key)) {
+      return mappings[key];
+    }
   }
 
-  // Attempt to build a generic domain if the user typed something like "example.com"
+  // 2. Extract domain from URL if available, cleaning common subdomains
+  if (url) {
+    try {
+      const cleanUrl = url.trim().toLowerCase();
+      const withHttp = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+      const parsed = new URL(withHttp);
+      let host = parsed.hostname.replace('www.', '');
+
+      const ignoredSubdomains = [
+        'pt', 'br', 'es', 'en', 'm', 'login', 'app', 'play', 'mail', 
+        'admin', 'portal', 'account', 'accounts', 'security', 'my', 'web', 'mobile'
+      ];
+
+      const parts = host.split('.');
+      if (parts.length > 2) {
+        if (ignoredSubdomains.includes(parts[0])) {
+          host = parts.slice(1).join('.');
+        }
+      }
+
+      if (host && host.includes('.')) {
+        return host;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  // 3. Attempt to build a generic domain if the user typed something like "example.com"
   if (normalized.includes('.')) {
     return normalized;
   }
 
   // Fallback guess: only guess if name is at least 3 characters AND we have a URL hint
-  // If no URL is provided, we prefer initials unless it's a known brand (checked above)
   if (!url || normalized.length < 3) {
     return '';
   }
@@ -143,16 +179,143 @@ export function getPlatformNameFromUrl(url: string): string {
 }
 
 /**
- * Gets a clean, high-quality logo URL or falls back to clearbit / devicons
+ * Generates a crisp, high-resolution SVG placeholder data URI for a brand
+ */
+export function getGeneratedPlaceholderLogo(name: string, url?: string): string {
+  const cleanName = name || getPlatformNameFromUrl(url || '') || 'Site';
+  const initials = getInitials(cleanName);
+  const brandColor = getPlatformColor(cleanName);
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="56" fill="#f8fafc"/>
+  <rect width="250" height="250" x="3" y="3" rx="53" fill="none" stroke="#e2e8f0" stroke-width="4"/>
+  <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" fill="${brandColor}" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="${initials.length > 2 ? '80' : '105'}">${initials}</text>
+</svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Gets a clean, high-quality logo URL or falls back to clearbit / simpleicons / unavatar / generated placeholder
  */
 export function getLogoUrl(name: string, url?: string, attempt: number = 0): string {
   const domain = getDomainFromInput(name, url);
-  if (!domain) return '';
-  
+  if (!domain) {
+    return getGeneratedPlaceholderLogo(name, url);
+  }
+
+  const normalized = name.toLowerCase().trim();
+
+  // Simple Icons mapping for popular brands to guarantee crisp HD vector SVG logos
+  const simpleIconsSlugs: { [key: string]: string } = {
+    github: 'github',
+    netflix: 'netflix',
+    spotify: 'spotify',
+    'disney+': 'disneyplus',
+    disney: 'disneyplus',
+    'prime video': 'primevideo',
+    prime: 'primevideo',
+    youtube: 'youtube',
+    nubank: 'nubank',
+    'mercado livre': 'mercadolibre',
+    mercadolivre: 'mercadolibre',
+    'mercado pago': 'mercadopago',
+    mercadopago: 'mercadopago',
+    amazon: 'amazon',
+    shopee: 'shopee',
+    shein: 'shein',
+    facebook: 'facebook',
+    instagram: 'instagram',
+    twitter: 'twitter',
+    x: 'x',
+    linkedin: 'linkedin',
+    whatsapp: 'whatsapp',
+    telegram: 'telegram',
+    tiktok: 'tiktok',
+    uber: 'uber',
+    trello: 'trello',
+    slack: 'slack',
+    linear: 'linear',
+    notion: 'notion',
+    figma: 'figma',
+    canva: 'canva',
+    google: 'google',
+    steam: 'steam',
+    playstation: 'playstation',
+    xbox: 'xbox',
+    ifood: 'ifood',
+    rappi: 'rappi',
+    magalu: 'magazineluiza',
+    apple: 'apple',
+    inter: 'inter',
+    epic: 'epicgames',
+  };
+
+  // High-precision vector SVG for AliExpress (sacolinha) icon
+  const aliExpressSacolinhaSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <clipPath id="aliClip">
+      <rect width="512" height="512" rx="100" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#aliClip)">
+    <rect width="512" height="512" fill="#FF9A00" />
+    <path d="M 0,60 Q 256,125 512,60 L 512,512 L 0,512 Z" fill="#E62E04" />
+    <circle cx="140" cy="150" r="18" fill="#B31A00" />
+    <circle cx="372" cy="150" r="18" fill="#B31A00" />
+    <path d="M 140,150 C 140,300 372,300 372,150" fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" />
+    <g fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Arial, sans-serif" font-weight="800">
+      <text x="256" y="385" font-size="76" text-anchor="middle" letter-spacing="-2">AliExpress</text>
+    </g>
+    <path d="M 183,308 Q 183,318 193,318 Q 183,318 183,328 Q 183,318 173,318 Q 183,318 183,308 Z" fill="#FFFFFF" />
+  </g>
+</svg>`)}`;
+
+  // High quality iconic vector SVG/tile overrides for specific popular brands (e.g. AliExpress sacolinha / app tile)
+  const customBrandLogos: { [key: string]: string } = {
+    aliexpress: aliExpressSacolinhaSvg,
+    'mercado livre': 'https://www.vectorlogo.zone/logos/mercadolibre/mercadolibre-icon.svg',
+    mercadolivre: 'https://www.vectorlogo.zone/logos/mercadolibre/mercadolibre-icon.svg',
+    'mercado pago': 'https://www.vectorlogo.zone/logos/mercadopago/mercadopago-icon.svg',
+    mercadopago: 'https://www.vectorlogo.zone/logos/mercadopago/mercadopago-icon.svg',
+  };
+
+  // Check if we can use custom brand tile or Simple Icons vector SVG on the first attempt
   if (attempt === 0) {
+    for (const key of Object.keys(customBrandLogos)) {
+      if (normalized.includes(key) || domain.includes(key)) {
+        return customBrandLogos[key];
+      }
+    }
+
+    for (const key of Object.keys(simpleIconsSlugs)) {
+      if (normalized.includes(key) || domain.includes(key)) {
+        return `https://cdn.simpleicons.org/${simpleIconsSlugs[key]}`;
+      }
+    }
+    // High-res Clearbit logo for domain
     return `https://logo.clearbit.com/${domain}`;
   }
-  return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
+
+  if (attempt === 1) {
+    // 2. Unavatar (queries Twitter HD avatars, GitHub, Gravatar, Clearbit, touch icons)
+    return `https://unavatar.io/${domain}?fallback=false`;
+  }
+  if (attempt === 2) {
+    // 3. Google s2 favicons API sz=256
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
+  }
+  if (attempt === 3) {
+    // 4. DuckDuckGo Favicon API
+    return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+  }
+  if (attempt === 4) {
+    // 5. Google Favicon V2 fallback
+    return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=404&url=https://${domain}&size=256`;
+  }
+
+  // 6. Professional generated SVG placeholder
+  return getGeneratedPlaceholderLogo(name, url);
 }
 
 /**

@@ -139,7 +139,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
     }
   };
 
-  const handleImgLoad = () => {
+  const handleImgLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     if (currentSrc) LOADED_IMAGE_CACHE.add(currentSrc);
     setLoading(false);
     setError(false);
@@ -158,23 +158,25 @@ export const SmartImage: React.FC<SmartImageProps> = ({
       className={`relative overflow-hidden select-none flex items-center justify-center ${containerClassName}`}
       onClick={onClick}
     >
-      {/* Fallback View when URL fails, is empty, or while loading when fallbackIcon is provided */}
-      {fallbackIcon ? (
-        <div className="absolute inset-0 z-0 flex items-center justify-center w-full h-full rounded-inherit overflow-hidden">
-          {fallbackIcon}
-        </div>
-      ) : error || !currentSrc ? (
-        <div
-          id={id}
-          className="w-full h-full min-h-[100%] bg-neutral-100/80 dark:bg-neutral-900/60 border border-neutral-200/40 dark:border-neutral-800/50 flex flex-col items-center justify-center p-1 text-neutral-400 dark:text-neutral-500 rounded-inherit select-none overflow-hidden"
-        >
-          <ImageOff className="w-[45%] h-[45%] max-w-6 max-h-6 min-w-3 min-h-3 stroke-[1.75] text-neutral-400 dark:text-neutral-500 opacity-80" />
-          {fallbackText && (
-            <span className="mt-1 text-[10px] font-medium text-neutral-400 dark:text-neutral-500 text-center line-clamp-1">
-              {fallbackText}
-            </span>
-          )}
-        </div>
+      {/* Fallback View when URL fails or is empty */}
+      {(error || !currentSrc) ? (
+        fallbackIcon ? (
+          <div className="absolute inset-0 z-0 flex items-center justify-center w-full h-full rounded-inherit overflow-hidden">
+            {fallbackIcon}
+          </div>
+        ) : (
+          <div
+            id={id}
+            className="w-full h-full min-h-[100%] bg-neutral-100/80 dark:bg-neutral-900/60 border border-neutral-200/40 dark:border-neutral-800/50 flex flex-col items-center justify-center p-1 text-neutral-400 dark:text-neutral-500 rounded-inherit select-none overflow-hidden"
+          >
+            <ImageOff className="w-[45%] h-[45%] max-w-6 max-h-6 min-w-3 min-h-3 stroke-[1.75] text-neutral-400 dark:text-neutral-500 opacity-80" />
+            {fallbackText && (
+              <span className="mt-1 text-[10px] font-medium text-neutral-400 dark:text-neutral-500 text-center line-clamp-1">
+                {fallbackText}
+              </span>
+            )}
+          </div>
+        )
       ) : null}
 
       {/* Skeleton / Loading State if no fallbackIcon provided */}

@@ -550,7 +550,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                           <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Padrões Populares</span>
                           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-h-[135px] overflow-y-auto p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-[#2a2d40]/70 dark:bg-[#111219]/50">
                             {POPULAR_PRESETS.map((preset, idx) => {
-                              const presetLogoUrl = `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${preset.domain}&size=256`;
+                              const presetLogoUrl = getLogoUrl(preset.name, preset.domain);
                               return (
                                 <button
                                   key={`pop-preset-${preset.domain}-${idx}`}

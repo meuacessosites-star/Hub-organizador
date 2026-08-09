@@ -961,11 +961,16 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {/* Logo container - Standardized App Icon Style */}
-                        <div className="w-8 h-8 rounded-lg bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-[0_6px_12px_-4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] border border-white/10 transition-transform hover:scale-105 active:scale-95 group">
+                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-[0_6px_12px_-4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] border border-neutral-200 dark:border-white/10 transition-transform hover:scale-105 active:scale-95 group">
                           <SmartImage
                             src={getLogoUrl(purchase.platformName, purchase.platformUrl)}
                             alt={purchase.platformName}
-                            className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110"
+                            className="w-full h-full object-contain p-1 pointer-events-none transition-transform duration-500 group-hover:scale-110"
+                            fallbackIcon={
+                              <div className="w-full h-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-800/80 text-neutral-800 dark:text-neutral-100 font-extrabold text-[10px] uppercase tracking-tight">
+                                {getInitials(purchase.platformName)}
+                              </div>
+                            }
                           />
                         </div>
                         <div className="flex flex-col">
