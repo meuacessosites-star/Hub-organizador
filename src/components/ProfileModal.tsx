@@ -266,28 +266,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const rawPresets: ProfilePreset[] = [];
-
-      (profilePresets || []).forEach(p => {
-        if (p && p.name) rawPresets.push(p);
-      });
-
-      (platforms || []).forEach(plat => {
-        (plat.profiles || []).forEach(prof => {
-          if (prof.name) {
-            rawPresets.push({
-              id: `preset-plat-${prof.id || Math.random().toString(36).substring(2, 7)}`,
-              name: prof.name,
-              avatar: prof.avatar || { type: 'color', value: prof.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
-            });
-          }
-        });
-      });
-
-      const combinedPresets = deduplicatePresets(rawPresets);
+      const syncedPresets = deduplicatePresets(profilePresets || []);
+      setLocalProfilePresets(syncedPresets);
 
       if (!prevIsOpenRef.current || openPresetsManager) {
-        setLocalProfilePresets(combinedPresets);
         setSelectedPresetIds(new Set());
         setShowBulkDelete(false);
         
@@ -307,7 +289,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       }
     }
     prevIsOpenRef.current = isOpen;
-  }, [isOpen, openPresetsManager, profilePresets, platforms, editingPresetId]);
+  }, [isOpen, openPresetsManager, profilePresets, editingPresetId]);
   
   const movePresetUp = (index: number) => {
     if (index <= 0) return;
@@ -316,6 +298,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     newPresets[index] = newPresets[index - 1];
     newPresets[index - 1] = temp;
     setLocalProfilePresets(newPresets);
+    saveProfilePresets(newPresets);
   };
 
   const movePresetDown = (index: number) => {
@@ -325,6 +308,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     newPresets[index] = newPresets[index + 1];
     newPresets[index + 1] = temp;
     setLocalProfilePresets(newPresets);
+    saveProfilePresets(newPresets);
   };
   
   const getProfileNamesKey = () => user ? `hub_user_${user.uid}_profile_names` : 'hub_profile_names';
@@ -517,7 +501,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     setLocalProfilePresets(filtered);
     setSelectedPresetIds(new Set());
     setShowBulkDelete(false);
-    addToast('Presets selecionados removidos temporariamente.', 'info');
+    saveProfilePresets(filtered);
+    addToast('Perfis selecionados removidos com sucesso! ✨', 'success');
     if (editingPresetId && selectedPresetIds.has(editingPresetId)) {
       if (filtered.length > 0) {
         handleSelectPresetForEditing(filtered[0]);
@@ -1020,7 +1005,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   onReorder={setLocalProfilePresets}
                   className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1 mt-3"
                 >
-                  {localProfilePresets.map((preset, idx) => {
+                  {localProfilePresets.map((preset) => {
                     const isEditingThis = editingPresetId === preset.id;
                     const liveAvatarObj: ProfileAvatar = {
                       type: avatarTab,
@@ -1030,7 +1015,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     };
                     return (
                       <PresetReorderItem
-                        key={`preset-reorder-${preset.id}-${idx}`}
+                        key={preset.id}
                         preset={preset}
                         isEditing={isEditingThis}
                         isSelected={selectedPresetIds.has(preset.id)}
@@ -1250,9 +1235,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           )}
 
                           <div className="flex flex-wrap gap-2">
-                            {PRESET_COLORS.map((c) => (
+                            {PRESET_COLORS.map((c, idx) => (
                               <button
-                                key={c}
+                                key={`pm-col-${c}-${idx}`}
                                 type="button"
                                 onClick={() => handleColorChange(c)}
                                 className={`w-6 h-6 rounded-full border border-neutral-200/40 cursor-pointer shadow-sm transition-transform hover:scale-110 ${
@@ -1281,9 +1266,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                           </div>
 
                           <div className="grid grid-cols-10 gap-2 p-2 bg-neutral-50 dark:bg-neutral-900/40 rounded-xl border border-neutral-150 dark:border-neutral-800/50">
-                            {PRESET_EMOJIS.map((em) => (
+                            {PRESET_EMOJIS.map((em, idx) => (
                               <button
-                                key={em}
+                                key={`pm-em-${em}-${idx}`}
                                 type="button"
                                 onClick={() => handleEmojiChange(em)}
                                 className={`text-lg p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer ${
@@ -1368,9 +1353,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                                     title="Digite o código HEX da cor (ex: #6366F1)"
                                   />
                                   <div className="flex flex-wrap gap-1.5 items-center">
-                                    {PRESET_COLORS.map((c) => (
+                                    {PRESET_COLORS.map((c, idx) => (
                                       <button
-                                        key={`img-bg-${c}`}
+                                        key={`img-bg-${c}-${idx}`}
                                         type="button"
                                         onClick={() => setSelectedColor(c)}
                                         className={`w-5 h-5 rounded-full border border-neutral-200/40 cursor-pointer shadow-sm transition-transform hover:scale-110 ${
@@ -1652,7 +1637,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     onClick={() => {
                       if (onManageProfiles) {
                         onManageProfiles();
-                        onClose();
                       }
                     }}
                     className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors"
@@ -1661,7 +1645,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </button>
                 </div>
 
-                <div className="flex flex-wrap gap-2 pt-0.5 transition-all duration-300">
+                <div className="flex flex-wrap gap-2 pt-0.5 max-h-56 overflow-y-auto pr-1 transition-all duration-300">
                   {(showAllPresets ? localProfilePresets : localProfilePresets.slice(0, 8)).map((preset, idx) => {
                     const isSel = profileName === preset.name && !isCustomProfile;
                     const isHex = (val?: string) => val && /^#([0-9A-F]{3}){1,2}$/i.test(val);
@@ -1744,9 +1728,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowAllPresets(!showAllPresets)}
-                      className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors uppercase tracking-wider cursor-pointer bg-indigo-500/5 hover:bg-indigo-500/10"
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors uppercase tracking-wider cursor-pointer bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 flex items-center gap-1"
                     >
-                      {showAllPresets ? 'Ver menos' : `+${localProfilePresets.length - 8} outros`}
+                      {showAllPresets ? 'Ver menos' : `Ver mais (+${localProfilePresets.length - 8})`}
                     </button>
                   )}
                 </div>
@@ -1804,9 +1788,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     ref={emailSuggestionsRef}
                     className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#131520] border border-neutral-200 dark:border-[#2a2d40] rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-neutral-100 dark:divide-[#2a2d40]"
                   >
-                    {emailSuggestions.map((suggestion) => (
+                    {emailSuggestions.map((suggestion, idx) => (
                       <button
-                        key={suggestion}
+                        key={`email-sug-${suggestion}-${idx}`}
                         type="button"
                         onClick={() => {
                           setEmail(suggestion);
@@ -1945,45 +1929,58 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
             {openPresetsManager ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (editingPresetId === 'new_preset_creation_mode') {
-                      setEditingPresetId(localProfilePresets.length > 0 ? localProfilePresets[0].id : null);
-                      if (localProfilePresets.length > 0) {
-                        handleSelectPresetForEditing(localProfilePresets[0]);
-                      }
-                    } else {
-                      onClose();
-                    }
-                  }}
-                  className="w-full sm:w-auto px-5 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer transition-all whitespace-nowrap dark:border-[#2c2e42] dark:hover:bg-[#1a1b26] dark:text-neutral-400"
-                >
-                  {editingPresetId === 'new_preset_creation_mode' ? 'Cancelar' : 'Sair sem salvar'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (editingPresetId === 'new_preset_creation_mode') {
-                      handleSaveNewPreset();
-                    } else {
-                      saveProfilePresets(localProfilePresets);
-                      addToast('Configurações de perfis salvas com sucesso! ✨', 'success');
-                      onClose();
-                    }
-                  }}
-                  disabled={editingPresetId === 'new_preset_creation_mode' && !profileName.trim()}
-                  className="w-full sm:w-auto px-6 h-10 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
-                >
-                  {editingPresetId === 'new_preset_creation_mode' ? (
-                    <>
+                {editingPresetId && editingPresetId !== 'new_preset_creation_mode' ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleCreateNewPreset}
+                      className="w-full sm:w-auto px-4 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer transition-all whitespace-nowrap dark:border-[#2c2e42] dark:hover:bg-[#1a1b26] dark:text-neutral-400"
+                    >
+                      Cancelar edição
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="w-full sm:w-auto px-4 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer transition-all whitespace-nowrap dark:border-[#2c2e42] dark:hover:bg-[#1a1b26] dark:text-neutral-400"
+                    >
+                      Sair sem salvar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSaveExistingPreset();
+                      }}
+                      disabled={!profileName.trim()}
+                      className="w-full sm:w-auto px-6 h-10 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                    >
+                      <span>Salvar alterações</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="w-full sm:w-auto px-5 h-10 rounded-lg text-sm font-semibold border border-neutral-200 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 cursor-pointer transition-all whitespace-nowrap dark:border-[#2c2e42] dark:hover:bg-[#1a1b26] dark:text-neutral-400"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (profileName.trim()) {
+                          handleSaveNewPreset();
+                        }
+                        onClose();
+                      }}
+                      disabled={!profileName.trim()}
+                      className="w-full sm:w-auto px-6 h-10 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                    >
                       <Plus className="w-4 h-4" />
                       <span>Salvar novo</span>
-                    </>
-                  ) : (
-                    <span>Salvar</span>
-                  )}
-                </button>
+                    </button>
+                  </>
+                )}
               </>
             ) : isEditMode && !isEditingInView ? (
               /* View State Actions */

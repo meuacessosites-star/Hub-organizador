@@ -613,9 +613,9 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({
                     ref={emailSuggestionsRef}
                     className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#131520] border border-neutral-200 dark:border-[#2a2d40] rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-neutral-100 dark:divide-[#2a2d40]"
                   >
-                    {emailSuggestions.map((suggestion) => (
+                    {emailSuggestions.map((suggestion, idx) => (
                       <button
-                        key={suggestion}
+                        key={`pv-email-sug-${suggestion}-${idx}`}
                         type="button"
                         onClick={() => {
                           setEmail(suggestion);
@@ -786,9 +786,9 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({
                   <div className="flex flex-col gap-3">
                     {/* Preset Colors Grid */}
                     <div className="flex flex-wrap gap-2">
-                      {PRESET_COLORS.map(c => (
+                      {PRESET_COLORS.map((c, idx) => (
                         <button
-                          key={c}
+                          key={`pv-col-${c}-${idx}`}
                           type="button"
                           onClick={() => setSelectedColor(c)}
                           className="w-7 h-7 rounded-full cursor-pointer transition-all border-2 border-transparent hover:scale-110 flex items-center justify-center shrink-0 shadow-sm"
@@ -832,9 +832,9 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({
                   <div className="flex flex-col gap-3">
                     {/* Preset Emojis Grid */}
                     <div className="grid grid-cols-10 gap-2 p-2 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 max-h-[120px] overflow-y-auto">
-                      {PRESET_EMOJIS.map(em => (
+                      {PRESET_EMOJIS.map((em, idx) => (
                         <button
-                          key={em}
+                          key={`pv-em-${em}-${idx}`}
                           type="button"
                           onClick={() => setSelectedEmoji(em)}
                           className={`text-lg p-1.5 rounded-lg cursor-pointer transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 text-center ${

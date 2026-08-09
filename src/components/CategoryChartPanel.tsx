@@ -214,7 +214,7 @@ export const CategoryChartPanel: React.FC<CategoryChartPanelProps> = ({
                             p.name === 'savings' || p.name === 'acumuladoEconomizado' ? 'Economizado' : p.name;
               const valueColor = p.name.includes('Gasto') || p.name === 'value' || p.name === 'spent' ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400';
               return (
-                <div key={idx} className="flex items-center justify-between gap-6">
+                <div key={`chart-p-${p.name || idx}-${idx}`} className="flex items-center justify-between gap-6">
                   <span className="text-neutral-400 font-semibold">{label}:</span>
                   <span className={`font-black ${valueColor}`}>
                     R$ {p.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -555,7 +555,7 @@ export const CategoryChartPanel: React.FC<CategoryChartPanelProps> = ({
                                 maxBarSize={32}
                               >
                                 {stats.categoryData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                  <Cell key={`bar-cell-${entry.id || index}-${index}`} fill={entry.color} />
                                 ))}
                               </Bar>
                             </BarChart>
@@ -571,7 +571,7 @@ export const CategoryChartPanel: React.FC<CategoryChartPanelProps> = ({
                                 dataKey="value"
                               >
                                 {stats.categoryData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                  <Cell key={`pie-cell-${entry.id || index}-${index}`} fill={entry.color} />
                                 ))}
                               </Pie>
                               <Tooltip content={<CustomTooltip />} />

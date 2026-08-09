@@ -215,13 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
-            ) : (
-              <div className="hidden sm:flex items-center">
-                <kbd className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-neutral-100 border border-neutral-200 text-neutral-500 font-mono shadow-sm dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400">
-                  ⌘K
-                </kbd>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

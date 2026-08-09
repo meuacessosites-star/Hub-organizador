@@ -106,6 +106,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   });
   
   const [saveAsPreset, setSaveAsPreset] = useState(false);
+  const [showAllPresets, setShowAllPresets] = useState(false);
   const [logoPreviewErrorCount, setLogoPreviewErrorCount] = useState(0);
 
   const handleDeleteCustomPreset = (name: string) => {
@@ -548,11 +549,11 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                         <div className="flex flex-col gap-1.5">
                           <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Padrões Populares</span>
                           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 max-h-[135px] overflow-y-auto p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-[#2a2d40]/70 dark:bg-[#111219]/50">
-                            {POPULAR_PRESETS.map((preset) => {
+                            {POPULAR_PRESETS.map((preset, idx) => {
                               const presetLogoUrl = `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${preset.domain}&size=256`;
                               return (
                                 <button
-                                  key={preset.domain}
+                                  key={`pop-preset-${preset.domain}-${idx}`}
                                   type="button"
                                   onClick={() => handleSelectPreset(preset)}
                                   className="flex flex-col items-center justify-center p-1.5 rounded-lg border border-neutral-200 bg-white text-neutral-700 dark:border-[#2a2d40] dark:bg-[#13141c]/40 dark:text-neutral-400 cursor-pointer hover:border-indigo-500"
@@ -611,11 +612,11 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                   <div className="flex flex-wrap gap-2 pt-1">
                     {categories
                       .filter(cat => cat.name.toLowerCase().includes(categorySearch.toLowerCase()))
-                      .map((cat) => {
+                      .map((cat, idx) => {
                         const isSel = selectedCategory === cat.id;
                         return (
                           <button
-                            key={cat.id}
+                            key={`cat-opt-${cat.id}-${idx}`}
                             type="button"
                             onClick={() => setSelectedCategory(cat.id)}
                             className={`px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 cursor-pointer ${
@@ -666,7 +667,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-0.5">
-                    {profilePresets.map((preset, idx) => {
+                    {(showAllPresets ? profilePresets : profilePresets.slice(0, 8)).map((preset, idx) => {
                       const isSel = profileName === preset.name;
                       return (
                         <button
@@ -724,6 +725,17 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                         </button>
                       );
                     })}
+
+                    {profilePresets.length > 8 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllPresets(!showAllPresets)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors uppercase tracking-wider cursor-pointer bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 flex items-center gap-1"
+                      >
+                        {showAllPresets ? 'Ver menos' : `Ver mais (+${profilePresets.length - 8})`}
+                      </button>
+                    )}
+
                     {profilePresets.length === 0 && (
                       <p className="text-[10px] text-neutral-500 italic">
                         Nenhum perfil salvo. Gerencie seus perfis na aba de perfil.
@@ -769,9 +781,9 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       ref={emailSuggestionsRef}
                       className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#131520] border border-neutral-200 dark:border-[#2a2d40] rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-neutral-100 dark:divide-[#2a2d40]"
                     >
-                      {emailSuggestions.map((suggestion) => (
+                      {emailSuggestions.map((suggestion, idx) => (
                         <button
-                          key={suggestion}
+                          key={`npm-email-sug-${suggestion}-${idx}`}
                           type="button"
                           onClick={() => {
                             setEmail(suggestion);

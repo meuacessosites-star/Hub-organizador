@@ -683,12 +683,12 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
             </div>
 
             <div className="flex flex-col gap-1.5 select-text">
-              {localCategories.map((cat) => {
+              {localCategories.map((cat, idx) => {
                 const isSystem = !cat.isCustom;
                 const slugName = cat.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
                 return (
                   <div
-                    key={cat.id}
+                    key={`manage-cat-${cat.id}-${idx}`}
                     id={`manage-category-row-${cat.id}`}
                     data-testid={`manage-category-row-${slugName}`}
                     role="button"

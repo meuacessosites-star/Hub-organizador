@@ -489,26 +489,6 @@ export function useStorage() {
           setPlatforms(cloudPlats);
           platformsRef.current = cloudPlats;
           safeSetItem(`hub_user_${user.uid}_platforms`, JSON.stringify(cloudPlats));
-
-          // Ensure profilePresets incorporates all profiles from cloudPlats
-          const platProfiles: ProfilePreset[] = [];
-          cloudPlats.forEach((plat: Platform) => {
-            (plat.profiles || []).forEach((prof: Profile) => {
-              if (prof.name) {
-                platProfiles.push({
-                  id: `preset-plat-${prof.id || Math.random().toString(36).substring(2, 7)}`,
-                  name: prof.name,
-                  avatar: prof.avatar || { type: 'color', value: prof.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
-                });
-              }
-            });
-          });
-
-          if (platProfiles.length > 0) {
-            const merged = deduplicatePresets([...profilePresetsRef.current, ...platProfiles]);
-            setProfilePresets(merged);
-            profilePresetsRef.current = merged;
-          }
         } else {
           setPlatforms([]);
           platformsRef.current = [];
@@ -552,24 +532,9 @@ export function useStorage() {
         
         checkRemoteChangesAndNotify('profilePresets', snap);
 
-        // Extract profiles from existing platforms to ensure custom user profiles are never lost
-        const currentPlats = platformsRef.current || [];
-        const platProfiles: ProfilePreset[] = [];
-        currentPlats.forEach((plat: Platform) => {
-          (plat.profiles || []).forEach((prof: Profile) => {
-            if (prof.name) {
-              platProfiles.push({
-                id: `preset-plat-${prof.id || Math.random().toString(36).substring(2, 7)}`,
-                name: prof.name,
-                avatar: prof.avatar || { type: 'color', value: prof.name.slice(0, 2).toUpperCase(), bgColor: '#6366f1' },
-              });
-            }
-          });
-        });
-
         if (!snap.empty) {
           const cloudPresets = snap.docs.map(d => ({ ...d.data() as ProfilePreset, id: d.id }));
-          const unique = deduplicatePresets([...cloudPresets, ...platProfiles]);
+          const unique = deduplicatePresets(cloudPresets);
 
           setProfilePresets(unique);
           profilePresetsRef.current = unique;
@@ -581,7 +546,7 @@ export function useStorage() {
             ? localPresets
             : [...DEFAULT_PROFILE_PRESETS];
 
-          const initialPresets = deduplicatePresets([...baseList, ...platProfiles]);
+          const initialPresets = deduplicatePresets(baseList);
 
           initialPresets.forEach(p => fbSet('profilePresets', p.id, p));
           setProfilePresets(initialPresets);
@@ -925,9 +890,13 @@ export function useStorage() {
   }, [fbSet]);
 
   const deleteProfile = useCallback((platformId: string, profileId: string) => {
+    let deletedProfName = '';
     setPlatforms((prev) => {
       const plat = prev.find(p => p.id === platformId);
       if (!plat) return prev;
+
+      const targetProf = (plat.profiles || []).find(p => p.id === profileId);
+      if (targetProf) deletedProfName = targetProf.name;
 
       const newProfiles = (plat.profiles || []).filter((prof) => prof.id !== profileId);
       const newPurchases = (plat.purchases || []).filter((pur) => pur.profileId !== profileId);
@@ -936,9 +905,21 @@ export function useStorage() {
       const next = prev.map((p) => (p.id === platformId ? newPlat : p));
       platformsRef.current = next;
       fbSet('platforms', platformId, newPlat);
+
+      if (deletedProfName) {
+        const stillInPlatforms = next.some(p => (p.profiles || []).some(pr => pr.name.trim().toLowerCase() === deletedProfName.trim().toLowerCase()));
+        if (!stillInPlatforms) {
+          const nextPresets = profilePresetsRef.current.filter(p => p.name.trim().toLowerCase() !== deletedProfName.trim().toLowerCase() && p.id !== profileId && p.id !== `preset-plat-${profileId}`);
+          setProfilePresets(nextPresets);
+          profilePresetsRef.current = nextPresets;
+          fbDelete('profilePresets', profileId);
+          fbDelete('profilePresets', `preset-plat-${profileId}`);
+        }
+      }
+
       return next;
     });
-  }, [fbSet]);
+  }, [fbSet, fbDelete]);
 
   // Purchase CRUD
   const validatePurchaseData = useCallback((productName: string, originalPrice: number, finalPrice: number) => {
@@ -1049,19 +1030,93 @@ export function useStorage() {
   }, [fbSet, user?.uid]);
 
   const updateProfilePreset = useCallback((id: string, updated: Partial<ProfilePreset>) => {
-    const currentPresets = profilePresetsRef.current;
-    const preset = currentPresets.find(p => p.id === id);
-    if (!preset) return;
+    let oldName = '';
+    setProfilePresets((prev) => {
+      const preset = prev.find(p => p.id === id);
+      if (!preset) return prev;
+      oldName = preset.name;
+      const newPreset = { ...preset, ...updated };
+      const next = prev.map((p) => (p.id === id ? newPreset : p));
+      profilePresetsRef.current = next;
+      fbSet('profilePresets', id, newPreset);
+      return next;
+    });
 
-    const newPreset = { ...preset, ...updated };
-    setProfilePresets((prev) => prev.map((p) => (p.id === id ? newPreset : p)));
-    fbSet('profilePresets', id, newPreset);
+    // Also update any platform profiles that match this preset (by name or id)
+    setPlatforms((prev) => {
+      let changed = false;
+      const next = prev.map((plat) => {
+        let platChanged = false;
+        const newProfiles = (plat.profiles || []).map((prof) => {
+          if ((oldName && prof.name.trim().toLowerCase() === oldName.trim().toLowerCase()) || prof.id === id) {
+            platChanged = true;
+            changed = true;
+            return {
+              ...prof,
+              name: updated.name !== undefined ? updated.name : prof.name,
+              email: updated.email !== undefined ? updated.email : prof.email,
+              username: updated.username !== undefined ? updated.username : prof.username,
+              password: updated.password !== undefined ? updated.password : prof.password,
+              accessLink: updated.accessLink !== undefined ? updated.accessLink : prof.accessLink,
+              description: updated.description !== undefined ? updated.description : prof.description,
+              avatar: updated.avatar !== undefined ? updated.avatar : prof.avatar,
+            };
+          }
+          return prof;
+        });
+
+        if (platChanged) {
+          const updatedPlat = { ...plat, profiles: newProfiles };
+          fbSet('platforms', plat.id, updatedPlat);
+          return updatedPlat;
+        }
+        return plat;
+      });
+
+      if (changed) {
+        platformsRef.current = next;
+        return next;
+      }
+      return prev;
+    });
   }, [fbSet]);
 
   const deleteProfilePreset = useCallback((id: string) => {
-    setProfilePresets((prev) => prev.filter((p) => p.id !== id));
+    let deletedPreset = profilePresetsRef.current.find(p => p.id === id);
+    const nextPresets = profilePresetsRef.current.filter((p) => p.id !== id);
+    setProfilePresets(nextPresets);
+    profilePresetsRef.current = nextPresets;
     fbDelete('profilePresets', id);
-  }, [fbDelete]);
+
+    if (deletedPreset) {
+      const deletedName = deletedPreset.name.trim().toLowerCase();
+      setPlatforms((prev) => {
+        let changed = false;
+        const next = prev.map((plat) => {
+          const filteredProfiles = (plat.profiles || []).filter((prof) => {
+            const matchesName = prof.name && prof.name.trim().toLowerCase() === deletedName;
+            const matchesId = prof.id === id || `preset-plat-${prof.id}` === id;
+            if (matchesName || matchesId) {
+              changed = true;
+              return false;
+            }
+            return true;
+          });
+          if (filteredProfiles.length !== (plat.profiles || []).length) {
+            const updatedPlat = { ...plat, profiles: filteredProfiles };
+            fbSet('platforms', plat.id, updatedPlat);
+            return updatedPlat;
+          }
+          return plat;
+        });
+        if (changed) {
+          platformsRef.current = next;
+          return next;
+        }
+        return prev;
+      });
+    }
+  }, [fbDelete, fbSet]);
 
   const reorderProfilePresets = useCallback((newPresets: ProfilePreset[]) => {
     setProfilePresets(newPresets);
@@ -1119,6 +1174,35 @@ export function useStorage() {
     }
     for (const p of deleted) {
       await fbDelete('profilePresets', p.id);
+    }
+
+    if (deleted.length > 0) {
+      const deletedNames = new Set(deleted.map(p => p.name.trim().toLowerCase()));
+      setPlatforms((prev) => {
+        let changed = false;
+        const next = prev.map((plat) => {
+          const filteredProfiles = (plat.profiles || []).filter((prof) => {
+            const matchesName = prof.name && deletedNames.has(prof.name.trim().toLowerCase());
+            const matchesId = deleted.some(d => d.id === prof.id || d.id === `preset-plat-${prof.id}`);
+            if (matchesName || matchesId) {
+              changed = true;
+              return false;
+            }
+            return true;
+          });
+          if (filteredProfiles.length !== (plat.profiles || []).length) {
+            const updatedPlat = { ...plat, profiles: filteredProfiles };
+            fbSet('platforms', plat.id, updatedPlat);
+            return updatedPlat;
+          }
+          return plat;
+        });
+        if (changed) {
+          platformsRef.current = next;
+          return next;
+        }
+        return prev;
+      });
     }
   }, [fbSet, fbDelete, user]);
 

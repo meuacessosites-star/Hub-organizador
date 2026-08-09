@@ -468,16 +468,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         localStorage.setItem('hub_guest_profile', JSON.stringify(newProfile));
       }
       
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        onClose();
-        if (isGuest) {
-          window.location.reload();
-        }
-      }, 1500);
+      addToast('Perfil atualizado com sucesso! ✨', 'success');
+      onClose();
     } catch (err) {
       console.error("Error saving profile:", err);
+      addToast('Erro ao salvar perfil.', 'error');
     } finally {
       setIsSaving(false);
     }

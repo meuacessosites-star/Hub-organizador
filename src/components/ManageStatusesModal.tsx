@@ -389,9 +389,9 @@ export const ManageStatusesModal: React.FC<ManageStatusesModalProps> = ({
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {PRESET_COLORS.map((col) => (
+                {PRESET_COLORS.map((col, idx) => (
                   <button
-                    key={col}
+                    key={`status-col-${col}-${idx}`}
                     type="button"
                     onClick={() => updateSelectedColor(col)}
                     className="w-6 h-6 rounded-full border border-black/40 flex items-center justify-center shadow-inner hover:scale-110 transition-all cursor-pointer shrink-0"
