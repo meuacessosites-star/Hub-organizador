@@ -2,7 +2,7 @@ import React from 'react';
 import type { ReactNode } from 'react';
 
 export type AvatarFrameModel =
-  | 'micro-hearts' | 'open-hearts' | 'petals' | 'petal-outline' | 'droplets'
+  | 'none' | 'micro-hearts' | 'open-hearts' | 'petals' | 'petal-outline' | 'droplets'
   | 'pearls' | 'pearls-alternating' | 'mini-links' | 'open-links' | 'moons'
   | 'tiny-stars' | 'sparkles' | 'diamonds' | 'diamond-outline' | 'mini-arches'
   | 'arches-alternating' | 'tiny-waves' | 'seeds' | 'clovers' | 'tiny-flowers'
@@ -14,7 +14,7 @@ export type AvatarFrameModel =
   | 'double-petals' | 'tiny-spirals' | 'mini-crowns' | 'tiny-sunbursts' | 'mini-feathers'
   | 'soft-braid' | 'woven-ribbon' | 'double-waves' | 'fine-chevron' | 'corner-marks' | 'tiny-sprigs' | 'delicate-crosses' | 'soft-x' | 'tiny-pluses' | 'fine-triangles' | 'hollow-rings' | 'hollow-stars' | 'outlined-stars' | 'tiny-squares' | 'rounded-dashes' | 'three-petals' | 'four-petal-flowers' | 'droplet-rays' | 'fine-spirals' | 'curved-waves' | 'starry-flower' | 'double-seeds' | 'infinity-links' | 'hollow-clovers' | 'soft-heartbeat';
 
-export type AvatarFrameFinish = 'solid' | 'gradient' | 'pastel-rainbow' | 'soft-neon' | 'pearl' | 'metallic';
+export type AvatarFrameFinish = 'solid' | 'gradient' | 'pastel-rainbow' | 'soft-neon' | 'pearl' | 'metallic' | 'matte' | 'satin' | 'crystal';
 export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave';
 
 export interface AvatarFrameSettings {
@@ -25,6 +25,7 @@ export interface AvatarFrameSettings {
 }
 
 export const AVATAR_FRAME_MODEL_LABELS: Record<AvatarFrameModel, string> = {
+  'none': 'Sem moldura',
   "micro-hearts": "Coraçõezinhos",
   "open-hearts": "Corações vazados",
   "petals": "Pétalas",
@@ -103,6 +104,7 @@ export const AVATAR_FRAME_MODEL_LABELS: Record<AvatarFrameModel, string> = {
 };
 
 export const AVATAR_FRAME_MODELS: AvatarFrameModel[] = [
+  'none',
   'micro-hearts','open-hearts','petals','petal-outline','droplets','pearls','pearls-alternating',
   'mini-links','open-links','moons','tiny-stars','sparkles','diamonds','diamond-outline',
   'mini-arches','arches-alternating','tiny-waves','seeds','clovers','tiny-flowers',
@@ -123,7 +125,7 @@ export function defaultAvatarFrame(profileId: string): AvatarFrameSettings {
   let hash = 0;
   for (let i = 0; i < profileId.length; i++) hash = (hash * 31 + profileId.charCodeAt(i)) >>> 0;
   return {
-    model: AVATAR_FRAME_MODELS[hash % AVATAR_FRAME_MODELS.length],
+    model: AVATAR_FRAME_MODELS[1 + (hash % (AVATAR_FRAME_MODELS.length - 1))],
     finish: 'solid',
     colors: PALETTES[Math.floor(hash / AVATAR_FRAME_MODELS.length) % PALETTES.length],
     motion: 'none'
@@ -231,6 +233,7 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
   profileId: string; settings?: AvatarFrameSettings; children: ReactNode; className?: string; size?: number;
 }) {
   const frame = settings || defaultAvatarFrame(profileId);
+  if (frame.model === 'none') return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={{width:size,height:size,flex:'0 0 auto'}}><span className="relative rounded-full overflow-hidden w-full h-full">{children}</span></span>;
   const color = frame.colors?.[0] || '#A99AE8';
   const second = frame.colors?.[1] || color;
   const third = frame.colors?.[2] || second;
@@ -240,7 +243,11 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
       ? [mixHex(color,'#FFFFFF',.58),mixHex(color,'#D9D2E8',.32),mixHex(color,'#FFFFFF',.78)]
       : frame.finish === 'metallic'
         ? [mixHex(color,'#FFFFFF',.42),mixHex(color,'#8A806F',.18),mixHex(color,'#FFFFFF',.62)]
-        : [color,second,third,color];
+        : frame.finish === 'satin'
+          ? [mixHex(color,'#FFFFFF',.24),mixHex(color,'#777777',.08),mixHex(color,'#FFFFFF',.38)]
+          : frame.finish === 'crystal'
+            ? [mixHex(color,'#FFFFFF',.72),mixHex(color,'#B9DDF5',.48),mixHex(color,'#FFFFFF',.88)]
+            : [color,second,third,color];
   const count = 24;
   const radius = 46;
   const svg = Array.from({length: count}, (_, i) => {
@@ -250,7 +257,7 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
       ? colorAt(palette, position)
       : frame.finish === 'pearl' || frame.finish === 'metallic'
         ? palette[i % palette.length]
-        : frame.finish === 'soft-neon' ? color : palette[i % palette.length];
+        : frame.finish === 'soft-neon' ? color : frame.finish === 'matte' ? mixHex(color,'#777777',.12) : palette[i % palette.length];
     const delay = (i * 0.16).toFixed(2);
     const animated = frame.motion !== 'none'
       ? ' class="avatar-frame-motif" style="animation-delay:-' + delay + 's"'
@@ -271,8 +278,9 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
     frame.motion === 'twinkle' ? 'avatar-motif-twinkle 3.2s ease-in-out infinite' :
     frame.motion === 'sparkle-wave' ? 'avatar-motif-sparkle 4.2s ease-in-out infinite' : undefined;
   const stroke = frame.finish === 'soft-neon' ? 'drop-shadow(0 0 2px ' + color + ') drop-shadow(0 0 4px ' + color + ')' :
-    frame.finish === 'pearl' ? 'drop-shadow(0 0 1px #fff)' :
-    frame.finish === 'metallic' ? 'drop-shadow(0 0 1px #D8C29A)' : undefined;
+    frame.finish === 'pearl' || frame.finish === 'crystal' ? 'drop-shadow(0 0 1px #fff)' :
+    frame.finish === 'metallic' ? 'drop-shadow(0 0 1px #D8C29A)' :
+    frame.finish === 'satin' ? 'drop-shadow(0 0 1px rgba(255,255,255,.45))' : undefined;
   return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={{width:size,height:size,flex:'0 0 auto'}}>
     <style>{motionCss + '.avatar-frame-motif{' + (motion ? 'animation:' + motion + ';' : '') + '}@media(prefers-reduced-motion:reduce){.avatar-frame-motif{animation:none!important}}'}</style>
     <span className="absolute inset-0 rounded-full overflow-hidden" style={{filter:stroke}} dangerouslySetInnerHTML={{__html:'<svg class="avatar-frame-svg" viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">' + svg + '</svg>'}} />
