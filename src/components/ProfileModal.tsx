@@ -14,7 +14,7 @@ import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useStorage, deduplicatePresets } from '../hooks/useStorage';
 import { SmartImage } from './SmartImage';
-import { AvatarFrame, defaultAvatarFrame, AVATAR_FRAME_MODELS, AvatarFrameSettings } from './AvatarFrame';
+import { AvatarFrame, defaultAvatarFrame, AVATAR_FRAME_MODELS, AVATAR_FRAME_MODEL_LABELS, AvatarFrameSettings } from './AvatarFrame';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -917,14 +917,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 </div>}
 </div>}
           <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 50 modelos · toque para escolher</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 75 modelos · toque para escolher</p>
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
               {AVATAR_FRAME_MODELS.map((model, index) => (
                 <button key={model} type="button" onClick={() => setAvatarFrame(v=>({...v,model}))} className={`min-w-0 rounded-xl p-2 flex flex-col items-center gap-1 border transition-colors ${avatarFrame.model===model ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/20' : 'border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-[#111219]'}`}>
                   <AvatarFrame profileId={`preview-${model}`} settings={{...avatarFrame,model}} size={38}>
                     <div className="w-full h-full rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{backgroundColor:selectedColor}}>{avatarTab==='emoji' ? selectedEmoji : profile.name.slice(0,1).toUpperCase()}</div>
                   </AvatarFrame>
-                  <span className="text-[9px] text-neutral-500">{index+1}. {model.replace(/-/g,' ')}</span>
+                  <span className="text-[9px] text-neutral-500">{index+1}. {AVATAR_FRAME_MODEL_LABELS[model] || model}</span>
                 </button>
               ))}
             </div>
@@ -1869,14 +1869,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 </div>}
 </div>}
                     <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 25 modelos · toque para escolher</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 75 modelos · toque para escolher</p>
                       <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
                         {AVATAR_FRAME_MODELS.map((model, index) => (
                           <button key={model} type="button" onClick={() => setAvatarFrame(v=>({...v,model}))} className={`min-w-0 rounded-xl p-2 flex flex-col items-center gap-1 border transition-colors ${avatarFrame.model===model ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/20' : 'border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-[#111219]'}`}>
                             <AvatarFrame profileId={`preview-${model}`} settings={{...avatarFrame,model}} size={38}>
                               <div className="w-full h-full rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{backgroundColor:selectedColor}}>{avatarTab==='emoji' ? selectedEmoji : profileName.slice(0,1).toUpperCase()}</div>
                             </AvatarFrame>
-                            <span className="text-[9px] text-neutral-500">{index+1}. {model.replace(/-/g,' ')}</span>
+                            <span className="text-[9px] text-neutral-500">{index+1}. {AVATAR_FRAME_MODEL_LABELS[model] || model}</span>
                           </button>
                         ))}
                       </div>
