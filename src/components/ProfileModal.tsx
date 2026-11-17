@@ -1828,7 +1828,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         ))}
                       </div>
                     </div>
-                    <button type="button" onClick={() => setShowFrameCustomizer(false)} className="w-full h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Concluir</button>
+                    <button type="button" onClick={handleSaveOrEdit} className="w-full h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Concluir e salvar</button>
                   </div>
                 </div>
               )}
