@@ -1,14 +1,14 @@
 import React from 'react';
 import { Banknote, Barcode, CalendarDays, CreditCard, Landmark, Receipt, Wallet } from 'lucide-react';
 
-/** Ícone vetorial simplificado para identificar a opção Pix, sem depender de imagem externa. */
+/** Marca Pix em vetor, proporções preservadas no viewBox 24×24.
+ * Referência: Simple Icons — Pix (Banco Central do Brasil).
+ * Mantém a cor do texto do tema, sem distorção nem dependência externa.
+ */
 function PixSymbol({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M7.2 5.4 9 3.6a4.25 4.25 0 0 1 6 0l3.6 3.6a4.25 4.25 0 0 1 0 6" />
-      <path d="m16.8 18.6-1.8 1.8a4.25 4.25 0 0 1-6 0l-3.6-3.6a4.25 4.25 0 0 1 0-6" />
-      <path d="m5.4 10.8 3.2 3.2a4.8 4.8 0 0 0 6.8 0l3.2-3.2" />
-      <path d="m7.2 5.4 1.4 1.4a4.8 4.8 0 0 0 6.8 0l1.4-1.4" />
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true" focusable="false">
+      <path d="M5.283 18.36a3.505 3.505 0 0 0 2.493-1.032l3.6-3.6a.684.684 0 0 1 .946 0l3.613 3.613a3.504 3.504 0 0 0 2.493 1.032h.71l-4.56 4.56a3.647 3.647 0 0 1-5.156 0L4.85 18.36ZM18.428 5.627a3.505 3.505 0 0 0-2.493 1.032l-3.613 3.614a.67.67 0 0 1-.946 0l-3.6-3.6A3.505 3.505 0 0 0 5.283 5.64h-.434l4.573-4.572a3.646 3.646 0 0 1 5.156 0l4.559 4.559ZM1.068 9.422 3.79 6.699h1.492a2.483 2.483 0 0 1 1.744.722l3.6 3.6a1.73 1.73 0 0 0 2.443 0l3.614-3.613a2.482 2.482 0 0 1 1.744-.723h1.767l2.737 2.737a3.646 3.646 0 0 1 0 5.156l-2.736 2.736h-1.768a2.482 2.482 0 0 1-1.744-.722l-3.613-3.613a1.77 1.77 0 0 0-2.444 0l-3.6 3.6a2.483 2.483 0 0 1-1.744.722H3.791l-2.723-2.723a3.646 3.646 0 0 1 0-5.156" />
     </svg>
   );
 }
