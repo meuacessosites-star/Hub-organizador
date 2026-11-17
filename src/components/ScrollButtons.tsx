@@ -47,7 +47,7 @@ export const ScrollButtons: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50 pointer-events-none">
+    <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40 pointer-events-none">
       <AnimatePresence>
         {showUp && (
           <motion.button
