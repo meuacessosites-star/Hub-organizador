@@ -15,7 +15,7 @@ export type AvatarFrameModel =
   | 'soft-braid' | 'woven-ribbon' | 'double-waves' | 'fine-chevron' | 'corner-marks' | 'tiny-sprigs' | 'delicate-crosses' | 'soft-x' | 'tiny-pluses' | 'fine-triangles' | 'hollow-rings' | 'hollow-stars' | 'outlined-stars' | 'tiny-squares' | 'rounded-dashes' | 'three-petals' | 'four-petal-flowers' | 'droplet-rays' | 'fine-spirals' | 'curved-waves' | 'starry-flower' | 'double-seeds' | 'infinity-links' | 'hollow-clovers' | 'soft-heartbeat';
 
 export type AvatarFrameFinish = 'solid' | 'gradient' | 'pastel-rainbow' | 'soft-neon' | 'pearl' | 'metallic' | 'matte' | 'satin' | 'crystal';
-export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave';
+export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave' | 'soft-blink' | 'slow-twinkle' | 'light-ripple' | 'gentle-glimmer' | 'color-breathe';
 
 export interface AvatarFrameSettings {
   model: AvatarFrameModel;
@@ -269,14 +269,24 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
     '@keyframes avatar-motif-breathe{0%,100%{opacity:.62}50%{opacity:1}}' +
     '@keyframes avatar-motif-glint{0%,100%{filter:brightness(1) drop-shadow(0 0 0 transparent)}50%{filter:brightness(1.35) drop-shadow(0 0 2px currentColor)}}' +
     '@keyframes avatar-motif-rainbow{0%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(35deg)}100%{filter:hue-rotate(0deg)}}' +
-    '@keyframes avatar-motif-sparkle{0%,100%{opacity:.66}35%{opacity:1;filter:brightness(1.35)}55%{opacity:.78}72%{opacity:1;filter:brightness(1.2)}}';
+    '@keyframes avatar-motif-sparkle{0%,100%{opacity:.66}35%{opacity:1;filter:brightness(1.35)}55%{opacity:.78}72%{opacity:1;filter:brightness(1.2)}}' +
+    '@keyframes avatar-motif-blink{0%,82%,100%{opacity:.82;filter:brightness(1)}88%{opacity:1;filter:brightness(1.22)}94%{opacity:.76;filter:brightness(.98)}}' +
+    '@keyframes avatar-motif-slowtwinkle{0%,100%{opacity:.68;filter:brightness(.98)}35%{opacity:1;filter:brightness(1.22)}65%{opacity:.82}}' +
+    '@keyframes avatar-motif-ripple{0%,100%{opacity:.72;filter:brightness(1)}50%{opacity:1;filter:brightness(1.16) drop-shadow(0 0 1px currentColor)}}' +
+    '@keyframes avatar-motif-glimmer{0%,100%{opacity:.78;filter:brightness(1)}25%{opacity:1;filter:brightness(1.2)}38%{opacity:.86}52%{opacity:1;filter:brightness(1.16)}}' +
+    '@keyframes avatar-motif-colorbreathe{0%,100%{opacity:.8;filter:saturate(.92) brightness(1)}50%{opacity:1;filter:saturate(1.16) brightness(1.12)}}';
   const motion = frame.motion === 'soft-pulse' || frame.motion === 'soft-breathe' ? 'avatar-motif-breathe 3.8s ease-in-out infinite' :
     frame.motion === 'soft-glow' ? 'avatar-motif-glint 4.6s ease-in-out infinite' :
     frame.motion === 'color-shift' || frame.motion === 'rainbow-wave' ? 'avatar-motif-rainbow 8s ease-in-out infinite' :
     frame.motion === 'soft-shimmer' || frame.motion === 'glint' ? 'avatar-motif-glint 5.5s ease-in-out infinite' :
     frame.motion === 'color-wave' ? 'avatar-motif-wave 3.6s ease-in-out infinite' :
     frame.motion === 'twinkle' ? 'avatar-motif-twinkle 3.2s ease-in-out infinite' :
-    frame.motion === 'sparkle-wave' ? 'avatar-motif-sparkle 4.2s ease-in-out infinite' : undefined;
+    frame.motion === 'sparkle-wave' ? 'avatar-motif-sparkle 4.2s ease-in-out infinite' :
+    frame.motion === 'soft-blink' ? 'avatar-motif-blink 3.8s ease-in-out infinite' :
+    frame.motion === 'slow-twinkle' ? 'avatar-motif-slowtwinkle 4.8s ease-in-out infinite' :
+    frame.motion === 'light-ripple' ? 'avatar-motif-ripple 3.4s ease-in-out infinite' :
+    frame.motion === 'gentle-glimmer' ? 'avatar-motif-glimmer 5.2s ease-in-out infinite' :
+    frame.motion === 'color-breathe' ? 'avatar-motif-colorbreathe 5.6s ease-in-out infinite' : undefined;
   const stroke = frame.finish === 'soft-neon' ? 'drop-shadow(0 0 2px ' + color + ') drop-shadow(0 0 4px ' + color + ')' :
     frame.finish === 'pearl' || frame.finish === 'crystal' ? 'drop-shadow(0 0 1px #fff)' :
     frame.finish === 'metallic' ? 'drop-shadow(0 0 1px #D8C29A)' :
