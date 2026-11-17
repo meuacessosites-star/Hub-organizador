@@ -93,6 +93,7 @@ interface RegisterPurchaseModalProps {
   onClose: () => void;
   platform: Platform | null;
   purchase: Purchase | null; // If null, mode is "add"
+  initialProfileId?: string; // Conta pré-selecionada pelo atalho rápido
   onSave: (purchaseData: Omit<Purchase, 'id'>) => void;
   onEdit: (purchaseId: string, purchaseData: Partial<Purchase>) => void;
   onDelete?: (purchaseId: string) => void;
@@ -109,6 +110,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   onClose,
   platform,
   purchase,
+  initialProfileId,
   onSave,
   onEdit,
   onDelete,
@@ -588,7 +590,8 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setSelectedTagIds(purchase.tags || []);
         setPurchaseType(purchase.purchaseType || 'single');
       } else {
-        setSelectedProfileId(platform.profiles[0].id);
+        setSelectedProfileId(initialProfileId && platform.profiles.some(profile => profile.id === initialProfileId)
+          ? initialProfileId : platform.profiles[0].id);
         setProductLink('');
         setProductName('');
         setStatus('pedido_feito');
@@ -614,7 +617,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setPurchaseType('single');
       }
     }
-  }, [purchase, isOpen, isEditMode, platform]);
+  }, [purchase, isOpen, isEditMode, platform, initialProfileId]);
 
   // Recalculate final price when original or discount changes
   useEffect(() => {
