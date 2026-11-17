@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { SmartImage } from './SmartImage';
 import { AvatarFrame } from './AvatarFrame';
+import { PaymentMethodIcon, PAYMENT_METHOD_OPTIONS, getPaymentMethodLabel } from './PaymentMethodIcon';
 
 // Color wheel helpers
 const hexToHsv = (hex: string): { h: number; s: number; v: number } => {
@@ -140,6 +141,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentMethodSelect, setPaymentMethodSelect] = useState('');
+  const [paymentMenuOpen, setPaymentMenuOpen] = useState(false);
   const [bankName, setBankName] = useState('');
   const [installments, setInstallments] = useState<number>(1);
   const [cardName, setCardName] = useState('');
@@ -1387,7 +1389,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                           })()}
                         </div>
                         </AvatarFrame>
-                        <span>{prof.name}</span>
+                        <span className="min-w-0 text-left"><span className="block">{prof.name}</span>{prof.email && platform.profiles.filter(p => p.name.trim().toLowerCase() === prof.name.trim().toLowerCase()).length > 1 && <span className="block text-[10px] font-normal opacity-80 break-all">{prof.email}</span>}</span>
                       </button>
                     );
                   })}
@@ -2263,31 +2265,31 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   Meio de Pagamento
                 </label>
                 <div className="relative">
-                  <select
-                    value={paymentMethodSelect}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setPaymentMethodSelect(val);
-                      if (val === 'Outro') {
-                        setPaymentMethod('');
-                      } else {
-                        setPaymentMethod(val);
-                      }
-                    }}
-                    className="w-full h-11 px-3.5 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 font-medium dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 cursor-pointer appearance-none"
-                  >
-                    <option value="">Selecione...</option>
-                    <option value="Pix">Pix</option>
-                    <option value="cartao">Cartão de Crédito</option>
-                    <option value="parcelada">Compra Parcelada</option>
-                    <option value="Boleto Bancário">Boleto Bancário</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="conta">Conta / Saldo Bancário</option>
-                    <option value="Outro">Outro (Digitar)...</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-neutral-400">
-                    <Receipt className="w-3.5 h-3.5" />
-                  </div>
+                  <button type="button" aria-expanded={paymentMenuOpen} aria-haspopup="listbox"
+                    onClick={() => setPaymentMenuOpen(open => !open)}
+                    className="w-full min-w-0 h-11 px-3.5 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-indigo-500 font-medium dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 cursor-pointer flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <PaymentMethodIcon method={paymentMethodSelect || paymentMethod} className="w-4 h-4 shrink-0 text-indigo-500" />
+                      <span className="truncate">{paymentMethodSelect ? getPaymentMethodLabel(paymentMethodSelect) : 'Selecione...'}</span>
+                    </span>
+                    <span className="text-neutral-400 text-xs shrink-0">{paymentMenuOpen ? '▴' : '▾'}</span>
+                  </button>
+                  {paymentMenuOpen && (
+                    <div role="listbox" aria-label="Escolher meio de pagamento" className="mt-2 grid grid-cols-2 gap-2 w-full min-w-0">
+                      {PAYMENT_METHOD_OPTIONS.map(option => (
+                        <button key={option.value || 'none'} type="button" role="option" aria-selected={paymentMethodSelect === option.value}
+                          onClick={() => {
+                            setPaymentMethodSelect(option.value);
+                            setPaymentMethod(option.value === 'Outro' ? '' : option.value);
+                            setPaymentMenuOpen(false);
+                          }}
+                          className={`min-w-0 flex items-center gap-2 text-left px-2.5 py-2.5 rounded-lg border text-[11px] font-semibold transition-colors ${paymentMethodSelect === option.value ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500' : 'border-neutral-200 dark:border-[#2a2d40] bg-neutral-50 dark:bg-[#111219] text-neutral-700 dark:text-neutral-200'}`}>
+                          <PaymentMethodIcon method={option.value} className="w-4 h-4 shrink-0" />
+                          <span className="min-w-0 break-words">{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Optional Bank Name for "conta" */}
