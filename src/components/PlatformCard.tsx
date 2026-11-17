@@ -700,7 +700,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    onEditProfile(platform.id, profile, true, true);
+                                    onEditProfile(platform.id, profile, false, true);
                                   }}
                                   className="shrink-0 rounded-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                                 >
