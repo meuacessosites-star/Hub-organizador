@@ -16,6 +16,49 @@ import { useStorage, deduplicatePresets } from '../hooks/useStorage';
 import { SmartImage } from './SmartImage';
 import { AvatarFrame, defaultAvatarFrame, AVATAR_FRAME_MODELS, AVATAR_FRAME_MODEL_LABELS, AvatarFrameSettings } from './AvatarFrame';
 
+function FrameColorControls({ frame, onChange }: { frame: AvatarFrameSettings; onChange: (frame: AvatarFrameSettings) => void }) {
+  const colors = [frame.colors?.[0] || '#A99AE8', frame.colors?.[1] || '#F2B8D0', frame.colors?.[2] || '#80B9E9'];
+  const [activeColor, setActiveColor] = React.useState(0);
+  const [hexInput, setHexInput] = React.useState(colors[0]);
+  React.useEffect(() => { setHexInput(colors[activeColor]); }, [activeColor, frame.colors?.[0], frame.colors?.[1], frame.colors?.[2]]);
+  const updateColor = (value: string) => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(value)) return;
+    const next = [...colors];
+    next[activeColor] = value.toUpperCase();
+    onChange({ ...frame, colors: next });
+  };
+  return (
+    <section className="rounded-xl border border-indigo-200/60 dark:border-indigo-500/20 p-3 space-y-3">
+      <div><p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">Cores da moldura</p>
+        <p className="text-[10px] text-neutral-500">Escolha qualquer cor ou combine três tonalidades nos desenhos.</p></div>
+      <div className="grid grid-cols-3 gap-2">
+        {colors.map((color, index) => (
+          <button key={index} type="button" onClick={() => setActiveColor(index)}
+            aria-label={`Editar ${index + 1}ª cor da moldura`} aria-pressed={activeColor === index}
+            className={`rounded-lg border p-2 flex items-center gap-2 text-[10px] font-semibold text-neutral-700 dark:text-neutral-200 ${activeColor === index ? 'border-indigo-500 ring-1 ring-indigo-500/40' : 'border-neutral-200 dark:border-neutral-700'}`}>
+            <span className="w-6 h-6 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: color }} />Cor {index + 1}
+          </button>
+        ))}
+      </div>
+      <div className="flex justify-center"><HexColorPicker color={colors[activeColor]} onChange={updateColor} style={{ width: 'min(100%, 220px)', height: 150 }} /></div>
+      <div className="flex items-center gap-2">
+        <label htmlFor="frame-color-hex" className="text-[11px] text-neutral-600 dark:text-neutral-300 shrink-0">Código HEX</label>
+        <input id="frame-color-hex" type="text" value={hexInput} maxLength={7}
+          onChange={event => { const value = event.target.value; setHexInput(value); updateColor(value); }}
+          onBlur={() => setHexInput(colors[activeColor])}
+          className="w-full min-w-0 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#15161e] px-2 py-2 text-xs text-neutral-900 dark:text-white" placeholder="#A99AE8" />
+        <input aria-label="Escolher cor personalizada" type="color" value={colors[activeColor]} onChange={event => updateColor(event.target.value)} className="w-10 h-9 shrink-0 cursor-pointer" />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {['#E7A2BD','#A99AE8','#80B9E9','#79C9AD','#F5C86E','#EF9494','#FFFFFF','#161616'].map(color => (
+          <button key={color} type="button" title={color} aria-label={`Usar cor ${color}`} onClick={() => updateColor(color)}
+            className="w-7 h-7 rounded-full border border-neutral-300 dark:border-neutral-600" style={{ backgroundColor: color }} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -916,6 +959,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 <AvatarFrame profileId={'motion-'+item.id} settings={{...avatarFrame,motion:item.id}} size={32}><span className="w-full h-full rounded-full bg-neutral-800 flex items-center justify-center text-[8px] text-white">A</span></AvatarFrame><span className="min-w-0"><span className="block text-[10px] font-semibold text-neutral-800 dark:text-neutral-100">{item.name}</span><span className="block text-[9px] text-neutral-500">{item.desc}</span></span></button>)}
 </div>}
 </div>}
+          <FrameColorControls frame={avatarFrame} onChange={setAvatarFrame} />
           <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
             <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 75 modelos · toque para escolher</p>
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
@@ -1868,7 +1912,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 <AvatarFrame profileId={'motion-'+item.id} settings={{...avatarFrame,motion:item.id}} size={32}><span className="w-full h-full rounded-full bg-neutral-800 flex items-center justify-center text-[8px] text-white">A</span></AvatarFrame><span className="min-w-0"><span className="block text-[10px] font-semibold text-neutral-800 dark:text-neutral-100">{item.name}</span><span className="block text-[9px] text-neutral-500">{item.desc}</span></span></button>)}
 </div>}
 </div>}
-                    <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
+                    <FrameColorControls frame={avatarFrame} onChange={setAvatarFrame} />
+          <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 75 modelos · toque para escolher</p>
                       <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
                         {AVATAR_FRAME_MODELS.map((model, index) => (
