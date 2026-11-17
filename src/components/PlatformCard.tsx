@@ -477,6 +477,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                 <AvatarFrame
                   key={`p-avatar-${platform.id}-${profile.id}-${prIdx}`}
                   profileId={profile.id}
+                  settings={profile.avatarFrame}
                   size={30}
                   className="cursor-pointer hover:z-10 transition-transform hover:scale-110"
                 >
