@@ -686,8 +686,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             >
                               <div className="flex items-center gap-2.5">
                                 {/* Avatar element */}
+                                <AvatarFrame profileId={profile.id} settings={profile.avatarFrame} size={40}>
                                 <div
-                                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 uppercase shadow-inner overflow-hidden"
+                                  className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white uppercase shadow-inner overflow-hidden"
                                   style={{
                                     backgroundColor:
                                       (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:')))) && profile.avatar.value
@@ -716,6 +717,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     profile.name ? profile.name.slice(0, 2).toUpperCase() : 'PF'
                                   )}
                                 </div>
+                                </AvatarFrame>
 
                                 <div>
                                   <span className="font-bold text-neutral-800 dark:text-neutral-100 text-xs tracking-wide flex items-center gap-1.5 flex-wrap">
