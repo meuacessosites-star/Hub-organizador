@@ -1224,19 +1224,19 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                 );
                               })}
                             </div>
-                            {/* Stage labels dots */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2 mt-3" aria-label="Etapas da entrega">
+                            {/* Stage labels: preserve the original horizontal timeline without overlaps. */}
+                            <div className="grid grid-cols-6 gap-0.5 items-start mt-1.5 w-full" aria-label="Etapas da entrega">
                               {availableStatuses.map((st, idx) => {
                                 const isActive = idx <= currentStatusIndex;
                                 const isCurrent = idx === currentStatusIndex;
                                 return (
-                                  <div
+                                  <span
                                     key={`dot-label-${st.id}-${idx}`}
-                                    className={`min-w-0 flex items-start gap-1.5 text-[9px] leading-tight font-semibold ${isCurrent ? 'text-indigo-600 dark:text-indigo-400' : isActive ? 'text-neutral-500' : 'text-neutral-400'}`}
+                                    title={st.label}
+                                    className={`min-w-0 px-0.5 text-center text-[7px] min-[420px]:text-[8px] sm:text-[9px] leading-[1.2] font-bold break-words [overflow-wrap:anywhere] transition-colors ${isCurrent ? 'text-indigo-600 dark:text-indigo-400' : isActive ? 'text-neutral-500' : 'text-neutral-400'}`}
                                   >
-                                    <span className={`mt-0.5 h-1.5 w-1.5 rounded-full shrink-0 ${isCurrent ? 'bg-indigo-500' : isActive ? 'bg-neutral-400' : 'bg-neutral-300 dark:bg-neutral-700'}`} />
-                                    <span className="min-w-0 break-words">{st.label}</span>
-                                  </div>
+                                    {st.label}
+                                  </span>
                                 );
                               })}
                             </div>
