@@ -258,35 +258,38 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
       : frame.finish === 'pearl' || frame.finish === 'metallic'
         ? palette[i % palette.length]
         : frame.finish === 'soft-neon' ? color : frame.finish === 'matte' ? mixHex(color,'#777777',.12) : palette[i % palette.length];
-    const delay = (i * 0.16).toFixed(2);
+    const delay = (i * 0.19).toFixed(2);
     const animated = frame.motion !== 'none'
-      ? ' class="avatar-frame-motif" style="animation-delay:-' + delay + 's"'
+      ? ' class="avatar-frame-motif" style="animation-delay:-' + delay + 's;transform-box:fill-box;transform-origin:center"'
       : '';
     return '<g' + animated + ' transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ')">' + motif(frame.model, motifColor, i) + '</g>';
   }).join('');
-  const motionCss = '@keyframes avatar-motif-wave{0%,100%{opacity:.58;filter:brightness(.96)}50%{opacity:1;filter:brightness(1.18)}}' +
-    '@keyframes avatar-motif-twinkle{0%,100%{opacity:.72;filter:brightness(.96)}50%{opacity:1;filter:brightness(1.2)}}' +
-    '@keyframes avatar-motif-breathe{0%,100%{opacity:.62}50%{opacity:1}}' +
-    '@keyframes avatar-motif-glint{0%,100%{filter:brightness(1) drop-shadow(0 0 0 transparent)}50%{filter:brightness(1.35) drop-shadow(0 0 2px currentColor)}}' +
-    '@keyframes avatar-motif-rainbow{0%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(35deg)}100%{filter:hue-rotate(0deg)}}' +
-    '@keyframes avatar-motif-sparkle{0%,100%{opacity:.66}35%{opacity:1;filter:brightness(1.35)}55%{opacity:.78}72%{opacity:1;filter:brightness(1.2)}}' +
-    '@keyframes avatar-motif-blink{0%,82%,100%{opacity:.82;filter:brightness(1)}88%{opacity:1;filter:brightness(1.22)}94%{opacity:.76;filter:brightness(.98)}}' +
-    '@keyframes avatar-motif-slowtwinkle{0%,100%{opacity:.68;filter:brightness(.98)}35%{opacity:1;filter:brightness(1.22)}65%{opacity:.82}}' +
-    '@keyframes avatar-motif-ripple{0%,100%{opacity:.72;filter:brightness(1)}50%{opacity:1;filter:brightness(1.16) drop-shadow(0 0 1px currentColor)}}' +
-    '@keyframes avatar-motif-glimmer{0%,100%{opacity:.78;filter:brightness(1)}25%{opacity:1;filter:brightness(1.2)}38%{opacity:.86}52%{opacity:1;filter:brightness(1.16)}}' +
-    '@keyframes avatar-motif-colorbreathe{0%,100%{opacity:.8;filter:saturate(.92) brightness(1)}50%{opacity:1;filter:saturate(1.16) brightness(1.12)}}';
-  const motion = frame.motion === 'soft-pulse' || frame.motion === 'soft-breathe' ? 'avatar-motif-breathe 3.8s ease-in-out infinite' :
-    frame.motion === 'soft-glow' ? 'avatar-motif-glint 4.6s ease-in-out infinite' :
-    frame.motion === 'color-shift' || frame.motion === 'rainbow-wave' ? 'avatar-motif-rainbow 8s ease-in-out infinite' :
-    frame.motion === 'soft-shimmer' || frame.motion === 'glint' ? 'avatar-motif-glint 5.5s ease-in-out infinite' :
-    frame.motion === 'color-wave' ? 'avatar-motif-wave 3.6s ease-in-out infinite' :
-    frame.motion === 'twinkle' ? 'avatar-motif-twinkle 3.2s ease-in-out infinite' :
-    frame.motion === 'sparkle-wave' ? 'avatar-motif-sparkle 4.2s ease-in-out infinite' :
-    frame.motion === 'soft-blink' ? 'avatar-motif-blink 3.8s ease-in-out infinite' :
-    frame.motion === 'slow-twinkle' ? 'avatar-motif-slowtwinkle 4.8s ease-in-out infinite' :
-    frame.motion === 'light-ripple' ? 'avatar-motif-ripple 3.4s ease-in-out infinite' :
-    frame.motion === 'gentle-glimmer' ? 'avatar-motif-glimmer 5.2s ease-in-out infinite' :
-    frame.motion === 'color-breathe' ? 'avatar-motif-colorbreathe 5.6s ease-in-out infinite' : undefined;
+  // Animate individual SVG motifs rather than an extra ring. Short, staggered peaks
+  // stay recognizable even at thumbnail sizes, without flashing or rotating the avatar.
+  const motionCss =
+    '@keyframes avatar-motif-wave{0%,100%{opacity:.55}42%,58%{opacity:1;filter:brightness(1.6) drop-shadow(0 0 2px currentColor)}}' +
+    '@keyframes avatar-motif-twinkle{0%,100%{opacity:.42;transform:scale(.86)}42%{opacity:1;transform:scale(1.13);filter:drop-shadow(0 0 2px currentColor)}}' +
+    '@keyframes avatar-motif-breathe{0%,100%{opacity:.48}50%{opacity:1;filter:brightness(1.35)}}' +
+    '@keyframes avatar-motif-glint{0%,100%{opacity:.65;filter:brightness(1)}45%{opacity:1;filter:brightness(1.65) drop-shadow(0 0 2.5px currentColor)}}' +
+    '@keyframes avatar-motif-rainbow{0%,100%{filter:hue-rotate(0deg) saturate(1)}50%{filter:hue-rotate(105deg) saturate(1.4)}}' +
+    '@keyframes avatar-motif-sparkle{0%,100%{opacity:.38;transform:scale(.85)}28%{opacity:1;transform:scale(1.14);filter:drop-shadow(0 0 2px currentColor)}48%{opacity:.55}65%{opacity:.92}}' +
+    '@keyframes avatar-motif-blink{0%,28%,100%{opacity:.42}42%,58%{opacity:1;filter:brightness(1.55) drop-shadow(0 0 2px currentColor)}70%{opacity:.48}}' +
+    '@keyframes avatar-motif-slowtwinkle{0%,100%{opacity:.45;transform:scale(.9)}38%,58%{opacity:1;transform:scale(1.11);filter:drop-shadow(0 0 2px currentColor)}}' +
+    '@keyframes avatar-motif-ripple{0%,100%{opacity:.48}35%,60%{opacity:1;filter:brightness(1.6) drop-shadow(0 0 2px currentColor)}}' +
+    '@keyframes avatar-motif-glimmer{0%,100%{opacity:.5}24%{opacity:1;filter:brightness(1.55)}42%{opacity:.55}65%{opacity:1;filter:brightness(1.35)}}' +
+    '@keyframes avatar-motif-colorbreathe{0%,100%{opacity:.6;filter:saturate(.7) brightness(.9)}50%{opacity:1;filter:saturate(1.8) brightness(1.35)}}';
+  const motion = frame.motion === 'soft-pulse' || frame.motion === 'soft-breathe' ? 'avatar-motif-breathe 3.6s ease-in-out infinite' :
+    frame.motion === 'soft-glow' ? 'avatar-motif-glint 4s ease-in-out infinite' :
+    frame.motion === 'color-shift' || frame.motion === 'rainbow-wave' ? 'avatar-motif-rainbow 6s ease-in-out infinite' :
+    frame.motion === 'soft-shimmer' || frame.motion === 'glint' ? 'avatar-motif-glint 4.2s ease-in-out infinite' :
+    frame.motion === 'color-wave' ? 'avatar-motif-wave 3.2s ease-in-out infinite' :
+    frame.motion === 'twinkle' ? 'avatar-motif-twinkle 3.4s ease-in-out infinite' :
+    frame.motion === 'sparkle-wave' ? 'avatar-motif-sparkle 4.1s ease-in-out infinite' :
+    frame.motion === 'soft-blink' ? 'avatar-motif-blink 3.6s ease-in-out infinite' :
+    frame.motion === 'slow-twinkle' ? 'avatar-motif-slowtwinkle 4.7s ease-in-out infinite' :
+    frame.motion === 'light-ripple' ? 'avatar-motif-ripple 3.1s ease-in-out infinite' :
+    frame.motion === 'gentle-glimmer' ? 'avatar-motif-glimmer 4.5s ease-in-out infinite' :
+    frame.motion === 'color-breathe' ? 'avatar-motif-colorbreathe 5.1s ease-in-out infinite' : undefined;
   const stroke = frame.finish === 'soft-neon' ? 'drop-shadow(0 0 2px ' + color + ') drop-shadow(0 0 4px ' + color + ')' :
     frame.finish === 'pearl' || frame.finish === 'crystal' ? 'drop-shadow(0 0 1px #fff)' :
     frame.finish === 'metallic' ? 'drop-shadow(0 0 1px #D8C29A)' :
