@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { db, auth } from '../firebase';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
-import { safeParse, safeSetItem, safeGetItem, safeRemoveItem } from '../lib/utils';
+import { safeParse, safeSetItem, safeGetItem, safeRemoveItem, orderPurchaseStatuses } from '../lib/utils';
 import { handleFirestoreError, OperationType } from '../utils/firebaseErrors';
 
 const DEFAULT_TAGS: Tag[] = [
@@ -345,7 +345,7 @@ export function useStorage() {
         if (idx !== -1) merged[idx] = ls;
         else merged.push(ls);
       });
-      return merged;
+      return orderPurchaseStatuses(merged);
     });
 
     setProfilePresets(() => {
@@ -515,8 +515,9 @@ export function useStorage() {
               unique.push(s);
             }
           });
-          setStatuses(unique);
-          safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(unique));
+          const ordered = orderPurchaseStatuses(unique);
+          setStatuses(ordered);
+          safeSetItem(`hub_user_${user.uid}_statuses`, JSON.stringify(ordered));
         } else {
           DEFAULT_STATUSES.forEach(s => fbSet('statuses', s.id, s));
           setStatuses(DEFAULT_STATUSES);
@@ -1127,11 +1128,12 @@ export function useStorage() {
   }, [fbSet]);
 
   const saveStatuses = useCallback(async (newStatuses: Status[]) => {
+    const orderedStatuses = orderPurchaseStatuses(newStatuses);
     const currentStatuses = statusesRef.current;
-    const deleted = currentStatuses.filter(cs => !newStatuses.some(ns => ns.id === cs.id));
-    
-    setStatuses(newStatuses);
-    statusesRef.current = newStatuses;
+    const deleted = currentStatuses.filter(cs => !orderedStatuses.some(ns => ns.id === cs.id));
+
+    setStatuses(orderedStatuses);
+    statusesRef.current = orderedStatuses;
     
     for (const s of newStatuses) {
       await fbSet('statuses', s.id, s);
