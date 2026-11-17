@@ -6,7 +6,12 @@ export type AvatarFrameModel =
   | 'pearls' | 'pearls-alternating' | 'mini-links' | 'open-links' | 'moons'
   | 'tiny-stars' | 'sparkles' | 'diamonds' | 'diamond-outline' | 'mini-arches'
   | 'arches-alternating' | 'tiny-waves' | 'seeds' | 'clovers' | 'tiny-flowers'
-  | 'flower-outline' | 'tiny-bows' | 'light-dots' | 'micro-dashes' | 'tiny-leaves';
+  | 'flower-outline' | 'tiny-bows' | 'light-dots' | 'micro-dashes' | 'tiny-leaves'
+  | 'tiny-crescents' | 'double-dots' | 'star-outline' | 'mini-daisies' | 'scallops'
+  | 'tiny-triangles' | 'leaf-pairs' | 'mini-swirls' | 'tiny-circles' | 'mini-squares'
+  | 'star-dots' | 'tiny-fans' | 'tiny-comets' | 'mini-ribbons' | 'mini-shells'
+  | 'tiny-branches' | 'mini-snowflakes' | 'tiny-crosses' | 'tiny-rings' | 'diamond-dots'
+  | 'double-petals' | 'tiny-spirals' | 'mini-crowns' | 'tiny-sunbursts' | 'mini-feathers';
 
 export type AvatarFrameFinish = 'solid' | 'gradient' | 'pastel-rainbow' | 'soft-neon' | 'pearl' | 'metallic';
 export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave';
@@ -22,7 +27,12 @@ export const AVATAR_FRAME_MODELS: AvatarFrameModel[] = [
   'micro-hearts','open-hearts','petals','petal-outline','droplets','pearls','pearls-alternating',
   'mini-links','open-links','moons','tiny-stars','sparkles','diamonds','diamond-outline',
   'mini-arches','arches-alternating','tiny-waves','seeds','clovers','tiny-flowers',
-  'flower-outline','tiny-bows','light-dots','micro-dashes','tiny-leaves'
+  'flower-outline','tiny-bows','light-dots','micro-dashes','tiny-leaves',
+  'tiny-crescents','double-dots','star-outline','mini-daisies','scallops',
+  'tiny-triangles','leaf-pairs','mini-swirls','tiny-circles','mini-squares',
+  'star-dots','tiny-fans','tiny-comets','mini-ribbons','mini-shells',
+  'tiny-branches','mini-snowflakes','tiny-crosses','tiny-rings','diamond-dots',
+  'double-petals','tiny-spirals','mini-crowns','tiny-sunbursts','mini-feathers'
 ];
 const PALETTES = [
   ['#E7A2BD'], ['#A99AE8'], ['#80B9E9'], ['#79C9AD'], ['#D9B77E'],
@@ -68,6 +78,31 @@ function motif(model: AvatarFrameModel, color: string, index: number) {
     case 'light-dots': return '<circle r="1" fill="' + color + '"/>';
     case 'micro-dashes': return '<path d="M-1.8 0 H1.8" ' + thin + '/>';
     case 'tiny-leaves': return '<path d="M0 2 Q-3 0 -1.8 -2.5 Q1 -2 0 2Z" fill="' + color + '"/>';
+    case 'tiny-crescents': return '<path d="M1 -3 A3.2 3.2 0 1 0 1 3 A2.2 2.2 0 1 1 1 -3Z" ' + thin + '/>';
+    case 'double-dots': return '<circle cx="-1.5" r="1.1" fill="' + color + '"/><circle cx="1.5" r="1.1" fill="' + color + '"/>';
+    case 'star-outline': return '<path d="M0 -3 L.8 -1 .8 -1 3 0 .8 1 0 3 -.8 1 -3 0 -.8 -1Z" ' + thin + '/>';
+    case 'mini-daisies': return '<circle cy="-2" r="1.1" fill="' + color + '"/><circle cx="2" r="1.1" fill="' + color + '"/><circle cy="2" r="1.1" fill="' + color + '"/><circle cx="-2" r="1.1" fill="' + color + '"/><circle r=".8" fill="#FFF"/>';
+    case 'scallops': return '<path d="M-3 1 Q-3 -2 0 -2 Q3 -2 3 1" ' + thin + '/>';
+    case 'tiny-triangles': return '<path d="M0 -2.8 L2.5 2 H-2.5Z" ' + thin + '/>';
+    case 'leaf-pairs': return '<path d="M0 0 Q-3 -3 -2 -1 Q-1 1 0 0 Q3 -3 2 -1 Q1 1 0 0Z" ' + thin + '/>';
+    case 'mini-swirls': return '<path d="M-2 1 C-3 -2 2 -3 2 0 C2 2 0 2 0 1" ' + thin + '/>';
+    case 'tiny-circles': return '<circle r="2.3" ' + thin + '/>';
+    case 'mini-squares': return '<rect x="-1.8" y="-1.8" width="3.6" height="3.6" rx=".6" ' + thin + '/>';
+    case 'star-dots': return '<path d="M0 -2.6 L.7 -.7 2.6 0 .7 .7 0 2.6 -.7 .7 -2.6 0 -.7 -.7Z" fill="' + color + '"/><circle r=".65" fill="#FFF"/>';
+    case 'tiny-fans': return '<path d="M0 2 L-2.6 -1 Q-1.5 -2.5 0 -1.2 Q1.5 -2.5 2.6 -1Z" ' + thin + '/>';
+    case 'tiny-comets': return '<circle r="1.5" fill="' + color + '"/><path d="M-2 2 L-3.2 3.2 M-1 2.5 L-1.8 3.8" ' + thin + '/>';
+    case 'mini-ribbons': return '<path d="M-2.5 -2 L0 0 L2.5 -2 M-2.5 2 L0 0 L2.5 2" ' + thin + '/>';
+    case 'mini-shells': return '<path d="M-3 2 A3 3 0 0 1 3 2 M-1.5 2 L-1 0 M0 2 V-1 M1.5 2 L1 0" ' + thin + '/>';
+    case 'tiny-branches': return '<path d="M0 3 V-2 M0 0 L-2 -2 M0 1 L2 -1" ' + thin + '/>';
+    case 'mini-snowflakes': return '<path d="M0 -3 V3 M-2.6 -1.5 L2.6 1.5 M-2.6 1.5 L2.6 -1.5" ' + thin + '/>';
+    case 'tiny-crosses': return '<path d="M0 -2.5 V2.5 M-2.5 0 H2.5" ' + thin + '/>';
+    case 'tiny-rings': return '<circle r="2.2" fill="none" stroke="' + color + '" stroke-width="1.1"/><circle r=".7" fill="' + color + '"/>';
+    case 'diamond-dots': return '<path d="M0 -2.5 L2 0 L0 2.5 L-2 0Z" ' + thin + '/><circle r=".7" fill="' + color + '"/>';
+    case 'double-petals': return '<path d="M0 0 Q-3 -3 0 -3 Q3 -3 0 0 Q3 3 0 3 Q-3 3 0 0Z" ' + thin + '/>';
+    case 'tiny-spirals': return '<path d="M1.8 0 C1.8 -2.5 -2 -2.5 -2 0 C-2 2 1 2 1 0 C1  -.8 0 -.8 0 0" ' + thin + '/>';
+    case 'mini-crowns': return '<path d="M-3 1 L-2 -2 L0 0 L2 -2 L3 1 V2 H-3Z" ' + thin + '/>';
+    case 'tiny-sunbursts': return '<circle r="1.1" fill="' + color + '"/><path d="M0 -3 V-2 M0 2 V3 M-3 0 H-2 M2 0 H3 M-2 -2 L-1.5 -1.5 M2 2 L1.5 1.5 M2 -2 L1.5 -1.5 M-2 2 L-1.5 1.5" ' + thin + '/>';
+    case 'mini-feathers': return '<path d="M-2 2 Q-2 -3 2 -3 Q2 1 -2 2Z M-1 1 L1 -1" ' + thin + '/>';
   }
 }
 
