@@ -15,7 +15,7 @@ export type AvatarFrameModel =
   | 'soft-braid' | 'woven-ribbon' | 'double-waves' | 'fine-chevron' | 'corner-marks' | 'tiny-sprigs' | 'delicate-crosses' | 'soft-x' | 'tiny-pluses' | 'fine-triangles' | 'hollow-rings' | 'hollow-stars' | 'outlined-stars' | 'tiny-squares' | 'rounded-dashes' | 'three-petals' | 'four-petal-flowers' | 'droplet-rays' | 'fine-spirals' | 'curved-waves' | 'starry-flower' | 'double-seeds' | 'infinity-links' | 'hollow-clovers' | 'soft-heartbeat';
 
 export type AvatarFrameFinish = 'solid' | 'gradient' | 'pastel-rainbow' | 'soft-neon' | 'pearl' | 'metallic' | 'matte' | 'satin' | 'crystal';
-export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave' | 'soft-blink' | 'slow-twinkle' | 'light-ripple' | 'gentle-glimmer' | 'color-breathe';
+export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave' | 'soft-blink' | 'slow-twinkle' | 'light-ripple' | 'gentle-glimmer' | 'color-breathe' | 'soft-sway' | 'petal-dance' | 'fireflies' | 'comet-tail' | 'double-beat' | 'bloom';
 
 export interface AvatarFrameSettings {
   model: AvatarFrameModel;
@@ -232,7 +232,7 @@ function colorAt(colors: string[], position: number) {
 // Cada efeito tem uma animação e um padrão temporal próprios. O seletor
 // mostra várias miniaturas simultaneamente: não use uma classe CSS global
 // para definir animation, pois a última miniatura substituiria as demais.
-type FrameMotionPattern = 'together' | 'around' | 'reverse' | 'random' | 'alternate' | 'pairs';
+type FrameMotionPattern = 'together' | 'around' | 'reverse' | 'random' | 'alternate' | 'pairs' | 'quarters';
 const FRAME_MOTION_EFFECTS: Record<AvatarFrameMotion, { name: string; seconds: number; pattern: FrameMotionPattern } | null> = {
   'none': null,
   'soft-pulse': { name: 'avatarfx-pulse', seconds: 3.6, pattern: 'together' },
@@ -249,37 +249,75 @@ const FRAME_MOTION_EFFECTS: Record<AvatarFrameMotion, { name: string; seconds: n
   'slow-twinkle': { name: 'avatarfx-slowtwinkle', seconds: 6.2, pattern: 'random' },
   'light-ripple': { name: 'avatarfx-ripple', seconds: 3.8, pattern: 'around' },
   'gentle-glimmer': { name: 'avatarfx-glimmer', seconds: 5.0, pattern: 'random' },
-  'color-breathe': { name: 'avatarfx-colorbreathe', seconds: 5.2, pattern: 'together' }
+  'color-breathe': { name: 'avatarfx-colorbreathe', seconds: 5.2, pattern: 'together' },
+  'soft-sway': { name: 'avatarfx-sway', seconds: 3.8, pattern: 'quarters' },
+  'petal-dance': { name: 'avatarfx-petaldance', seconds: 4.2, pattern: 'alternate' },
+  'fireflies': { name: 'avatarfx-still', seconds: 5.4, pattern: 'together' },
+  'comet-tail': { name: 'avatarfx-still', seconds: 5, pattern: 'together' },
+  'double-beat': { name: 'avatarfx-doublebeat', seconds: 4.2, pattern: 'together' },
+  'bloom': { name: 'avatarfx-bloom', seconds: 4.5, pattern: 'pairs' }
 };
 
 // Só os desenhos brilham/movem: nenhum segundo aro e nenhuma rotação.
 // Animar o grupo INTERNO preserva o posicionamento radial do grupo SVG externo.
 const AVATAR_FRAME_MOTION_CSS = [
-  '@keyframes avatarfx-pulse{0%,100%{opacity:.48}50%{opacity:1}}',
-  '@keyframes avatarfx-glow{0%,100%{filter:drop-shadow(0 0 0 transparent);opacity:.84}50%{filter:drop-shadow(0 0 2.8px currentColor);opacity:1}}',
-  '@keyframes avatarfx-color{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(135deg) saturate(1.35)}}',
-  '@keyframes avatarfx-shimmer{0%,12%,100%{opacity:.48;filter:brightness(.9)}22%,34%{opacity:1;filter:brightness(1.7) drop-shadow(0 0 1.8px currentColor)}46%{opacity:.52}}',
-  '@keyframes avatarfx-wave{0%,100%{opacity:.5;transform:scale(.86)}45%,63%{opacity:1;transform:scale(1.16)}}',
-  '@keyframes avatarfx-twinkle{0%,24%,58%,100%{opacity:.42;transform:scale(.8)}34%,47%{opacity:1;transform:scale(1.24);filter:drop-shadow(0 0 2px currentColor)}}',
-  '@keyframes avatarfx-breathe{0%,100%{transform:scale(.86);opacity:.86}50%{transform:scale(1.14);opacity:1}}',
-  '@keyframes avatarfx-glint{0%,35%,100%{opacity:.62;filter:brightness(1)}42%,53%{opacity:1;filter:brightness(1.85) drop-shadow(0 0 2.5px currentColor)}61%{opacity:.62}}',
-  '@keyframes avatarfx-rainbow{0%,100%{filter:hue-rotate(0deg)}45%,65%{filter:hue-rotate(155deg) saturate(1.5)}}',
-  '@keyframes avatarfx-sparkles{0%,55%,100%{opacity:.38;transform:scale(.82)}16%,33%{opacity:1;transform:scale(1.28);filter:drop-shadow(0 0 2.4px currentColor)}}',
-  '@keyframes avatarfx-blink{0%,14%,50%,100%{opacity:.42}25%,40%{opacity:1;filter:brightness(1.6) drop-shadow(0 0 1.4px currentColor)}}',
-  '@keyframes avatarfx-slowtwinkle{0%,34%,84%,100%{opacity:.5;transform:scale(.92)}52%,68%{opacity:1;transform:scale(1.14);filter:drop-shadow(0 0 1.8px currentColor)}}',
-  '@keyframes avatarfx-ripple{0%,100%{opacity:.6;transform:translateY(.6px) scale(.94)}42%,60%{opacity:1;transform:translateY(-1.2px) scale(1.13)}}',
-  '@keyframes avatarfx-glimmer{0%,55%,100%{opacity:.55;filter:brightness(1)}17%,29%{opacity:1;filter:brightness(1.75) drop-shadow(0 0 2px currentColor)}38%{opacity:.6}}',
-  '@keyframes avatarfx-colorbreathe{0%,100%{filter:saturate(.65) brightness(.85);opacity:.8}50%{filter:saturate(1.7) brightness(1.35);opacity:1}}',
-  '@media(prefers-reduced-motion:reduce){.avatar-frame-ink{animation:none!important;opacity:1!important;transform:none!important;filter:none!important}}'
+  '@keyframes avatarfx-pulse{0%,100%{transform:scale(.92);opacity:.9}50%{transform:scale(1.3);opacity:1}}',
+  '@keyframes avatarfx-glow{0%,100%{filter:drop-shadow(0 0 0 transparent);opacity:1}50%{filter:drop-shadow(0 0 3.5px currentColor);opacity:1}}',
+  '@keyframes avatarfx-color{0%,100%{filter:hue-rotate(0deg) saturate(1)}50%{filter:hue-rotate(155deg) saturate(1.7)}}',
+  '@keyframes avatarfx-shimmer{0%,75%,100%{opacity:.84;filter:brightness(1)}11%,26%{opacity:1;filter:brightness(2.1) drop-shadow(0 0 1.7px currentColor)}}',
+  '@keyframes avatarfx-wave{0%,75%,100%{transform:translateY(0) scale(1)}19%,36%{transform:translateY(-3px) scale(1.24)}}',
+  '@keyframes avatarfx-twinkle{0%,48%,100%{transform:scale(.85);opacity:.73}13%,30%{transform:scale(1.5);opacity:1;filter:drop-shadow(0 0 1.9px currentColor)}}',
+  '@keyframes avatarfx-breathe{0%,100%{transform:translateY(2.4px);opacity:.95}50%{transform:translateY(-2.4px);opacity:1}}',
+  '@keyframes avatarfx-glint{0%,75%,100%{filter:brightness(1);transform:scaleX(1)}15%,29%{filter:brightness(2.3) drop-shadow(0 0 2px currentColor);transform:scaleX(1.38)}}',
+  '@keyframes avatarfx-rainbow{0%,100%{filter:hue-rotate(0deg) saturate(1.2)}33%{filter:hue-rotate(110deg) saturate(1.9)}67%{filter:hue-rotate(235deg) saturate(1.5)}}',
+  '@keyframes avatarfx-sparkles{0%,68%,100%{transform:scale(.87);opacity:.75}12%,28%{transform:scale(1.46);opacity:1}}',
+  '@keyframes avatarfx-blink{0%,14%,100%{opacity:1;filter:brightness(1.5)}34%,66%{opacity:.26;filter:brightness(.9)}}',
+  '@keyframes avatarfx-slowtwinkle{0%,65%,100%{transform:scale(.95);opacity:.88}20%,39%{transform:scale(1.4);opacity:1;filter:drop-shadow(0 0 1.8px currentColor)}}',
+  '@keyframes avatarfx-ripple{0%,77%,100%{transform:translateY(2px) scale(.95)}20%,37%{transform:translateY(-3.2px) scale(1.25)}}',
+  '@keyframes avatarfx-glimmer{0%,62%,100%{opacity:1;filter:brightness(1)}16%,31%{opacity:1;filter:brightness(1.8)}}',
+  '@keyframes avatarfx-colorbreathe{0%,100%{filter:hue-rotate(0deg) saturate(.65) brightness(.95)}50%{filter:hue-rotate(45deg) saturate(2) brightness(1.22)}}',
+  '@keyframes avatarfx-still{0%,100%{opacity:1}50%{opacity:.98}}',
+  '@keyframes avatarfx-sway{0%,100%{transform:translateX(-2.4px)}50%{transform:translateX(2.4px)}}',
+  '@keyframes avatarfx-petaldance{0%,100%{transform:rotate(-18deg) translateY(.6px)}50%{transform:rotate(18deg) translateY(-1.4px)}}',
+  '@keyframes avatarfx-doublebeat{0%,13%,31%,100%{transform:scale(.94)}19%{transform:scale(1.44)}37%{transform:scale(1.27)}48%,85%{transform:scale(.94)}}',
+  '@keyframes avatarfx-bloom{0%,75%,100%{transform:scale(.84)}30%,55%{transform:scale(1.34)}}',
+  '@keyframes avatarfx-fairy{0%,14%,100%{transform:translate(-2px,2px) scale(.5);opacity:0}34%,57%{transform:translate(1px,-2.6px) scale(1.18);opacity:1}75%{opacity:0}}',
+  '@keyframes avatarfx-comet{0%,10%,100%{transform:translate(-3px,2.5px);opacity:0}31%,46%{opacity:1}65%{transform:translate(3px,-2.8px);opacity:0}}',
+  '@keyframes avatarfx-petals{0%,15%,100%{opacity:0;transform:scale(.35)}35%,58%{opacity:1;transform:scale(1.4)}}',
+  '@keyframes avatarfx-flickerstar{0%,65%,100%{opacity:0;transform:scale(.3)}16%,34%{opacity:1;transform:scale(1.1)}}',
+  '@media(prefers-reduced-motion:reduce){.avatar-frame-ink,.avatar-frame-accent{animation:none!important;opacity:1!important;transform:none!important;filter:none!important}}'
 ].join('');
 
 function frameMotionDelay(pattern: FrameMotionPattern, index: number, total: number, seconds: number): number {
   if (pattern === 'together') return 0;
   if (pattern === 'alternate') return (index % 2) * seconds / 2;
-  if (pattern === 'pairs') return (Math.floor(index / 3) % 4) * seconds / 4;
+  if (pattern === 'pairs') return (Math.floor(index / 3) % 5) * seconds / 5;
+  if (pattern === 'quarters') return (Math.floor(index / 6) % 2) * seconds / 2;
   if (pattern === 'random') return ((index * 7 + 3) % total) * seconds / total;
   if (pattern === 'reverse') return ((total - index) % total) * seconds / total;
   return index * seconds / total;
+}
+
+function frameMotionAccent(motion: AvatarFrameMotion, color: string, index: number, seconds: number): string {
+  const center = 'transform-box:fill-box;transform-origin:center;';
+  const delay = (((index * 11 + 4) % 24) / 24 * seconds).toFixed(2);
+  if (motion === 'fireflies' && index % 3 === 0) {
+    return '<g class="avatar-frame-accent" style="' + center + 'animation:avatarfx-fairy ' + seconds + 's ease-in-out infinite;animation-delay:-' + delay + 's">' +
+      '<circle cy="-1.8" r="2.1" fill="' + color + '" opacity=".65"/><circle cy="-1.8" r="1" fill="#FFFFFF"/></g>';
+  }
+  if (motion === 'comet-tail' && index % 4 === 0) {
+    return '<g class="avatar-frame-accent" style="' + center + 'animation:avatarfx-comet ' + seconds + 's ease-in-out infinite;animation-delay:-' + delay + 's">' +
+      '<path d="M-4 2 L0 -1.5" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round"/><circle cx=".8" cy="-2" r="1.2" fill="#FFFFFF"/></g>';
+  }
+  if (motion === 'bloom' && index % 3 === 0) {
+    return '<g class="avatar-frame-accent" style="' + center + 'animation:avatarfx-petals ' + seconds + 's ease-in-out infinite;animation-delay:-' + delay + 's">' +
+      '<path d="M0 -4 Q2 -2 0 0 Q-2 -2 0 -4 M4 0 Q2 2 0 0 Q2 -2 4 0 M0 4 Q-2 2 0 0 Q2 2 0 4 M-4 0 Q-2 -2 0 0 Q-2 2 -4 0" fill="' + color + '" stroke="' + color + '" stroke-width=".6"/></g>';
+  }
+  if ((motion === 'twinkle' || motion === 'sparkle-wave' || motion === 'slow-twinkle' || motion === 'gentle-glimmer') && index % (motion === 'slow-twinkle' ? 4 : 3) === 0) {
+    return '<g class="avatar-frame-accent" style="' + center + 'animation:avatarfx-flickerstar ' + seconds + 's ease-in-out infinite;animation-delay:-' + delay + 's">' +
+      '<path d="M0 -4 V4 M-4 0 H4" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/></g>';
+  }
+  return '';
 }
 
 export function AvatarFrame({ profileId, settings, children, className = '', size = 48 }: {
@@ -316,9 +354,11 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
     const animStyle = effect
       ? 'animation:' + effect.name + ' ' + effect.seconds + 's ease-in-out infinite;animation-delay:-' + delay.toFixed(2) + 's;'
       : '';
-    return '<g transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ')">' +
+    const accent = effect ? frameMotionAccent(frame.motion, motifColor, i, effect.seconds) : '';
+    const ornamentScale = size < 76 ? 1.16 : 1;
+    return '<g transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ') scale(' + ornamentScale + ')">' +
       '<g class="avatar-frame-ink" style="color:' + motifColor + ';transform-box:fill-box;transform-origin:center;' + animStyle + '">' +
-      motif(frame.model, motifColor, i) + '</g></g>';
+      motif(frame.model, motifColor, i) + '</g>' + accent + '</g>';
   }).join('');
   const stroke = frame.finish === 'soft-neon' ? 'drop-shadow(0 0 2px ' + color + ') drop-shadow(0 0 4px ' + color + ')' :
     frame.finish === 'pearl' || frame.finish === 'crystal' ? 'drop-shadow(0 0 1px #fff)' :
