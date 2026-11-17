@@ -686,39 +686,51 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               }`}
                             >
                               <div className="flex items-center gap-2.5">
-                                {/* Avatar element */}
-                                <AvatarFrame profileId={profile.id} settings={profile.avatarFrame} size={40}>
-                                <div
-                                  className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white uppercase shadow-inner overflow-hidden"
-                                  style={{
-                                    backgroundColor:
-                                      (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:')))) && profile.avatar.value
-                                        ? 'transparent'
-                                        : profile.avatar.bgColor || (profile.avatar.type === 'color' ? profile.avatar.value : '#4f46e5'),
+                                {/* Avatar: toque abre edição/personalização sem recolher o cartão */}
+                                <button
+                                  type="button"
+                                  aria-label={`Personalizar foto e moldura de ${profile.name}`}
+                                  title="Toque para personalizar foto e moldura"
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditProfile(platform.id, profile, true);
                                   }}
+                                  className="shrink-0 rounded-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                                 >
-                                  {profile.avatar.type === 'emoji' && profile.avatar.value ? (
-                                    profile.avatar.value
-                                  ) : (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:')))) && profile.avatar.value ? (
-                                    <SmartImage
-                                      src={profile.avatar.value}
-                                      alt={profile.name}
-                                      className="w-full h-full object-cover rounded-full"
-                                      style={{ transform: `scale(${profile.avatar.zoom || 1})` }}
-                                      fallbackIcon={
-                                        <div
-                                          className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white uppercase"
-                                          style={{ backgroundColor: profile.avatar.bgColor || '#4f46e5' }}
-                                        >
-                                          {profile.name ? profile.name.slice(0, 2).toUpperCase() : 'PF'}
-                                        </div>
-                                      }
-                                    />
-                                  ) : (
-                                    profile.name ? profile.name.slice(0, 2).toUpperCase() : 'PF'
-                                  )}
-                                </div>
-                                </AvatarFrame>
+                                  <AvatarFrame profileId={profile.id} settings={profile.avatarFrame} size={40}>
+                                    <div
+                                      className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white uppercase shadow-inner overflow-hidden"
+                                      style={{
+                                        backgroundColor:
+                                          (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:')))) && profile.avatar.value
+                                            ? 'transparent'
+                                            : profile.avatar.bgColor || (profile.avatar.type === 'color' ? profile.avatar.value : '#4f46e5'),
+                                      }}
+                                    >
+                                      {profile.avatar.type === 'emoji' && profile.avatar.value ? (
+                                        profile.avatar.value
+                                      ) : (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:')))) && profile.avatar.value ? (
+                                        <SmartImage
+                                          src={profile.avatar.value}
+                                          alt={profile.name}
+                                          className="w-full h-full object-cover rounded-full"
+                                          style={{ transform: `scale(${profile.avatar.zoom || 1})` }}
+                                          fallbackIcon={
+                                            <div
+                                              className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white uppercase"
+                                              style={{ backgroundColor: profile.avatar.bgColor || '#4f46e5' }}
+                                            >
+                                              {profile.name ? profile.name.slice(0, 2).toUpperCase() : 'PF'}
+                                            </div>
+                                          }
+                                        />
+                                      ) : (
+                                        profile.name ? profile.name.slice(0, 2).toUpperCase() : 'PF'
+                                      )}
+                                    </div>
+                                  </AvatarFrame>
+                                </button>
 
                                 <div>
                                   <span className="font-bold text-neutral-800 dark:text-neutral-100 text-xs tracking-wide flex items-center gap-1.5 flex-wrap">
