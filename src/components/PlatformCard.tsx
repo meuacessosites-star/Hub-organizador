@@ -7,6 +7,7 @@ import { safeUrl } from "../lib/utils";
 import React, { useState } from 'react';
 import { Platform, Profile, Purchase, PurchaseStatus, Tag as TagType, Status } from '../types';
 import { CategoryIcon } from './CategoryIcon';
+import { AvatarFrame } from './AvatarFrame';
 import {
   ChevronDown,
   ChevronUp,
@@ -473,10 +474,15 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
             {/* Profile Avatars indicators */}
             <div className="flex items-center -space-x-2 overflow-hidden">
               {platform.profiles.map((profile, prIdx) => (
-                <div
+                <AvatarFrame
                   key={`p-avatar-${platform.id}-${profile.id}-${prIdx}`}
+                  profileId={profile.id}
+                  size={30}
+                  className="cursor-pointer hover:z-10 transition-transform hover:scale-110"
+                >
+                <div
                   title={`${profile.name} (${profile.email || profile.username || ''})`}
-                  className="w-7 h-7 rounded-full border-2 border-white dark:border-[#111218] flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase cursor-pointer hover:z-10 transition-transform hover:scale-110 overflow-hidden"
+                  className="w-full h-full rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase overflow-hidden"
                   style={{
                     backgroundColor:
                       (profile.avatar.type === 'image' || (profile.avatar.value && (profile.avatar.value.startsWith('http') || profile.avatar.value.startsWith('data:') || profile.avatar.value.startsWith('blob:') || profile.avatar.value.startsWith('/')))) && profile.avatar.value
@@ -509,6 +515,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                     return profile.name.slice(0, 2).toUpperCase();
                   })()}
                 </div>
+                </AvatarFrame>
               ))}
             </div>
           </div>
