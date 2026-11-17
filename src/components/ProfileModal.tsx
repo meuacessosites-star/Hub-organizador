@@ -17,44 +17,74 @@ import { SmartImage } from './SmartImage';
 import { AvatarFrame, defaultAvatarFrame, AVATAR_FRAME_MODELS, AVATAR_FRAME_MODEL_LABELS, AvatarFrameSettings } from './AvatarFrame';
 
 function FrameColorControls({ frame, onChange }: { frame: AvatarFrameSettings; onChange: (frame: AvatarFrameSettings) => void }) {
-  const colors = [frame.colors?.[0] || '#A99AE8', frame.colors?.[1] || '#F2B8D0', frame.colors?.[2] || '#80B9E9'];
+  const colors = (frame.colors?.length ? frame.colors : ['#A99AE8']).slice(0, 3);
   const [activeColor, setActiveColor] = React.useState(0);
-  const [hexInput, setHexInput] = React.useState(colors[0]);
-  React.useEffect(() => { setHexInput(colors[activeColor]); }, [activeColor, frame.colors?.[0], frame.colors?.[1], frame.colors?.[2]]);
+  const [expanded, setExpanded] = React.useState(false);
+  const selectedIndex = Math.min(activeColor, colors.length - 1);
+  const selected = colors[selectedIndex];
+  const [hexInput, setHexInput] = React.useState(selected);
+  React.useEffect(() => { setHexInput(selected); }, [selected, selectedIndex]);
   const updateColor = (value: string) => {
     if (!/^#[0-9a-fA-F]{6}$/.test(value)) return;
     const next = [...colors];
-    next[activeColor] = value.toUpperCase();
+    next[selectedIndex] = value.toUpperCase();
     onChange({ ...frame, colors: next });
   };
+  const addColor = () => {
+    if (colors.length >= 3) return;
+    onChange({ ...frame, colors: [...colors, colors.length === 1 ? '#F2B8D0' : '#80B9E9'] });
+    setActiveColor(colors.length);
+    setExpanded(true);
+  };
+  const removeColor = () => {
+    if (colors.length <= 1) return;
+    onChange({ ...frame, colors: colors.filter((_, i) => i !== selectedIndex) });
+    setActiveColor(0);
+  };
   return (
-    <section className="rounded-xl border border-indigo-200/60 dark:border-indigo-500/20 p-3 space-y-3">
-      <div><p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">Cores da moldura</p>
-        <p className="text-[10px] text-neutral-500">Escolha qualquer cor ou combine três tonalidades nos desenhos.</p></div>
-      <div className="grid grid-cols-3 gap-2">
+    <section className="rounded-xl border border-indigo-200/60 dark:border-indigo-500/20 p-3 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">Cores da moldura</p>
+          <p className="text-[10px] text-neutral-500">Uma cor ou combinação de até três.</p>
+        </div>
+        <button type="button" onClick={() => setExpanded(v => !v)}
+          aria-expanded={expanded}
+          className="shrink-0 rounded-lg border border-indigo-500/30 px-3 py-2 text-[11px] font-semibold text-indigo-500">
+          {expanded ? 'Recolher' : 'Escolher cor'}
+        </button>
+      </div>
+      <div className="flex items-center flex-wrap gap-2">
         {colors.map((color, index) => (
-          <button key={index} type="button" onClick={() => setActiveColor(index)}
-            aria-label={`Editar ${index + 1}ª cor da moldura`} aria-pressed={activeColor === index}
-            className={`rounded-lg border p-2 flex items-center gap-2 text-[10px] font-semibold text-neutral-700 dark:text-neutral-200 ${activeColor === index ? 'border-indigo-500 ring-1 ring-indigo-500/40' : 'border-neutral-200 dark:border-neutral-700'}`}>
-            <span className="w-6 h-6 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: color }} />Cor {index + 1}
+          <button key={index} type="button" onClick={() => { setActiveColor(index); setExpanded(true); }}
+            aria-label={`Editar cor ${index + 1}`} aria-pressed={selectedIndex === index}
+            className={`rounded-lg border px-2 py-1.5 flex items-center gap-2 text-[10px] font-semibold text-neutral-700 dark:text-neutral-200 ${selectedIndex === index ? 'border-indigo-500' : 'border-neutral-200 dark:border-neutral-700'}`}>
+            <span className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: color }} />Cor {index + 1}
           </button>
         ))}
+        {colors.length < 3 && <button type="button" onClick={addColor} className="rounded-lg border border-dashed border-indigo-400/60 px-2.5 py-2 text-[10px] font-semibold text-indigo-500">+ Adicionar cor</button>}
       </div>
-      <div className="flex justify-center"><HexColorPicker color={colors[activeColor]} onChange={updateColor} style={{ width: 'min(100%, 220px)', height: 150 }} /></div>
-      <div className="flex items-center gap-2">
-        <label htmlFor="frame-color-hex" className="text-[11px] text-neutral-600 dark:text-neutral-300 shrink-0">Código HEX</label>
-        <input id="frame-color-hex" type="text" value={hexInput} maxLength={7}
-          onChange={event => { const value = event.target.value; setHexInput(value); updateColor(value); }}
-          onBlur={() => setHexInput(colors[activeColor])}
-          className="w-full min-w-0 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#15161e] px-2 py-2 text-xs text-neutral-900 dark:text-white" placeholder="#A99AE8" />
-        <input aria-label="Escolher cor personalizada" type="color" value={colors[activeColor]} onChange={event => updateColor(event.target.value)} className="w-10 h-9 shrink-0 cursor-pointer" />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {['#E7A2BD','#A99AE8','#80B9E9','#79C9AD','#F5C86E','#EF9494','#FFFFFF','#161616'].map(color => (
-          <button key={color} type="button" title={color} aria-label={`Usar cor ${color}`} onClick={() => updateColor(color)}
-            className="w-7 h-7 rounded-full border border-neutral-300 dark:border-neutral-600" style={{ backgroundColor: color }} />
-        ))}
-      </div>
+      {expanded && (
+        <div className="space-y-3 pt-2 border-t border-neutral-200 dark:border-neutral-700">
+          <div className="flex justify-center"><HexColorPicker color={selected} onChange={updateColor} style={{ width: 'min(100%, 220px)', height: 140 }} /></div>
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] text-neutral-600 dark:text-neutral-300 shrink-0">HEX
+              <input type="text" value={hexInput} maxLength={7}
+                onChange={event => { const value = event.target.value; setHexInput(value); updateColor(value); }}
+                onBlur={() => setHexInput(selected)}
+                className="ml-2 w-28 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#15161e] px-2 py-2 text-xs text-neutral-900 dark:text-white" placeholder="#A99AE8" />
+            </label>
+            <input aria-label="Escolher cor personalizada" type="color" value={selected} onChange={event => updateColor(event.target.value)} className="w-10 h-9 shrink-0 cursor-pointer" />
+            {colors.length > 1 && <button type="button" onClick={removeColor} className="ml-auto text-[10px] text-red-400">Remover cor</button>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {['#E7A2BD','#A99AE8','#80B9E9','#79C9AD','#F5C86E','#EF9494','#FFFFFF','#161616'].map(color => (
+              <button key={color} type="button" title={color} aria-label={`Usar cor ${color}`} onClick={() => updateColor(color)}
+                className="w-7 h-7 rounded-full border border-neutral-300 dark:border-neutral-600" style={{ backgroundColor: color }} />
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
