@@ -123,7 +123,7 @@ interface PlatformCardProps {
   tags: TagType[]; // Use TagType
   availableStatuses: Status[];
   onAddProfile: (platformId: string) => void;
-  onEditProfile: (platformId: string, profile: Profile, startInEditMode?: boolean) => void;
+  onEditProfile: (platformId: string, profile: Profile, startInEditMode?: boolean, openFrameCustomizer?: boolean) => void;
   onDeletePlatform: (platformId: string) => void;
   onDeleteProfile: (platformId: string, profileId: string) => void;
   onAddPurchase: (platformId: string) => void;
@@ -680,7 +680,10 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                           >
                             {/* CARD HEADER: Avatar & Name & Swipe indicator */}
                             <div
-                              onClick={() => toggleProfileCollapse(profile.id)}
+                              onClick={(e) => {
+                                if ((e.target as HTMLElement).closest('button')) return;
+                                toggleProfileCollapse(profile.id);
+                              }}
                               className={`flex items-center justify-between w-full cursor-pointer select-none transition-all ${
                                 isCollapsed ? '' : 'border-b border-neutral-50 dark:border-neutral-800/20 pb-2'
                               }`}
@@ -691,10 +694,13 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   type="button"
                                   aria-label={`Personalizar foto e moldura de ${profile.name}`}
                                   title="Toque para personalizar foto e moldura"
-                                  onPointerDown={(e) => e.stopPropagation()}
+                                  onPointerDownCapture={(e) => e.stopPropagation()}
+                                  onTouchStart={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => e.stopPropagation()}
                                   onClick={(e) => {
+                                    e.preventDefault();
                                     e.stopPropagation();
-                                    onEditProfile(platform.id, profile, true);
+                                    onEditProfile(platform.id, profile, true, true);
                                   }}
                                   className="shrink-0 rounded-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                                 >
