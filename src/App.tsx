@@ -727,18 +727,8 @@ export default function App() {
               )}
             </AnimatePresence>
 
-            {/* Acesso rápido pequeno e no fluxo da página: nunca cobre cartões ou imagens. */}
-            <div className="flex w-full justify-end pb-12 pr-1">
-              <button
-                type="button"
-                aria-label="Adicionar conta ou registrar compra"
-                title="Adicionar conta ou registrar compra"
-                onClick={() => setIsQuickAddOpen(true)}
-                className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/15 transition-colors active:scale-95"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
+            {/* Espaço para que o final da lista não fique escondido pelos atalhos fixos. */}
+            <div aria-hidden="true" className="h-20 shrink-0" />
           </main>
         </div>
 
@@ -840,6 +830,18 @@ export default function App() {
 
         </AnimatePresence>
 
+        {/* Fixo na tela: expandir cartões não muda a posição do botão. */}
+        {!isQuickAddOpen && (
+          <button
+            type="button"
+            aria-label="Adicionar conta ou registrar compra"
+            title="Adicionar conta ou registrar compra"
+            onClick={() => setIsQuickAddOpen(true)}
+            className="fixed right-5 bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] z-50 h-10 w-10 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/15 transition-colors active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        )}
         <ScrollButtons />
         <OnboardingTutorial 
           isActive={isTutorialActive}
