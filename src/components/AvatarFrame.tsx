@@ -229,6 +229,59 @@ function colorAt(colors: string[], position: number) {
   return mixHex(stops[index], stops[index+1], scaled-index);
 }
 
+// Cada efeito tem uma animação e um padrão temporal próprios. O seletor
+// mostra várias miniaturas simultaneamente: não use uma classe CSS global
+// para definir animation, pois a última miniatura substituiria as demais.
+type FrameMotionPattern = 'together' | 'around' | 'reverse' | 'random' | 'alternate' | 'pairs';
+const FRAME_MOTION_EFFECTS: Record<AvatarFrameMotion, { name: string; seconds: number; pattern: FrameMotionPattern } | null> = {
+  'none': null,
+  'soft-pulse': { name: 'avatarfx-pulse', seconds: 3.6, pattern: 'together' },
+  'soft-glow': { name: 'avatarfx-glow', seconds: 4.6, pattern: 'together' },
+  'color-shift': { name: 'avatarfx-color', seconds: 6.4, pattern: 'together' },
+  'soft-shimmer': { name: 'avatarfx-shimmer', seconds: 4.2, pattern: 'around' },
+  'color-wave': { name: 'avatarfx-wave', seconds: 3.2, pattern: 'around' },
+  'twinkle': { name: 'avatarfx-twinkle', seconds: 3.8, pattern: 'random' },
+  'soft-breathe': { name: 'avatarfx-breathe', seconds: 4.8, pattern: 'together' },
+  'glint': { name: 'avatarfx-glint', seconds: 4.5, pattern: 'reverse' },
+  'rainbow-wave': { name: 'avatarfx-rainbow', seconds: 5.6, pattern: 'around' },
+  'sparkle-wave': { name: 'avatarfx-sparkles', seconds: 4.0, pattern: 'pairs' },
+  'soft-blink': { name: 'avatarfx-blink', seconds: 3.2, pattern: 'alternate' },
+  'slow-twinkle': { name: 'avatarfx-slowtwinkle', seconds: 6.2, pattern: 'random' },
+  'light-ripple': { name: 'avatarfx-ripple', seconds: 3.8, pattern: 'around' },
+  'gentle-glimmer': { name: 'avatarfx-glimmer', seconds: 5.0, pattern: 'random' },
+  'color-breathe': { name: 'avatarfx-colorbreathe', seconds: 5.2, pattern: 'together' }
+};
+
+// Só os desenhos brilham/movem: nenhum segundo aro e nenhuma rotação.
+// Animar o grupo INTERNO preserva o posicionamento radial do grupo SVG externo.
+const AVATAR_FRAME_MOTION_CSS = [
+  '@keyframes avatarfx-pulse{0%,100%{opacity:.48}50%{opacity:1}}',
+  '@keyframes avatarfx-glow{0%,100%{filter:drop-shadow(0 0 0 transparent);opacity:.84}50%{filter:drop-shadow(0 0 2.8px currentColor);opacity:1}}',
+  '@keyframes avatarfx-color{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(135deg) saturate(1.35)}}',
+  '@keyframes avatarfx-shimmer{0%,12%,100%{opacity:.48;filter:brightness(.9)}22%,34%{opacity:1;filter:brightness(1.7) drop-shadow(0 0 1.8px currentColor)}46%{opacity:.52}}',
+  '@keyframes avatarfx-wave{0%,100%{opacity:.5;transform:scale(.86)}45%,63%{opacity:1;transform:scale(1.16)}}',
+  '@keyframes avatarfx-twinkle{0%,24%,58%,100%{opacity:.42;transform:scale(.8)}34%,47%{opacity:1;transform:scale(1.24);filter:drop-shadow(0 0 2px currentColor)}}',
+  '@keyframes avatarfx-breathe{0%,100%{transform:scale(.86);opacity:.86}50%{transform:scale(1.14);opacity:1}}',
+  '@keyframes avatarfx-glint{0%,35%,100%{opacity:.62;filter:brightness(1)}42%,53%{opacity:1;filter:brightness(1.85) drop-shadow(0 0 2.5px currentColor)}61%{opacity:.62}}',
+  '@keyframes avatarfx-rainbow{0%,100%{filter:hue-rotate(0deg)}45%,65%{filter:hue-rotate(155deg) saturate(1.5)}}',
+  '@keyframes avatarfx-sparkles{0%,55%,100%{opacity:.38;transform:scale(.82)}16%,33%{opacity:1;transform:scale(1.28);filter:drop-shadow(0 0 2.4px currentColor)}}',
+  '@keyframes avatarfx-blink{0%,14%,50%,100%{opacity:.42}25%,40%{opacity:1;filter:brightness(1.6) drop-shadow(0 0 1.4px currentColor)}}',
+  '@keyframes avatarfx-slowtwinkle{0%,34%,84%,100%{opacity:.5;transform:scale(.92)}52%,68%{opacity:1;transform:scale(1.14);filter:drop-shadow(0 0 1.8px currentColor)}}',
+  '@keyframes avatarfx-ripple{0%,100%{opacity:.6;transform:translateY(.6px) scale(.94)}42%,60%{opacity:1;transform:translateY(-1.2px) scale(1.13)}}',
+  '@keyframes avatarfx-glimmer{0%,55%,100%{opacity:.55;filter:brightness(1)}17%,29%{opacity:1;filter:brightness(1.75) drop-shadow(0 0 2px currentColor)}38%{opacity:.6}}',
+  '@keyframes avatarfx-colorbreathe{0%,100%{filter:saturate(.65) brightness(.85);opacity:.8}50%{filter:saturate(1.7) brightness(1.35);opacity:1}}',
+  '@media(prefers-reduced-motion:reduce){.avatar-frame-ink{animation:none!important;opacity:1!important;transform:none!important;filter:none!important}}'
+].join('');
+
+function frameMotionDelay(pattern: FrameMotionPattern, index: number, total: number, seconds: number): number {
+  if (pattern === 'together') return 0;
+  if (pattern === 'alternate') return (index % 2) * seconds / 2;
+  if (pattern === 'pairs') return (Math.floor(index / 3) % 4) * seconds / 4;
+  if (pattern === 'random') return ((index * 7 + 3) % total) * seconds / total;
+  if (pattern === 'reverse') return ((total - index) % total) * seconds / total;
+  return index * seconds / total;
+}
+
 export function AvatarFrame({ profileId, settings, children, className = '', size = 48 }: {
   profileId: string; settings?: AvatarFrameSettings; children: ReactNode; className?: string; size?: number;
 }) {
@@ -250,6 +303,7 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
             : frame.colors?.length === 1 ? [color, color] : frame.colors?.length === 2 ? [color, second, color] : [color, second, third, color];
   const count = 24;
   const radius = 46;
+  const effect = FRAME_MOTION_EFFECTS[frame.motion] ?? null;
   const svg = Array.from({length: count}, (_, i) => {
     const angle = (360 / count) * i - 90;
     const position = i / (count - 1);
@@ -258,44 +312,20 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
       : frame.finish === 'pearl' || frame.finish === 'metallic'
         ? palette[i % palette.length]
         : frame.finish === 'soft-neon' ? color : frame.finish === 'matte' ? mixHex(color,'#777777',.12) : palette[i % palette.length];
-    const delay = (i * 0.19).toFixed(2);
-    const animated = frame.motion !== 'none'
-      ? ' class="avatar-frame-motif" style="animation-delay:-' + delay + 's;transform-box:fill-box;transform-origin:center"'
+    const delay = effect ? frameMotionDelay(effect.pattern, i, count, effect.seconds) : 0;
+    const animStyle = effect
+      ? 'animation:' + effect.name + ' ' + effect.seconds + 's ease-in-out infinite;animation-delay:-' + delay.toFixed(2) + 's;'
       : '';
-    return '<g' + animated + ' transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ')">' + motif(frame.model, motifColor, i) + '</g>';
+    return '<g transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ')">' +
+      '<g class="avatar-frame-ink" style="color:' + motifColor + ';transform-box:fill-box;transform-origin:center;' + animStyle + '">' +
+      motif(frame.model, motifColor, i) + '</g></g>';
   }).join('');
-  // Animate individual SVG motifs rather than an extra ring. Short, staggered peaks
-  // stay recognizable even at thumbnail sizes, without flashing or rotating the avatar.
-  const motionCss =
-    '@keyframes avatar-motif-wave{0%,100%{opacity:.55}42%,58%{opacity:1;filter:brightness(1.6) drop-shadow(0 0 2px currentColor)}}' +
-    '@keyframes avatar-motif-twinkle{0%,100%{opacity:.42;transform:scale(.86)}42%{opacity:1;transform:scale(1.13);filter:drop-shadow(0 0 2px currentColor)}}' +
-    '@keyframes avatar-motif-breathe{0%,100%{opacity:.48}50%{opacity:1;filter:brightness(1.35)}}' +
-    '@keyframes avatar-motif-glint{0%,100%{opacity:.65;filter:brightness(1)}45%{opacity:1;filter:brightness(1.65) drop-shadow(0 0 2.5px currentColor)}}' +
-    '@keyframes avatar-motif-rainbow{0%,100%{filter:hue-rotate(0deg) saturate(1)}50%{filter:hue-rotate(105deg) saturate(1.4)}}' +
-    '@keyframes avatar-motif-sparkle{0%,100%{opacity:.38;transform:scale(.85)}28%{opacity:1;transform:scale(1.14);filter:drop-shadow(0 0 2px currentColor)}48%{opacity:.55}65%{opacity:.92}}' +
-    '@keyframes avatar-motif-blink{0%,28%,100%{opacity:.42}42%,58%{opacity:1;filter:brightness(1.55) drop-shadow(0 0 2px currentColor)}70%{opacity:.48}}' +
-    '@keyframes avatar-motif-slowtwinkle{0%,100%{opacity:.45;transform:scale(.9)}38%,58%{opacity:1;transform:scale(1.11);filter:drop-shadow(0 0 2px currentColor)}}' +
-    '@keyframes avatar-motif-ripple{0%,100%{opacity:.48}35%,60%{opacity:1;filter:brightness(1.6) drop-shadow(0 0 2px currentColor)}}' +
-    '@keyframes avatar-motif-glimmer{0%,100%{opacity:.5}24%{opacity:1;filter:brightness(1.55)}42%{opacity:.55}65%{opacity:1;filter:brightness(1.35)}}' +
-    '@keyframes avatar-motif-colorbreathe{0%,100%{opacity:.6;filter:saturate(.7) brightness(.9)}50%{opacity:1;filter:saturate(1.8) brightness(1.35)}}';
-  const motion = frame.motion === 'soft-pulse' || frame.motion === 'soft-breathe' ? 'avatar-motif-breathe 3.6s ease-in-out infinite' :
-    frame.motion === 'soft-glow' ? 'avatar-motif-glint 4s ease-in-out infinite' :
-    frame.motion === 'color-shift' || frame.motion === 'rainbow-wave' ? 'avatar-motif-rainbow 6s ease-in-out infinite' :
-    frame.motion === 'soft-shimmer' || frame.motion === 'glint' ? 'avatar-motif-glint 4.2s ease-in-out infinite' :
-    frame.motion === 'color-wave' ? 'avatar-motif-wave 3.2s ease-in-out infinite' :
-    frame.motion === 'twinkle' ? 'avatar-motif-twinkle 3.4s ease-in-out infinite' :
-    frame.motion === 'sparkle-wave' ? 'avatar-motif-sparkle 4.1s ease-in-out infinite' :
-    frame.motion === 'soft-blink' ? 'avatar-motif-blink 3.6s ease-in-out infinite' :
-    frame.motion === 'slow-twinkle' ? 'avatar-motif-slowtwinkle 4.7s ease-in-out infinite' :
-    frame.motion === 'light-ripple' ? 'avatar-motif-ripple 3.1s ease-in-out infinite' :
-    frame.motion === 'gentle-glimmer' ? 'avatar-motif-glimmer 4.5s ease-in-out infinite' :
-    frame.motion === 'color-breathe' ? 'avatar-motif-colorbreathe 5.1s ease-in-out infinite' : undefined;
   const stroke = frame.finish === 'soft-neon' ? 'drop-shadow(0 0 2px ' + color + ') drop-shadow(0 0 4px ' + color + ')' :
     frame.finish === 'pearl' || frame.finish === 'crystal' ? 'drop-shadow(0 0 1px #fff)' :
     frame.finish === 'metallic' ? 'drop-shadow(0 0 1px #D8C29A)' :
     frame.finish === 'satin' ? 'drop-shadow(0 0 1px rgba(255,255,255,.45))' : undefined;
   return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={{width:size,height:size,flex:'0 0 auto'}}>
-    <style>{motionCss + '.avatar-frame-motif{' + (motion ? 'animation:' + motion + ';' : '') + '}@media(prefers-reduced-motion:reduce){.avatar-frame-motif{animation:none!important}}'}</style>
+    <style>{AVATAR_FRAME_MOTION_CSS}</style>
     <span className="absolute inset-0 rounded-full overflow-hidden" style={{filter:stroke}} dangerouslySetInnerHTML={{__html:'<svg class="avatar-frame-svg" viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">' + svg + '</svg>'}} />
     <span className="relative z-10 rounded-full overflow-hidden" style={{width:'76%',height:'76%'}}>{children}</span>
   </span>;
