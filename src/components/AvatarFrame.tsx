@@ -118,7 +118,7 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
     return '<g' + animated + ' transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ')">' + motif(frame.model, motifColor, i) + '</g>';
   }).join('');
   const motionCss = '@keyframes avatar-motif-wave{0%,100%{opacity:.58;filter:brightness(.96)}50%{opacity:1;filter:brightness(1.18)}}' +
-    '@keyframes avatar-motif-twinkle{0%,100%{opacity:.72;transform:scale(.88)}50%{opacity:1;transform:scale(1.12)}}' +
+    '@keyframes avatar-motif-twinkle{0%,100%{opacity:.72;filter:brightness(.96)}50%{opacity:1;filter:brightness(1.2)}}' +
     '@keyframes avatar-motif-breathe{0%,100%{opacity:.62}50%{opacity:1}}' +
     '@keyframes avatar-motif-glint{0%,100%{filter:brightness(1) drop-shadow(0 0 0 transparent)}50%{filter:brightness(1.35) drop-shadow(0 0 2px currentColor)}}' +
     '@keyframes avatar-motif-rainbow{0%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(35deg)}100%{filter:hue-rotate(0deg)}}' +
@@ -134,7 +134,7 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
     frame.finish === 'pearl' ? 'drop-shadow(0 0 1px #fff)' :
     frame.finish === 'metallic' ? 'drop-shadow(0 0 1px #D8C29A)' : undefined;
   return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={{width:size,height:size,flex:'0 0 auto'}}>
-    <style>{motionCss + '.avatar-frame-motif{' + (motion ? 'animation:' + motion + ';transform-box:fill-box;transform-origin:center;' : '') + '}@media(prefers-reduced-motion:reduce){.avatar-frame-motif{animation:none!important;transform:none!important}}'}</style>
+    <style>{motionCss + '.avatar-frame-motif{' + (motion ? 'animation:' + motion + ';' : '') + '}@media(prefers-reduced-motion:reduce){.avatar-frame-motif{animation:none!important}}'}</style>
     <span className="absolute inset-0 rounded-full overflow-hidden" style={{filter:stroke}} dangerouslySetInnerHTML={{__html:'<svg class="avatar-frame-svg" viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">' + svg + '</svg>'}} />
     <span className="relative z-10 rounded-full overflow-hidden" style={{width:'76%',height:'76%'}}>{children}</span>
   </span>;
