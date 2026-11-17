@@ -18,6 +18,7 @@ import {
   CheckCircle,
   Truck,
   ArrowUpDown,
+  RotateCcw,
   Tag,
   Eye,
   Plus,
@@ -405,6 +406,24 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
   const [endDate, setEndDate] = useState('');
   const [sortOrder, setSortOrder] = useState<'date_desc' | 'date_asc' | 'price_desc' | 'price_asc'>('date_desc');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Limpa a busca, todos os filtros, a ordenação e qualquer seleção em massa.
+  // Nenhuma compra é modificada ou excluída por esta ação.
+  const clearAllFilters = () => {
+    setSearch('');
+    setPlatformFilter('todos');
+    setProfileFilter('todos');
+    setStatusFilter('todos');
+    setTagFilter('todos');
+    setStartDate('');
+    setEndDate('');
+    setSortOrder('date_desc');
+    setShowFilters(false);
+    setSelectedPurchaseKeys(new Set());
+    setShowPurchaseBulkSelect(false);
+    setShowPurchaseBulkDeleteConfirm(false);
+  };
+
   const [fullScreenCarousel, setFullScreenCarousel] = useState<{images: string[]; initialIndex: number} | null>(null);
 
   const openFullScreen = (images: string[], index: number) => {
@@ -737,6 +756,17 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               {(platformFilter !== 'todos' || profileFilter !== 'todos' || statusFilter !== 'todos' || tagFilter !== 'todos' || startDate !== '' || endDate !== '') && (
                 <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
               )}
+            </button>
+
+            {/* Limpa busca, filtros, datas, ordenação e itens marcados. */}
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              aria-label="Limpar pesquisa e todos os filtros"
+              className="h-11 px-3 rounded-xl border border-neutral-200 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all bg-white text-neutral-600 hover:bg-neutral-50 dark:bg-[#050505] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02]"
+            >
+              <RotateCcw className="w-4 h-4 shrink-0" />
+              <span>Limpar filtros</span>
             </button>
 
             {/* Sort Dropdown */}
