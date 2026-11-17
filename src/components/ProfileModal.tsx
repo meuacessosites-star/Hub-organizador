@@ -585,6 +585,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [copiedPass, setCopiedPass] = useState(false);
   const [avatarFrame, setAvatarFrame] = useState<AvatarFrameSettings>(() => defaultAvatarFrame(profile?.id || 'new-profile'));
   const [showFrameCustomizer, setShowFrameCustomizer] = useState(false);
+  const [framePicker, setFramePicker] = useState<'finish' | 'motion' | null>(null);
 
   useEffect(() => {
     if (profile?.id) setAvatarFrame(profile.avatarFrame || defaultAvatarFrame(profile.id));
@@ -898,25 +899,25 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </AvatarFrame>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-[10px] font-semibold text-neutral-500">Acabamento
-              <select value={avatarFrame.finish} onChange={e=>setAvatarFrame(v=>({...v,finish:e.target.value as AvatarFrameSettings['finish']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
-                <option value="solid">Clássico</option><option value="gradient">Degradê</option><option value="pastel-rainbow">Arco-íris suave</option><option value="soft-neon">Neon suave</option><option value="pearl">Perolado</option><option value="metallic">Metálico</option>
-              </select>
-            </label>
-            <label className="text-[10px] font-semibold text-neutral-500">Animação
-              <select value={avatarFrame.motion} onChange={e=>setAvatarFrame(v=>({...v,motion:e.target.value as AvatarFrameSettings['motion']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
-                <option value="none">Sem movimento</option><option value="soft-pulse">Pulso delicado</option><option value="soft-glow">Brilho respirando</option><option value="color-shift">Cores em transição</option><option value="soft-shimmer">Cintilação discreta</option><option value="color-wave">Onda de brilho</option><option value="twinkle">Pontinhos cintilantes</option><option value="soft-breathe">Respiração suave</option><option value="glint">Reflexo perolado</option><option value="rainbow-wave">Arco-íris delicado</option><option value="sparkle-wave">Brilhos alternados</option>
-              </select>
-            </label>
-            <label className="text-[10px] font-semibold text-neutral-500">Cor principal
-              <input type="color" value={avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[e.target.value,v.colors[1] || e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
-            </label>
-            <label className="text-[10px] font-semibold text-neutral-500">Segunda cor
-              <input type="color" value={avatarFrame.colors[1] || avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[v.colors[0] || '#A99AE8',e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
-            </label>
-          </div>
+<button type="button" onClick={() => setFramePicker(framePicker === 'finish' ? null : 'finish')} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#15161e] p-2.5 text-left">
+<span className="block text-[10px] text-neutral-500 mb-1">Acabamento</span><span className="flex items-center justify-between text-xs font-semibold text-neutral-900 dark:text-neutral-100">{({solid:'Clássico',gradient:'Degradê','pastel-rainbow':'Arco-íris suave','soft-neon':'Neon suave',pearl:'Perolado',metallic:'Metálico'} as Record<string,string>)[avatarFrame.finish]} <span className="text-indigo-400">⌄</span></span>
+</button>
+<button type="button" onClick={() => setFramePicker(framePicker === 'motion' ? null : 'motion')} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#15161e] p-2.5 text-left">
+<span className="block text-[10px] text-neutral-500 mb-1">Animação</span><span className="flex items-center justify-between text-xs font-semibold text-neutral-900 dark:text-neutral-100">{({none:'Sem movimento','soft-pulse':'Pulso delicado','soft-glow':'Brilho respirando','color-shift':'Cores em transição','soft-shimmer':'Cintilação discreta','color-wave':'Onda de brilho',twinkle:'Pontinhos cintilantes','soft-breathe':'Respiração suave',glint:'Reflexo perolado','rainbow-wave':'Arco-íris delicado','sparkle-wave':'Brilhos alternados'} as Record<string,string>)[avatarFrame.motion]} <span className="text-indigo-400">⌄</span></span>
+</button>
+</div>
+{framePicker && <div className="rounded-xl border border-indigo-500/20 bg-neutral-50 dark:bg-[#12131a] p-2.5">
+<div className="flex items-center justify-between mb-2"><span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{framePicker === 'finish' ? 'Escolha o acabamento' : 'Escolha o movimento'}</span><button type="button" onClick={()=>setFramePicker(null)} className="text-[10px] text-indigo-400">Fechar</button></div>
+{framePicker === 'finish' ? <div className="grid grid-cols-3 gap-2">
+{([{id:'solid',name:'Clássico',desc:'Cor uniforme'},{id:'gradient',name:'Degradê',desc:'Cores nos desenhos'},{id:'pastel-rainbow',name:'Arco-íris',desc:'Tons suaves'},{id:'soft-neon',name:'Neon suave',desc:'Brilho delicado'},{id:'pearl',name:'Perolado',desc:'Reflexo claro'},{id:'metallic',name:'Metálico',desc:'Toque metalizado'}] as const).map(item=><button key={item.id} type="button" onClick={()=>{setAvatarFrame(v=>({...v,finish:item.id}));setFramePicker(null)}} className={'rounded-lg border p-2 text-left '+(avatarFrame.finish===item.id?'border-indigo-500 bg-indigo-500/10':'border-neutral-200 dark:border-neutral-700')}>
+<AvatarFrame profileId={'finish-'+item.id} settings={{...avatarFrame,finish:item.id,motion:'none'}} size={36}><span className="w-full h-full rounded-full bg-neutral-800 flex items-center justify-center text-[9px] text-white">A</span></AvatarFrame><span className="block mt-1 text-[10px] font-semibold text-neutral-800 dark:text-neutral-100">{item.name}</span><span className="block text-[9px] text-neutral-500">{item.desc}</span></button>)}
+</div> : <div className="grid grid-cols-2 gap-2">
+{([{id:'none',name:'Sem movimento',desc:'Fixo e discreto'},{id:'soft-pulse',name:'Pulso delicado',desc:'Intensidade suave'},{id:'soft-glow',name:'Brilho respirando',desc:'Luz que aparece e some'},{id:'color-shift',name:'Cores em transição',desc:'Tons mudam devagar'},{id:'soft-shimmer',name:'Cintilação discreta',desc:'Reflexos sutis'},{id:'color-wave',name:'Onda de brilho',desc:'Brilho percorre os detalhes'},{id:'twinkle',name:'Pontinhos cintilantes',desc:'Pequenos pontos brilham'},{id:'soft-breathe',name:'Respiração suave',desc:'A moldura ganha vida'},{id:'glint',name:'Reflexo perolado',desc:'Reflexo delicado'},{id:'rainbow-wave',name:'Arco-íris delicado',desc:'Cores suaves alternadas'},{id:'sparkle-wave',name:'Brilhos alternados',desc:'Pequenos brilhos em sequência'}] as const).map(item=><button key={item.id} type="button" onClick={()=>{setAvatarFrame(v=>({...v,motion:item.id}));setFramePicker(null)}} className={'rounded-lg border p-2 text-left flex items-center gap-2 '+(avatarFrame.motion===item.id?'border-indigo-500 bg-indigo-500/10':'border-neutral-200 dark:border-neutral-700')}>
+<AvatarFrame profileId={'motion-'+item.id} settings={{...avatarFrame,motion:item.id}} size={32}><span className="w-full h-full rounded-full bg-neutral-800 flex items-center justify-center text-[8px] text-white">A</span></AvatarFrame><span className="min-w-0"><span className="block text-[10px] font-semibold text-neutral-800 dark:text-neutral-100">{item.name}</span><span className="block text-[9px] text-neutral-500">{item.desc}</span></span></button>)}
+</div>}
+</div>}
           <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 25 modelos · toque para escolher</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 50 modelos · toque para escolher</p>
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
               {AVATAR_FRAME_MODELS.map((model, index) => (
                 <button key={model} type="button" onClick={() => setAvatarFrame(v=>({...v,model}))} className={`min-w-0 rounded-xl p-2 flex flex-col items-center gap-1 border transition-colors ${avatarFrame.model===model ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/20' : 'border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-[#111219]'}`}>
@@ -1850,33 +1851,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       </AvatarFrame>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className="text-[10px] font-semibold text-neutral-500">Acabamento
-                        <select value={avatarFrame.finish} onChange={e=>setAvatarFrame(v=>({...v,finish:e.target.value as AvatarFrameSettings['finish']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
-                          <option value="solid">Clássico</option><option value="gradient">Degradê</option><option value="pastel-rainbow">Arco-íris suave</option><option value="soft-neon">Neon suave</option><option value="pearl">Perolado</option><option value="metallic">Metálico</option>
-                        </select>
-                      </label>
-                      <label className="text-[10px] font-semibold text-neutral-500">Animação
-                        <select value={avatarFrame.motion} onChange={e=>setAvatarFrame(v=>({...v,motion:e.target.value as AvatarFrameSettings['motion']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
-                          <option value="none">Sem movimento</option>
-                          <option value="soft-pulse">Pulso delicado</option>
-                          <option value="soft-glow">Brilho respirando</option>
-                          <option value="color-shift">Cores em transição</option>
-                          <option value="soft-shimmer">Cintilação discreta</option>
-                          <option value="color-wave">Onda de brilho</option>
-                          <option value="twinkle">Pontinhos cintilantes</option>
-                          <option value="soft-breathe">Respiração suave</option>
-                          <option value="glint">Reflexo perolado</option>
-                          <option value="rainbow-wave">Arco-íris delicado</option>
-                          <option value="sparkle-wave">Brilhos alternados</option>
-                        </select>
-                      </label>
-                      <label className="text-[10px] font-semibold text-neutral-500">Cor principal
-                        <input type="color" value={avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[e.target.value,v.colors[1] || e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
-                      </label>
-                      <label className="text-[10px] font-semibold text-neutral-500">Segunda cor
-                        <input type="color" value={avatarFrame.colors[1] || avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[v.colors[0] || '#A99AE8',e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
-                      </label>
-                    </div>
+<button type="button" onClick={() => setFramePicker(framePicker === 'finish' ? null : 'finish')} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#15161e] p-2.5 text-left">
+<span className="block text-[10px] text-neutral-500 mb-1">Acabamento</span><span className="flex items-center justify-between text-xs font-semibold text-neutral-900 dark:text-neutral-100">{({solid:'Clássico',gradient:'Degradê','pastel-rainbow':'Arco-íris suave','soft-neon':'Neon suave',pearl:'Perolado',metallic:'Metálico'} as Record<string,string>)[avatarFrame.finish]} <span className="text-indigo-400">⌄</span></span>
+</button>
+<button type="button" onClick={() => setFramePicker(framePicker === 'motion' ? null : 'motion')} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#15161e] p-2.5 text-left">
+<span className="block text-[10px] text-neutral-500 mb-1">Animação</span><span className="flex items-center justify-between text-xs font-semibold text-neutral-900 dark:text-neutral-100">{({none:'Sem movimento','soft-pulse':'Pulso delicado','soft-glow':'Brilho respirando','color-shift':'Cores em transição','soft-shimmer':'Cintilação discreta','color-wave':'Onda de brilho',twinkle:'Pontinhos cintilantes','soft-breathe':'Respiração suave',glint:'Reflexo perolado','rainbow-wave':'Arco-íris delicado','sparkle-wave':'Brilhos alternados'} as Record<string,string>)[avatarFrame.motion]} <span className="text-indigo-400">⌄</span></span>
+</button>
+</div>
+{framePicker && <div className="rounded-xl border border-indigo-500/20 bg-neutral-50 dark:bg-[#12131a] p-2.5">
+<div className="flex items-center justify-between mb-2"><span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{framePicker === 'finish' ? 'Escolha o acabamento' : 'Escolha o movimento'}</span><button type="button" onClick={()=>setFramePicker(null)} className="text-[10px] text-indigo-400">Fechar</button></div>
+{framePicker === 'finish' ? <div className="grid grid-cols-3 gap-2">
+{([{id:'solid',name:'Clássico',desc:'Cor uniforme'},{id:'gradient',name:'Degradê',desc:'Cores nos desenhos'},{id:'pastel-rainbow',name:'Arco-íris',desc:'Tons suaves'},{id:'soft-neon',name:'Neon suave',desc:'Brilho delicado'},{id:'pearl',name:'Perolado',desc:'Reflexo claro'},{id:'metallic',name:'Metálico',desc:'Toque metalizado'}] as const).map(item=><button key={item.id} type="button" onClick={()=>{setAvatarFrame(v=>({...v,finish:item.id}));setFramePicker(null)}} className={'rounded-lg border p-2 text-left '+(avatarFrame.finish===item.id?'border-indigo-500 bg-indigo-500/10':'border-neutral-200 dark:border-neutral-700')}>
+<AvatarFrame profileId={'finish-'+item.id} settings={{...avatarFrame,finish:item.id,motion:'none'}} size={36}><span className="w-full h-full rounded-full bg-neutral-800 flex items-center justify-center text-[9px] text-white">A</span></AvatarFrame><span className="block mt-1 text-[10px] font-semibold text-neutral-800 dark:text-neutral-100">{item.name}</span><span className="block text-[9px] text-neutral-500">{item.desc}</span></button>)}
+</div> : <div className="grid grid-cols-2 gap-2">
+{([{id:'none',name:'Sem movimento',desc:'Fixo e discreto'},{id:'soft-pulse',name:'Pulso delicado',desc:'Intensidade suave'},{id:'soft-glow',name:'Brilho respirando',desc:'Luz que aparece e some'},{id:'color-shift',name:'Cores em transição',desc:'Tons mudam devagar'},{id:'soft-shimmer',name:'Cintilação discreta',desc:'Reflexos sutis'},{id:'color-wave',name:'Onda de brilho',desc:'Brilho percorre os detalhes'},{id:'twinkle',name:'Pontinhos cintilantes',desc:'Pequenos pontos brilham'},{id:'soft-breathe',name:'Respiração suave',desc:'A moldura ganha vida'},{id:'glint',name:'Reflexo perolado',desc:'Reflexo delicado'},{id:'rainbow-wave',name:'Arco-íris delicado',desc:'Cores suaves alternadas'},{id:'sparkle-wave',name:'Brilhos alternados',desc:'Pequenos brilhos em sequência'}] as const).map(item=><button key={item.id} type="button" onClick={()=>{setAvatarFrame(v=>({...v,motion:item.id}));setFramePicker(null)}} className={'rounded-lg border p-2 text-left flex items-center gap-2 '+(avatarFrame.motion===item.id?'border-indigo-500 bg-indigo-500/10':'border-neutral-200 dark:border-neutral-700')}>
+<AvatarFrame profileId={'motion-'+item.id} settings={{...avatarFrame,motion:item.id}} size={32}><span className="w-full h-full rounded-full bg-neutral-800 flex items-center justify-center text-[8px] text-white">A</span></AvatarFrame><span className="min-w-0"><span className="block text-[10px] font-semibold text-neutral-800 dark:text-neutral-100">{item.name}</span><span className="block text-[9px] text-neutral-500">{item.desc}</span></span></button>)}
+</div>}
+</div>}
                     <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 25 modelos · toque para escolher</p>
                       <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
