@@ -18,7 +18,7 @@ export interface AvatarFrameSettings {
   motion: AvatarFrameMotion;
 }
 
-const MODELS: AvatarFrameModel[] = [
+export const AVATAR_FRAME_MODELS: AvatarFrameModel[] = [
   'micro-hearts','open-hearts','petals','petal-outline','droplets','pearls','pearls-alternating',
   'mini-links','open-links','moons','tiny-stars','sparkles','diamonds','diamond-outline',
   'mini-arches','arches-alternating','tiny-waves','seeds','clovers','tiny-flowers',
@@ -33,9 +33,9 @@ export function defaultAvatarFrame(profileId: string): AvatarFrameSettings {
   let hash = 0;
   for (let i = 0; i < profileId.length; i++) hash = (hash * 31 + profileId.charCodeAt(i)) >>> 0;
   return {
-    model: MODELS[hash % MODELS.length],
+    model: AVATAR_FRAME_MODELS[hash % AVATAR_FRAME_MODELS.length],
     finish: 'solid',
-    colors: PALETTES[Math.floor(hash / MODELS.length) % PALETTES.length],
+    colors: PALETTES[Math.floor(hash / AVATAR_FRAME_MODELS.length) % PALETTES.length],
     motion: 'none'
   };
 }
