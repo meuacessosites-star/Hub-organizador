@@ -362,13 +362,13 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 z-50 overflow-y-auto backdrop-blur-sm scrollbar-hide">
+    <div className="fixed inset-0 bg-black/75 z-50 overflow-y-auto overflow-x-hidden backdrop-blur-sm scrollbar-hide">
       <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 flex flex-col"
+          className="w-full min-w-0 max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 flex flex-col"
         >
           {/* Header */}
           <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
@@ -389,7 +389,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
           </div>
 
           {/* Content Panel */}
-          <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
+          <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0 min-w-0">
             {/* STEP 1 */}
             {step === 1 && (
               <div className="flex flex-col gap-5">
@@ -451,7 +451,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
 
                 {/* Logo Selection Section */}
                 <div className="flex flex-col gap-3 p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 dark:border-white/[0.06] dark:bg-[#111219]/30">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3 min-w-0 sm:flex-row sm:items-center sm:justify-between">
                     <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
                       <span>Logo da plataforma</span>
                       <div className="w-6 h-6 rounded-full bg-white dark:bg-[#1e202e] border border-neutral-200 dark:border-white/[0.1] flex items-center justify-center overflow-hidden shadow-sm">
@@ -470,11 +470,11 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                     </label>
 
                     {/* Logo Mode Tabs */}
-                    <div className="flex bg-neutral-200/70 dark:bg-neutral-800 p-0.5 rounded-lg text-[10px]">
+                    <div className="grid grid-cols-2 sm:flex gap-1 w-full sm:w-auto min-w-0 bg-neutral-200/70 dark:bg-neutral-800 p-1 rounded-lg text-[10px]">
                       <button
                         type="button"
                         onClick={() => setLogoMode('auto')}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                        className={`min-w-0 w-full sm:w-auto px-2 py-2 sm:py-1 rounded-md text-center font-medium transition-colors cursor-pointer ${
                           logoMode === 'auto'
                             ? 'bg-white dark:bg-[#13141c] text-indigo-600 dark:text-indigo-400 shadow-sm'
                             : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -485,7 +485,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setLogoMode('presets')}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                        className={`min-w-0 w-full sm:w-auto px-2 py-2 sm:py-1 rounded-md text-center font-medium transition-colors cursor-pointer ${
                           logoMode === 'presets'
                             ? 'bg-white dark:bg-[#13141c] text-indigo-600 dark:text-indigo-400 shadow-sm'
                             : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -496,7 +496,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setLogoMode('url')}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                        className={`min-w-0 w-full sm:w-auto px-2 py-2 sm:py-1 rounded-md text-center font-medium transition-colors cursor-pointer ${
                           logoMode === 'url'
                             ? 'bg-white dark:bg-[#13141c] text-indigo-600 dark:text-indigo-400 shadow-sm'
                             : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -507,7 +507,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setLogoMode('upload')}
-                        className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                        className={`min-w-0 w-full sm:w-auto px-2 py-2 sm:py-1 rounded-md text-center font-medium transition-colors cursor-pointer ${
                           logoMode === 'upload'
                             ? 'bg-white dark:bg-[#13141c] text-indigo-600 dark:text-indigo-400 shadow-sm'
                             : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -869,7 +869,7 @@ export const NewPlatformModal: React.FC<NewPlatformModalProps> = ({
           </div>
 
           {/* Footer Navigation Buttons */}
-          <div className="px-6 py-3.5 border-t border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
+          <div className="px-4 sm:px-6 py-3.5 border-t border-neutral-200 dark:border-white/[0.08] flex items-center justify-between gap-2 min-w-0 bg-neutral-50 dark:bg-[#0d0d0d]">
             {step === 2 ? (
               <button
                 type="button"
