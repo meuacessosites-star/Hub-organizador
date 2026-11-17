@@ -9,7 +9,7 @@ export type AvatarFrameModel =
   | 'flower-outline' | 'tiny-bows' | 'light-dots' | 'micro-dashes' | 'tiny-leaves';
 
 export type AvatarFrameFinish = 'solid' | 'gradient' | 'pastel-rainbow' | 'soft-neon' | 'pearl' | 'metallic';
-export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer';
+export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave';
 
 export interface AvatarFrameSettings {
   model: AvatarFrameModel;
@@ -71,36 +71,71 @@ function motif(model: AvatarFrameModel, color: string, index: number) {
   }
 }
 
+function mixHex(a: string, b: string, amount: number) {
+  const parse = (v: string) => {
+    const h = v.replace('#','');
+    return [0,2,4].map(i => parseInt(h.slice(i,i+2),16) || 0);
+  };
+  const aa=parse(a), bb=parse(b);
+  return '#' + aa.map((v,i)=>Math.round(v+(bb[i]-v)*amount).toString(16).padStart(2,'0')).join('');
+}
+
+function colorAt(colors: string[], position: number) {
+  const stops = colors.length > 1 ? colors : [colors[0], colors[0]];
+  const scaled = position * (stops.length - 1);
+  const index = Math.min(stops.length - 2, Math.floor(scaled));
+  return mixHex(stops[index], stops[index+1], scaled-index);
+}
+
 export function AvatarFrame({ profileId, settings, children, className = '', size = 48 }: {
   profileId: string; settings?: AvatarFrameSettings; children: ReactNode; className?: string; size?: number;
 }) {
   const frame = settings || defaultAvatarFrame(profileId);
   const color = frame.colors?.[0] || '#A99AE8';
   const second = frame.colors?.[1] || color;
-  const gradient = frame.finish === 'gradient' || frame.finish === 'pastel-rainbow' || frame.finish === 'color-shift';
-  const colors = frame.finish === 'pastel-rainbow'
-    ? ['#E9A9C4','#E9D49B','#9BD4B7','#9EC7EB','#C3A9E8']
-    : [color, second, frame.colors?.[2] || second];
+  const third = frame.colors?.[2] || second;
+  const palette = frame.finish === 'pastel-rainbow'
+    ? ['#E9A9C4','#E9D49B','#9BD4B7','#9EC7EB','#C3A9E8','#E9A9C4']
+    : frame.finish === 'pearl'
+      ? [mixHex(color,'#FFFFFF',.58),mixHex(color,'#D9D2E8',.32),mixHex(color,'#FFFFFF',.78)]
+      : frame.finish === 'metallic'
+        ? [mixHex(color,'#FFFFFF',.42),mixHex(color,'#8A806F',.18),mixHex(color,'#FFFFFF',.62)]
+        : [color,second,third,color];
   const count = 24;
   const radius = 46;
   const svg = Array.from({length: count}, (_, i) => {
     const angle = (360 / count) * i - 90;
-    const c = colors[i % colors.length];
-    return '<g transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ')">' + motif(frame.model, c, i) + '</g>';
+    const position = i / (count - 1);
+    const motifColor = frame.finish === 'gradient' || frame.finish === 'pastel-rainbow'
+      ? colorAt(palette, position)
+      : frame.finish === 'pearl' || frame.finish === 'metallic'
+        ? palette[i % palette.length]
+        : frame.finish === 'soft-neon' ? color : palette[i % palette.length];
+    const delay = (i * 0.16).toFixed(2);
+    const animated = frame.motion !== 'none'
+      ? ' class="avatar-frame-motif" style="animation-delay:-' + delay + 's"'
+      : '';
+    return '<g' + animated + ' transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ')">' + motif(frame.model, motifColor, i) + '</g>';
   }).join('');
-  const style: React.CSSProperties = {
-    width: size, height: size, flex: '0 0 auto',
-    animation: frame.motion === 'soft-pulse' ? 'avatar-frame-pulse 4s ease-in-out infinite' :
-      frame.motion === 'soft-glow' ? 'avatar-frame-glow 4.5s ease-in-out infinite' :
-      frame.motion === 'color-shift' ? 'avatar-frame-colors 12s ease-in-out infinite' :
-      frame.motion === 'soft-shimmer' ? 'avatar-frame-shimmer 6s ease-in-out infinite' : undefined
-  };
-  const stroke = frame.finish === 'soft-neon' ? 'drop-shadow(0 0 2px ' + color + ')' :
+  const motionCss = '@keyframes avatar-motif-wave{0%,100%{opacity:.58;filter:brightness(.96)}50%{opacity:1;filter:brightness(1.18)}}' +
+    '@keyframes avatar-motif-twinkle{0%,100%{opacity:.72;transform:scale(.88)}50%{opacity:1;transform:scale(1.12)}}' +
+    '@keyframes avatar-motif-breathe{0%,100%{opacity:.62}50%{opacity:1}}' +
+    '@keyframes avatar-motif-glint{0%,100%{filter:brightness(1) drop-shadow(0 0 0 transparent)}50%{filter:brightness(1.35) drop-shadow(0 0 2px currentColor)}}' +
+    '@keyframes avatar-motif-rainbow{0%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(35deg)}100%{filter:hue-rotate(0deg)}}' +
+    '@keyframes avatar-motif-sparkle{0%,100%{opacity:.66}35%{opacity:1;filter:brightness(1.35)}55%{opacity:.78}72%{opacity:1;filter:brightness(1.2)}}';
+  const motion = frame.motion === 'soft-pulse' || frame.motion === 'soft-breathe' ? 'avatar-motif-breathe 3.8s ease-in-out infinite' :
+    frame.motion === 'soft-glow' ? 'avatar-motif-glint 4.6s ease-in-out infinite' :
+    frame.motion === 'color-shift' || frame.motion === 'rainbow-wave' ? 'avatar-motif-rainbow 8s ease-in-out infinite' :
+    frame.motion === 'soft-shimmer' || frame.motion === 'glint' ? 'avatar-motif-glint 5.5s ease-in-out infinite' :
+    frame.motion === 'color-wave' ? 'avatar-motif-wave 3.6s ease-in-out infinite' :
+    frame.motion === 'twinkle' ? 'avatar-motif-twinkle 3.2s ease-in-out infinite' :
+    frame.motion === 'sparkle-wave' ? 'avatar-motif-sparkle 4.2s ease-in-out infinite' : undefined;
+  const stroke = frame.finish === 'soft-neon' ? 'drop-shadow(0 0 2px ' + color + ') drop-shadow(0 0 4px ' + color + ')' :
     frame.finish === 'pearl' ? 'drop-shadow(0 0 1px #fff)' :
     frame.finish === 'metallic' ? 'drop-shadow(0 0 1px #D8C29A)' : undefined;
-  return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={style}>
-    <style>{'@keyframes avatar-frame-pulse{0%,100%{opacity:.78}50%{opacity:1}}@keyframes avatar-frame-glow{0%,100%{filter:drop-shadow(0 0 1px currentColor)}50%{filter:drop-shadow(0 0 4px currentColor)}}@keyframes avatar-frame-colors{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(35deg)}}@keyframes avatar-frame-shimmer{0%,100%{opacity:.78}50%{opacity:1}}@media(prefers-reduced-motion:reduce){.avatar-frame-svg{animation:none!important}}'}</style>
-    <span className="absolute inset-0 rounded-full overflow-hidden" style={{filter: stroke}} dangerouslySetInnerHTML={{__html:'<svg class="avatar-frame-svg" viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="avatar-frame-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="' + colors[0] + '"/><stop offset="50%" stop-color="' + colors[1] + '"/><stop offset="100%" stop-color="' + colors[2] + '"/></linearGradient></defs>' + (gradient ? '<circle cx="50" cy="50" r="47.5" fill="none" stroke="url(#avatar-frame-gradient)" stroke-width="1"/>' : '') + svg + '</svg>'}} />
+  return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={{width:size,height:size,flex:'0 0 auto'}}>
+    <style>{motionCss + '.avatar-frame-motif{' + (motion ? 'animation:' + motion + ';transform-box:fill-box;transform-origin:center;' : '') + '}@media(prefers-reduced-motion:reduce){.avatar-frame-motif{animation:none!important;transform:none!important}}'}</style>
+    <span className="absolute inset-0 rounded-full overflow-hidden" style={{filter:stroke}} dangerouslySetInnerHTML={{__html:'<svg class="avatar-frame-svg" viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">' + svg + '</svg>'}} />
     <span className="relative z-10 rounded-full overflow-hidden" style={{width:'76%',height:'76%'}}>{children}</span>
   </span>;
 }
