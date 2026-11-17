@@ -1225,17 +1225,18 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               })}
                             </div>
                             {/* Stage labels dots */}
-                            <div className="flex justify-between items-center mt-1">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2 mt-3" aria-label="Etapas da entrega">
                               {availableStatuses.map((st, idx) => {
                                 const isActive = idx <= currentStatusIndex;
                                 const isCurrent = idx === currentStatusIndex;
                                 return (
-                                  <span 
+                                  <div
                                     key={`dot-label-${st.id}-${idx}`}
-                                    className={`text-[8px] font-bold ${isCurrent ? 'text-indigo-600 dark:text-indigo-400 scale-105' : isActive ? 'text-neutral-500' : 'text-neutral-400'} transition-all`}
+                                    className={`min-w-0 flex items-start gap-1.5 text-[9px] leading-tight font-semibold ${isCurrent ? 'text-indigo-600 dark:text-indigo-400' : isActive ? 'text-neutral-500' : 'text-neutral-400'}`}
                                   >
-                                    {st.label}
-                                  </span>
+                                    <span className={`mt-0.5 h-1.5 w-1.5 rounded-full shrink-0 ${isCurrent ? 'bg-indigo-500' : isActive ? 'bg-neutral-400' : 'bg-neutral-300 dark:bg-neutral-700'}`} />
+                                    <span className="min-w-0 break-words">{st.label}</span>
+                                  </div>
                                 );
                               })}
                             </div>
