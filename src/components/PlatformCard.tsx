@@ -1,4 +1,4 @@
-import { safeUrl } from "../lib/utils";
+import { safeUrl, orderPurchaseStatuses, nextPurchaseStatus, isPurchaseFinalStatus } from "../lib/utils";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -193,23 +193,19 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
   }
 
   const [isExpanded, setIsExpanded] = useState(() => platform.id.startsWith('demo-'));
+  const orderedStatuses = orderPurchaseStatuses(availableStatuses);
 
   const cycleStatus = (e: React.MouseEvent, purchase: Purchase) => {
     e.stopPropagation();
-    const sequence = availableStatuses.map(s => s.id);
-    const currentIndex = sequence.indexOf(purchase.status as any);
-    
-    const nextIndex = (currentIndex + 1) % sequence.length;
-    const nextStatus = sequence[nextIndex];
-
-    const updatedPurchase = { 
-      ...purchase, 
+    const nextStatus = nextPurchaseStatus(orderedStatuses, purchase.status);
+    if (!nextStatus) return; // Entregue, Cancelado e Devolvido são resultados finais.
+    const updatedPurchase = {
+      ...purchase,
       status: nextStatus,
-      deliveryDate: nextIndex === sequence.length - 1 && !purchase.deliveryDate 
-        ? new Date().toISOString().substring(0, 10) 
+      deliveryDate: nextStatus === 'entregue' && !purchase.deliveryDate
+        ? new Date().toISOString().substring(0, 10)
         : purchase.deliveryDate
     };
-    
     onEditPurchase(platform.id, updatedPurchase);
   };
 
@@ -217,11 +213,9 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     if (!purchase.bundleItems) return;
-    const sequence = availableStatuses.map(s => s.id);
     const item = purchase.bundleItems[itemIndex];
-    const currentIndex = sequence.indexOf((item.status || 'pedido_feito') as any);
-    const nextIndex = (currentIndex + 1) % sequence.length;
-    const nextStatus = sequence[nextIndex];
+    const nextStatus = nextPurchaseStatus(orderedStatuses, item.status || 'pedido_feito');
+    if (!nextStatus) return;
 
     const updatedBundleItems = [...purchase.bundleItems];
     updatedBundleItems[itemIndex] = {
@@ -1035,8 +1029,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                       );
 
                       // Calculate progress timeline index
-                      const sequence = availableStatuses.map(s => s.id);
-                      const currentStatusIndex = sequence.indexOf(purchase.status);
+                      const currentStatusIndex = orderedStatuses.findIndex(s => s.id === purchase.status);
 
                       return (
                         <div
@@ -1209,8 +1202,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               <span className="text-indigo-600 dark:text-indigo-400 font-black">{getStatusLabel(purchase.status)}</span>
                             </div>
                             <div className="relative h-1 w-full bg-neutral-200/60 dark:bg-neutral-800/60 rounded-full overflow-hidden flex">
-                              {availableStatuses.map((st, idx) => {
-                                const isActive = idx <= currentStatusIndex;
+                              {orderedStatuses.map((st, idx) => {
+                                const isActive = idx <= currentStatusIndex && (!isPurchaseFinalStatus(st.id) || st.id === purchase.status);
                                 return (
                                   <div 
                                     key={`bar-${st.id}-${idx}`}
@@ -1218,7 +1211,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     style={{
                                       backgroundColor: isActive ? getStatusColor(purchase.status) : 'transparent',
                                       opacity: isActive ? 1 - (currentStatusIndex - idx) * 0.18 : 0,
-                                      borderRight: idx < availableStatuses.length - 1 ? '1px solid rgba(255,255,255,0.25)' : 'none'
+                                      borderRight: idx < orderedStatuses.length - 1 ? '1px solid rgba(255,255,255,0.25)' : 'none'
                                     }}
                                   />
                                 );
@@ -1226,8 +1219,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             </div>
                             {/* Stage labels: preserve the original horizontal timeline without overlaps. */}
                             <div className="grid grid-cols-6 gap-0.5 items-start mt-1.5 w-full" aria-label="Etapas da entrega">
-                              {availableStatuses.map((st, idx) => {
-                                const isActive = idx <= currentStatusIndex;
+                              {orderedStatuses.map((st, idx) => {
+                                const isActive = idx <= currentStatusIndex && (!isPurchaseFinalStatus(st.id) || st.id === purchase.status);
                                 const isCurrent = idx === currentStatusIndex;
                                 return (
                                   <span
