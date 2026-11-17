@@ -642,7 +642,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
   useEffect(() => {
     const calculatedFinalPrice = Math.max(0, originalPrice - discount);
-    if (validationErrors.finalPrice && calculatedFinalPrice > 0) {
+    if (validationErrors.finalPrice && calculatedFinalPrice >= 0) {
       setValidationErrors(prev => ({ ...prev, finalPrice: undefined }));
     }
   }, [originalPrice, discount, validationErrors.finalPrice]);
@@ -1175,8 +1175,8 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     }
 
     const calculatedFinalPrice = isEditMode ? finalPrice : Math.max(0, originalPrice - discount);
-    if (calculatedFinalPrice <= 0) {
-      validation.finalPrice = 'O preço final (após descontos) deve ser maior que zero.';
+    if (!Number.isFinite(calculatedFinalPrice) || calculatedFinalPrice < 0) {
+      validation.finalPrice = 'O preço final não pode ser negativo ou inválido.';
     }
 
     // Validation for bundle items
@@ -1911,7 +1911,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                     type="number"
                     step="0.01"
                     min="0"
-                    value={finalPrice || ''}
+                    value={Number.isFinite(finalPrice) ? finalPrice : ''}
                     onChange={(e) => setFinalPrice(parseFloat(e.target.value) || 0)}
                     className={`w-full h-11 pl-8 pr-3 rounded-xl text-lg bg-indigo-50/50 border text-indigo-700 placeholder-indigo-300 focus:outline-none focus:ring-2 transition-all font-mono font-black shadow-sm dark:bg-indigo-900/20 dark:text-indigo-300 ${
                       validationErrors.finalPrice
