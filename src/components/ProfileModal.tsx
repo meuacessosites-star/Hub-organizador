@@ -26,6 +26,7 @@ interface ProfileModalProps {
   onDelete?: (profileId: string) => void;
   startInEditMode?: boolean;
   openPresetsManager?: boolean;
+  openFrameCustomizer?: boolean;
   onManageProfiles?: () => void;
 }
 
@@ -251,6 +252,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onDelete,
   startInEditMode = false,
   openPresetsManager = false,
+  openFrameCustomizer = false,
   onManageProfiles,
 }) => {
   const isEditMode = !!profile;
@@ -608,7 +610,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   // Load profile data if in edit mode
   useEffect(() => {
     setShowColorWheel(false); // Reset color wheel state
-    setShowFrameCustomizer(false);
+    setShowFrameCustomizer(!!openFrameCustomizer);
     setShowAllPresets(false);
     setShowEmailSuggestions(false);
     if (profile) {
@@ -668,7 +670,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setImageUrl('');
       setAvatarZoom(1);
     }
-  }, [profile, isOpen, isEditMode, platform, startInEditMode]);
+  }, [profile, isOpen, isEditMode, platform, startInEditMode, openFrameCustomizer]);
 
   // Reset color wheel state when switching tabs
   useEffect(() => {
