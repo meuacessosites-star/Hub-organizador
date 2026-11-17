@@ -582,6 +582,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
   const [avatarFrame, setAvatarFrame] = useState<AvatarFrameSettings>(() => defaultAvatarFrame(profile?.id || 'new-profile'));
+  const [showFrameCustomizer, setShowFrameCustomizer] = useState(false);
 
   useEffect(() => {
     if (profile?.id) setAvatarFrame(profile.avatarFrame || defaultAvatarFrame(profile.id));
@@ -607,6 +608,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   // Load profile data if in edit mode
   useEffect(() => {
     setShowColorWheel(false); // Reset color wheel state
+    setShowFrameCustomizer(false);
     setShowAllPresets(false);
     setShowEmailSuggestions(false);
     if (profile) {
@@ -1487,11 +1489,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <div className="flex flex-col gap-5 select-text">
               {/* Profile Avatar Card */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/[0.06]">
-                <AvatarFrame profileId={profile?.id || 'new-profile'} settings={avatarFrame} size={60}>
-                  <div className="w-full h-full rounded-full flex items-center justify-center text-xl font-bold text-white uppercase overflow-hidden" style={{backgroundColor:selectedColor}}>
-                    {avatarTab === 'emoji' && selectedEmoji ? selectedEmoji : avatarTab === 'image' && imageUrl ? <SmartImage src={imageUrl} alt="profile" className="w-full h-full object-cover" style={{transform:`scale(${avatarZoom})`}}/> : (isCustomProfile ? customProfileName : profileName).slice(0,2).toUpperCase()}
-                  </div>
-                </AvatarFrame>
+                <button type="button" onClick={() => { setIsEditingInView(true); setShowFrameCustomizer(true); }} aria-label="Personalizar moldura do perfil" title="Toque para personalizar a moldura" className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer shrink-0">
+                  <AvatarFrame profileId={profile?.id || 'new-profile'} settings={avatarFrame} size={60}>
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-xl font-bold text-white uppercase overflow-hidden" style={{backgroundColor:selectedColor}}>
+                      {avatarTab === 'emoji' && selectedEmoji ? selectedEmoji : avatarTab === 'image' && imageUrl ? <SmartImage src={imageUrl} alt="profile" className="w-full h-full object-cover" style={{transform:`scale(${avatarZoom})`}}/> : (isCustomProfile ? customProfileName : profileName).slice(0,2).toUpperCase()}
+                    </div>
+                  </AvatarFrame>
+                </button>
                 <div>
                   <h3 className="font-sans font-bold text-neutral-900 dark:text-white text-sm">
                     {isCustomProfile ? customProfileName : profileName}
@@ -1760,8 +1764,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </div>
               </div>
 
-              {/* Moldura do avatar - personalização por conta */}
-              <div className="rounded-2xl border border-indigo-200/70 dark:border-indigo-500/20 bg-indigo-50/40 dark:bg-indigo-500/[0.04] p-3.5 flex flex-col gap-3">
+              {showFrameCustomizer && (
+              <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => setShowFrameCustomizer(false)}>
+                <div className="w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-2xl border border-indigo-200/70 dark:border-indigo-500/20 bg-white dark:bg-[#101116] shadow-2xl p-3.5 flex flex-col gap-3" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Personalizar moldura</p>
+                      <p className="text-[10px] text-neutral-500">Escolha o desenho, as cores e o movimento</p>
+                    </div>
+                    <button type="button" onClick={() => setShowFrameCustomizer(false)} aria-label="Fechar personalização" className="w-9 h-9 rounded-xl border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"><X className="w-4 h-4"/></button>
+                  </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">Moldura do avatar</p>
