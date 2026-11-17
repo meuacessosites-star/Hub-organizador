@@ -934,8 +934,8 @@ export function useStorage() {
     if (originalPrice <= 0) {
       throw new Error('O preço original deve ser maior que zero (positivo).');
     }
-    if (finalPrice <= 0) {
-      throw new Error('O preço final deve ser maior que zero (positivo).');
+    if (!Number.isFinite(finalPrice) || finalPrice < 0) {
+      throw new Error('O preço final não pode ser negativo ou inválido.');
     }
   }, []);
 
