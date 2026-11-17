@@ -852,6 +852,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           accessLink,
           description,
           avatar: avatarObj,
+          avatarFrame,
         });
       }
       addToast(`Conta "${finalProfileName}" criada com sucesso! ✨`, 'success');
