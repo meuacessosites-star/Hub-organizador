@@ -190,12 +190,14 @@ export default function App() {
     profile: Profile | null;
     startInEditMode?: boolean;
     openPresetsManager?: boolean;
+    openFrameCustomizer?: boolean;
   }>({
     isOpen: false,
     platformId: null,
     profile: null,
     startInEditMode: false,
     openPresetsManager: false,
+    openFrameCustomizer: false,
   });
 
   // Purchase modal state (Handles both add and view/edit)
@@ -341,12 +343,13 @@ export default function App() {
     });
   };
 
-  const handleOpenEditProfile = (platformId: string, profile: Profile, startInEditMode: boolean = false) => {
+  const handleOpenEditProfile = (platformId: string, profile: Profile, startInEditMode: boolean = false, openFrameCustomizer: boolean = false) => {
     setProfileModal({
       isOpen: true,
       platformId,
       profile,
       startInEditMode,
+      openFrameCustomizer,
     });
   };
 
@@ -764,7 +767,7 @@ export default function App() {
           {profileModal.isOpen && (
             <ProfileModal
               isOpen={profileModal.isOpen}
-              onClose={() => setProfileModal({ isOpen: false, platformId: null, profile: null, startInEditMode: false, openPresetsManager: false })}
+              onClose={() => setProfileModal({ isOpen: false, platformId: null, profile: null, startInEditMode: false, openPresetsManager: false, openFrameCustomizer: false })}
               platform={currentPlatformForProfile}
               profile={profileModal.profile}
               onSave={handleSaveProfile}
@@ -772,6 +775,7 @@ export default function App() {
               onDelete={handleDeleteProfile}
               startInEditMode={profileModal.startInEditMode}
               openPresetsManager={profileModal.openPresetsManager}
+              openFrameCustomizer={profileModal.openFrameCustomizer}
               onManageProfiles={handleOpenManageProfiles}
             />
           )}
