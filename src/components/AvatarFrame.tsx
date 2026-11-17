@@ -263,7 +263,7 @@ const FRAME_MOTION_EFFECTS: Record<AvatarFrameMotion, { name: string; seconds: n
 const AVATAR_FRAME_MOTION_CSS = [
   '@keyframes avatarfx-pulse{0%,100%{transform:scale(.92);opacity:.9}50%{transform:scale(1.3);opacity:1}}',
   '@keyframes avatarfx-glow{0%,100%{filter:drop-shadow(0 0 0 transparent);opacity:1}50%{filter:drop-shadow(0 0 3.5px currentColor);opacity:1}}',
-  '@keyframes avatarfx-color{0%,100%{filter:hue-rotate(0deg) saturate(1)}50%{filter:hue-rotate(155deg) saturate(1.7)}}',
+  '@keyframes avatarfx-color{0%,100%{opacity:1}50%{opacity:1}}',
   '@keyframes avatarfx-shimmer{0%,75%,100%{opacity:.84;filter:brightness(1)}11%,26%{opacity:1;filter:brightness(2.1) drop-shadow(0 0 1.7px currentColor)}}',
   '@keyframes avatarfx-wave{0%,75%,100%{transform:translateY(0) scale(1)}19%,36%{transform:translateY(-3px) scale(1.24)}}',
   '@keyframes avatarfx-twinkle{0%,48%,100%{transform:scale(.85);opacity:.73}13%,30%{transform:scale(1.5);opacity:1;filter:drop-shadow(0 0 1.9px currentColor)}}',
@@ -275,7 +275,7 @@ const AVATAR_FRAME_MOTION_CSS = [
   '@keyframes avatarfx-slowtwinkle{0%,65%,100%{transform:scale(.95);opacity:.88}20%,39%{transform:scale(1.4);opacity:1;filter:drop-shadow(0 0 1.8px currentColor)}}',
   '@keyframes avatarfx-ripple{0%,77%,100%{transform:translateY(2px) scale(.95)}20%,37%{transform:translateY(-3.2px) scale(1.25)}}',
   '@keyframes avatarfx-glimmer{0%,62%,100%{opacity:1;filter:brightness(1)}16%,31%{opacity:1;filter:brightness(1.8)}}',
-  '@keyframes avatarfx-colorbreathe{0%,100%{filter:hue-rotate(0deg) saturate(.65) brightness(.95)}50%{filter:hue-rotate(45deg) saturate(2) brightness(1.22)}}',
+  '@keyframes avatarfx-colorbreathe{0%,100%{filter:brightness(.88)}50%{filter:brightness(1.23)}}',
   '@keyframes avatarfx-still{0%,100%{opacity:1}50%{opacity:.98}}',
   '@keyframes avatarfx-sway{0%,100%{transform:translateX(-2.4px)}50%{transform:translateX(2.4px)}}',
   '@keyframes avatarfx-petaldance{0%,100%{transform:rotate(-18deg) translateY(.6px)}50%{transform:rotate(18deg) translateY(-1.4px)}}',
@@ -320,12 +320,32 @@ function frameMotionAccent(motion: AvatarFrameMotion, color: string, index: numb
   return '';
 }
 
+/** Transições passam apenas pelas cores escolhidas, na ordem do seletor. */
+function selectedColorKeyframes(colors: string[], breathing: boolean): { name: string; css: string } | null {
+  if (colors.length < 2) return null;
+  // Validated hex colors double as a stable, instance-safe animation name.
+  const name = 'avatarfx-' + (breathing ? 'breathing-' : 'chosen-') + colors.map(c => c.slice(1).toLowerCase()).join('-');
+  const stops = [...colors, colors[0]];
+  const css = '@keyframes ' + name + '{' + stops.map((color, index) => {
+    const position = Math.round(index * 100 / colors.length);
+    const brightness = breathing ? 'filter:brightness(' + (index % 2 ? '1.15' : '.94') + ');' : '';
+    return position + '%{color:' + color + ';' + brightness + '}';
+  }).join('') + '}';
+  return { name, css };
+}
+
 export function AvatarFrame({ profileId, settings, children, className = '', size = 48 }: {
   profileId: string; settings?: AvatarFrameSettings; children: ReactNode; className?: string; size?: number;
 }) {
   const frame = settings || defaultAvatarFrame(profileId);
   if (frame.model === 'none') return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={{width:size,height:size,flex:'0 0 auto'}}><span className="relative rounded-full overflow-hidden w-full h-full">{children}</span></span>;
   const color = frame.colors?.[0] || '#A99AE8';
+  const chosenColors = (frame.colors || []).filter(c => /^#[0-9a-fA-F]{6}$/.test(c)).slice(0, 3);
+  if (chosenColors.length === 0) chosenColors.push('#A99AE8');
+  const isSelectedColorEffect = frame.motion === 'color-shift' || frame.motion === 'color-breathe';
+  const colorAnimation = isSelectedColorEffect
+    ? selectedColorKeyframes(chosenColors, frame.motion === 'color-breathe')
+    : null;
   const second = frame.colors?.[1] || color;
   const third = frame.colors?.[2] || second;
   const palette = frame.finish === 'pastel-rainbow'
@@ -341,7 +361,9 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
             : frame.colors?.length === 1 ? [color, color] : frame.colors?.length === 2 ? [color, second, color] : [color, second, third, color];
   const count = 24;
   const radius = 46;
-  const effect = FRAME_MOTION_EFFECTS[frame.motion] ?? null;
+  // "Cores em transição": com uma única cor não existe animação, nem variação de tom.
+  const effect = frame.motion === 'color-shift' && chosenColors.length < 2
+    ? null : FRAME_MOTION_EFFECTS[frame.motion] ?? null;
   const svg = Array.from({length: count}, (_, i) => {
     const angle = (360 / count) * i - 90;
     const position = i / (count - 1);
@@ -350,22 +372,25 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
       : frame.finish === 'pearl' || frame.finish === 'metallic'
         ? palette[i % palette.length]
         : frame.finish === 'soft-neon' ? color : frame.finish === 'matte' ? mixHex(color,'#777777',.12) : palette[i % palette.length];
+    const inkColor = isSelectedColorEffect ? chosenColors[0] : motifColor;
+    const inkPaint = colorAnimation ? 'currentColor' : inkColor;
     const delay = effect ? frameMotionDelay(effect.pattern, i, count, effect.seconds) : 0;
-    const animStyle = effect
-      ? 'animation:' + effect.name + ' ' + effect.seconds + 's ease-in-out infinite;animation-delay:-' + delay.toFixed(2) + 's;'
+    const animationName = colorAnimation?.name || effect?.name;
+    const animStyle = effect && animationName
+      ? 'animation:' + animationName + ' ' + effect.seconds + 's ease-in-out infinite;animation-delay:-' + delay.toFixed(2) + 's;'
       : '';
-    const accent = effect ? frameMotionAccent(frame.motion, motifColor, i, effect.seconds) : '';
+    const accent = effect ? frameMotionAccent(frame.motion, inkColor, i, effect.seconds) : '';
     const ornamentScale = size < 76 ? 1.16 : 1;
     return '<g transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ') scale(' + ornamentScale + ')">' +
-      '<g class="avatar-frame-ink" style="color:' + motifColor + ';transform-box:fill-box;transform-origin:center;' + animStyle + '">' +
-      motif(frame.model, motifColor, i) + '</g>' + accent + '</g>';
+      '<g class="avatar-frame-ink" style="color:' + inkColor + ';transform-box:fill-box;transform-origin:center;' + animStyle + '">' +
+      motif(frame.model, inkPaint, i) + '</g>' + accent + '</g>';
   }).join('');
   const stroke = frame.finish === 'soft-neon' ? 'drop-shadow(0 0 2px ' + color + ') drop-shadow(0 0 4px ' + color + ')' :
     frame.finish === 'pearl' || frame.finish === 'crystal' ? 'drop-shadow(0 0 1px #fff)' :
     frame.finish === 'metallic' ? 'drop-shadow(0 0 1px #D8C29A)' :
     frame.finish === 'satin' ? 'drop-shadow(0 0 1px rgba(255,255,255,.45))' : undefined;
   return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={{width:size,height:size,flex:'0 0 auto'}}>
-    <style>{AVATAR_FRAME_MOTION_CSS}</style>
+    <style>{AVATAR_FRAME_MOTION_CSS + (colorAnimation?.css || '')}</style>
     <span className="absolute inset-0 rounded-full overflow-hidden" style={{filter:stroke}} dangerouslySetInnerHTML={{__html:'<svg class="avatar-frame-svg" viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">' + svg + '</svg>'}} />
     <span className="relative z-10 rounded-full overflow-hidden" style={{width:'76%',height:'76%'}}>{children}</span>
   </span>;
