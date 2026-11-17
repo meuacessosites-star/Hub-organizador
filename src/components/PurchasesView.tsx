@@ -1,4 +1,4 @@
-import { safeUrl } from "../lib/utils";
+import { safeUrl, nextPurchaseStatus } from "../lib/utils";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -362,20 +362,13 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
 
   const cycleStatus = (e: React.MouseEvent, platformId: string, purchase: Purchase) => {
     e.stopPropagation();
-    const sequence = statuses.map(s => s.id);
-    const currentIndex = sequence.indexOf(purchase.status as any);
-    
-    // If it's not in the list, go to the first one
-    // If it's the last one, go back to start
-    const nextIndex = (currentIndex + 1) % sequence.length;
-    const nextStatus = sequence[nextIndex];
-
-    const updatedPurchase = { 
-      ...purchase, 
+    const nextStatus = nextPurchaseStatus(statuses, purchase.status);
+    if (!nextStatus) return; // Resultados finais só são modificados na edição da compra.
+    const updatedPurchase = {
+      ...purchase,
       status: nextStatus,
-      // Auto-set delivery date if it's the last one in the sequence and not already set
-      deliveryDate: nextIndex === sequence.length - 1 && !purchase.deliveryDate 
-        ? new Date().toISOString().substring(0, 10) 
+      deliveryDate: nextStatus === 'entregue' && !purchase.deliveryDate
+        ? new Date().toISOString().substring(0, 10)
         : purchase.deliveryDate
     };
     
@@ -385,11 +378,9 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
   const cycleBundleItemStatus = (e: React.MouseEvent, platformId: string, purchase: Purchase, itemIndex: number) => {
     e.stopPropagation();
     if (!purchase.bundleItems) return;
-    const sequence = statuses.map(s => s.id);
     const item = purchase.bundleItems[itemIndex];
-    const currentIndex = sequence.indexOf((item.status || 'pedido_feito') as any);
-    const nextIndex = (currentIndex + 1) % sequence.length;
-    const nextStatus = sequence[nextIndex];
+    const nextStatus = nextPurchaseStatus(statuses, item.status || 'pedido_feito');
+    if (!nextStatus) return;
 
     const updatedBundleItems = [...purchase.bundleItems];
     updatedBundleItems[itemIndex] = {
