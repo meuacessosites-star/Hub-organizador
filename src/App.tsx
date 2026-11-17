@@ -512,8 +512,9 @@ export default function App() {
           {/* Core Body Container */}
           <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col gap-12">
             
-            {/* View Selector Tabs */}
-            <div role="tablist" className="flex bg-neutral-200/50 dark:bg-white/[0.02] p-1.5 rounded-2xl self-start select-none border border-neutral-200 dark:border-white/5 shadow-sm">
+            {/* View Selector Tabs + quick add, visible without horizontal scrolling */}
+            <div className="flex items-center w-full sm:w-auto min-w-0 max-w-full gap-2">
+              <div role="tablist" className="flex flex-1 sm:flex-none min-w-0 bg-neutral-200/50 dark:bg-white/[0.02] p-1.5 rounded-2xl select-none border border-neutral-200 dark:border-white/5 shadow-sm">
               <button
                 id="view-selector-platforms"
                 data-testid="view-selector-platforms"
@@ -521,7 +522,7 @@ export default function App() {
                 aria-selected={currentView === 'platforms'}
                 aria-label="Ver Plataformas"
                 onClick={() => setCurrentView('platforms')}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                className={`min-w-0 flex-1 sm:flex-none px-2 sm:px-5 py-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
                   currentView === 'platforms'
                     ? 'bg-white dark:bg-[#141414] text-indigo-600 dark:text-indigo-400 shadow-md dark:shadow-[0_0_20px_rgba(79,70,229,0.15)] border border-neutral-200 dark:border-white/10'
                     : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
@@ -537,7 +538,7 @@ export default function App() {
                 aria-selected={currentView === 'purchases'}
                 aria-label="Ver Painel de Compras"
                 onClick={() => setCurrentView('purchases')}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                className={`min-w-0 flex-1 sm:flex-none px-2 sm:px-5 py-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
                   currentView === 'purchases'
                     ? 'bg-white dark:bg-[#141414] text-indigo-600 dark:text-indigo-400 shadow-md dark:shadow-[0_0_20px_rgba(79,70,229,0.15)] border border-neutral-200 dark:border-white/10'
                     : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-white'
@@ -546,12 +547,13 @@ export default function App() {
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>Compras</span>
               </button>
+              </div>
               <button
                 type="button"
                 aria-label="Adicionar conta ou registrar compra"
                 title="Adicionar conta ou registrar compra"
                 onClick={() => setIsQuickAddOpen(true)}
-                className="ml-2 h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-colors"
+                className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-colors"
               >
                 <Plus className="w-5 h-5" />
               </button>
