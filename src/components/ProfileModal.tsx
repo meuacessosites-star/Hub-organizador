@@ -1765,67 +1765,61 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </div>
 
               {showFrameCustomizer && (
-              <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => setShowFrameCustomizer(false)}>
-                <div className="w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-2xl border border-indigo-200/70 dark:border-indigo-500/20 bg-white dark:bg-[#101116] shadow-2xl p-3.5 flex flex-col gap-3" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Personalizar moldura</p>
-                      <p className="text-[10px] text-neutral-500">Escolha o desenho, as cores e o movimento</p>
+                <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => setShowFrameCustomizer(false)}>
+                  <div className="w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-2xl border border-indigo-200/70 dark:border-indigo-500/20 bg-white dark:bg-[#101116] shadow-2xl p-3.5 flex flex-col gap-3" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Personalizar moldura</p>
+                        <p className="text-[10px] text-neutral-500">Escolha o desenho, as cores e o movimento</p>
+                      </div>
+                      <button type="button" onClick={() => setShowFrameCustomizer(false)} aria-label="Fechar personalização" className="w-9 h-9 rounded-xl border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"><X className="w-4 h-4"/></button>
                     </div>
-                    <button type="button" onClick={() => setShowFrameCustomizer(false)} aria-label="Fechar personalização" className="w-9 h-9 rounded-xl border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"><X className="w-4 h-4"/></button>
-                  </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">Moldura do avatar</p>
-                    <p className="text-[10px] text-neutral-500">Escolha um desenho, acabamento e movimento</p>
-                  </div>
-                  <AvatarFrame profileId={profile?.id || 'new-profile'} settings={avatarFrame} size={48}>
-                    <div className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden" style={{backgroundColor:selectedColor}}>
-                      {avatarTab === 'emoji' ? selectedEmoji : avatarTab === 'image' && imageUrl ? <SmartImage src={imageUrl} alt="" className="w-full h-full object-cover"/> : profileName.slice(0,2).toUpperCase()}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">Pré-visualização</p>
+                        <p className="text-[10px] text-neutral-500">A moldura desta conta</p>
+                      </div>
+                      <AvatarFrame profileId={profile?.id || 'new-profile'} settings={avatarFrame} size={52}>
+                        <div className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden" style={{backgroundColor:selectedColor}}>
+                          {avatarTab === 'emoji' ? selectedEmoji : avatarTab === 'image' && imageUrl ? <SmartImage src={imageUrl} alt="" className="w-full h-full object-cover"/> : profileName.slice(0,2).toUpperCase()}
+                        </div>
+                      </AvatarFrame>
                     </div>
-                  </AvatarFrame>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="text-[10px] font-semibold text-neutral-500">Modelo
-                    <select value={avatarFrame.model} onChange={e=>setAvatarFrame(v=>({...v,model:e.target.value as AvatarFrameSettings['model']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
-                      {AVATAR_FRAME_MODELS.map((m,i)=><option key={m} value={m}>{String(i+1).padStart(2,'0')} · {({ 'micro-hearts':'Corações mini','open-hearts':'Corações vazados','petals':'Pétalas','petal-outline':'Pétalas finas','droplets':'Gotas','pearls':'Pérolas','pearls-alternating':'Pérolas alternadas','mini-links':'Elos delicados','open-links':'Elos abertos','moons':'Luas','tiny-stars':'Estrelinhas','sparkles':'Brilhos','diamonds':'Diamantes','diamond-outline':'Diamantes finos','mini-arches':'Arcos','arches-alternating':'Arcos alternados','tiny-waves':'Ondinhas','seeds':'Sementes','clovers':'Trevos','tiny-flowers':'Flores mini','flower-outline':'Flores finas','tiny-bows':'Lacinhos','light-dots':'Pontos','micro-dashes':'Traços','tiny-leaves':'Folhinhas' } as Record<string,string>)[m]}</option>)}
-                    </select>
-                  </label>
-                  <label className="text-[10px] font-semibold text-neutral-500">Acabamento
-                    <select value={avatarFrame.finish} onChange={e=>setAvatarFrame(v=>({...v,finish:e.target.value as AvatarFrameSettings['finish']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
-                      <option value="solid">Clássico</option><option value="gradient">Degradê</option><option value="pastel-rainbow">Arco-íris suave</option><option value="soft-neon">Neon suave</option><option value="pearl">Perolado</option><option value="metallic">Metálico</option>
-                    </select>
-                  </label>
-                  <label className="text-[10px] font-semibold text-neutral-500">Cor principal
-                    <input type="color" value={avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[e.target.value,v.colors[1] || e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
-                  </label>
-                  <label className="text-[10px] font-semibold text-neutral-500">Segunda cor
-                    <input type="color" value={avatarFrame.colors[1] || avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[v.colors[0] || '#A99AE8',e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
-                  </label>
-                  <label className="text-[10px] font-semibold text-neutral-500 col-span-2">Animação
-                    <select value={avatarFrame.motion} onChange={e=>setAvatarFrame(v=>({...v,motion:e.target.value as AvatarFrameSettings['motion']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
-                      <option value="none">Sem movimento</option><option value="soft-pulse">Pulso suave</option><option value="soft-glow">Brilho suave</option><option value="color-shift">Mudança de cores</option><option value="soft-shimmer">Cintilação discreta</option>
-                    </select>
-                  </label>
-                </div>
-                <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os modelos · toque para visualizar</p>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
-                    {AVATAR_FRAME_MODELS.map((model, index) => (
-                      <button key={model} type="button" onClick={() => setAvatarFrame(v=>({...v,model}))}
-                        className={`min-w-0 rounded-xl p-2 flex flex-col items-center gap-1 border transition-colors ${avatarFrame.model===model ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/20' : 'border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-[#111219]'}`}>
-                        <AvatarFrame profileId={`preview-${model}`} settings={{...avatarFrame,model}} size={38}>
-                          <div className="w-full h-full rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{backgroundColor:selectedColor}}>
-                            {avatarTab==='emoji' ? selectedEmoji : profileName.slice(0,1).toUpperCase()}
-                          </div>
-                        </AvatarFrame>
-                        <span className="text-[9px] text-neutral-500">{index+1}. {model.replace(/-/g,' ')}</span>
-                      </button>
-                    ))}
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="text-[10px] font-semibold text-neutral-500">Acabamento
+                        <select value={avatarFrame.finish} onChange={e=>setAvatarFrame(v=>({...v,finish:e.target.value as AvatarFrameSettings['finish']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
+                          <option value="solid">Clássico</option><option value="gradient">Degradê</option><option value="pastel-rainbow">Arco-íris suave</option><option value="soft-neon">Neon suave</option><option value="pearl">Perolado</option><option value="metallic">Metálico</option>
+                        </select>
+                      </label>
+                      <label className="text-[10px] font-semibold text-neutral-500">Animação
+                        <select value={avatarFrame.motion} onChange={e=>setAvatarFrame(v=>({...v,motion:e.target.value as AvatarFrameSettings['motion']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
+                          <option value="none">Sem movimento</option><option value="soft-pulse">Pulso suave</option><option value="soft-glow">Brilho suave</option><option value="color-shift">Mudança de cores</option><option value="soft-shimmer">Cintilação discreta</option>
+                        </select>
+                      </label>
+                      <label className="text-[10px] font-semibold text-neutral-500">Cor principal
+                        <input type="color" value={avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[e.target.value,v.colors[1] || e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
+                      </label>
+                      <label className="text-[10px] font-semibold text-neutral-500">Segunda cor
+                        <input type="color" value={avatarFrame.colors[1] || avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[v.colors[0] || '#A99AE8',e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
+                      </label>
+                    </div>
+                    <div className="pt-2 border-t border-indigo-200/60 dark:border-indigo-500/15">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Todos os 25 modelos · toque para escolher</p>
+                      <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1">
+                        {AVATAR_FRAME_MODELS.map((model, index) => (
+                          <button key={model} type="button" onClick={() => setAvatarFrame(v=>({...v,model}))} className={`min-w-0 rounded-xl p-2 flex flex-col items-center gap-1 border transition-colors ${avatarFrame.model===model ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/20' : 'border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-[#111219]'}`}>
+                            <AvatarFrame profileId={`preview-${model}`} settings={{...avatarFrame,model}} size={38}>
+                              <div className="w-full h-full rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{backgroundColor:selectedColor}}>{avatarTab==='emoji' ? selectedEmoji : profileName.slice(0,1).toUpperCase()}</div>
+                            </AvatarFrame>
+                            <span className="text-[9px] text-neutral-500">{index+1}. {model.replace(/-/g,' ')}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setShowFrameCustomizer(false)} className="w-full h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Concluir</button>
                   </div>
                 </div>
-              </div>
-
+              )}
               {/* E-mail Input com Sugestões de Domínio */}
               <div className="flex flex-col gap-1.5 relative">
                 <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
