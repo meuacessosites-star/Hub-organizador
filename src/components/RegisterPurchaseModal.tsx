@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { FullScreenCarousel } from './FullScreenCarousel';
 import { SmartImage } from './SmartImage';
+import { AvatarFrame } from './AvatarFrame';
 
 // Color wheel helpers
 const hexToHsv = (hex: string): { h: number; s: number; v: number } => {
@@ -1350,8 +1351,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                             : 'bg-white dark:bg-[#050505] text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-[#2a2d40] hover:border-indigo-400 dark:hover:border-indigo-500/50'
                         }`}
                       >
+                        <AvatarFrame profileId={prof.id} size={28} className="shrink-0">
                         <div
-                          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 uppercase shadow-sm border border-white/20 overflow-hidden"
+                          className="w-full h-full rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-sm overflow-hidden"
                           style={{
                             backgroundColor:
                               (prof.avatar.type === 'image' || (prof.avatar.value && (prof.avatar.value.startsWith('http') || prof.avatar.value.startsWith('data:') || prof.avatar.value.startsWith('blob:') || prof.avatar.value.startsWith('/')))) && prof.avatar.value
@@ -1384,6 +1386,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                             return prof.name.slice(0, 1).toUpperCase();
                           })()}
                         </div>
+                        </AvatarFrame>
                         <span>{prof.name}</span>
                       </button>
                     );
