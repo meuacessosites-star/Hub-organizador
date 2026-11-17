@@ -8,6 +8,8 @@ import React, { useState } from 'react';
 import { Platform, Profile, Purchase, PurchaseStatus, Tag as TagType, Status } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { AvatarFrame } from './AvatarFrame';
+import { PaymentMethodIcon, getPaymentMethodLabel } from './PaymentMethodIcon';
+import { ProfileAvatarDisplay } from './ProfileAvatarDisplay';
 import {
   ChevronDown,
   ChevronUp,
@@ -1232,11 +1234,14 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
   
                           {/* Purchase detail metadata */}
                           <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-neutral-200/50 dark:border-[#2a2d40]/40 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 select-none">
-                            <div>
+                            <div className="min-w-0">
                               <span className="text-[9px] text-neutral-500 block">Comprador</span>
+                              {buyerProfile && <div className="mt-1 mb-1"><ProfileAvatarDisplay profile={buyerProfile} size={28} /></div>}
                               <span className="font-semibold text-neutral-700 dark:text-neutral-300">
                                 {buyerProfile ? buyerProfile.name : 'N/A'}
                               </span>
+                              {buyerProfile?.email && platform.profiles.some(other => other.id !== buyerProfile.id && other.name.trim().toLowerCase() === buyerProfile.name.trim().toLowerCase()) &&
+                                <span className="block text-[9px] text-neutral-500 break-all">{buyerProfile.email}</span>}
                             </div>
                             <div>
                               <span className="text-[9px] text-neutral-500 block">Preço Final</span>
@@ -1265,13 +1270,11 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                               <div className="col-span-3 mt-2 pt-2 border-t border-neutral-200/40 dark:border-[#2a2d40]/40 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                                 {purchase.paymentMethod && (
                                   <div className="flex items-center gap-1.5">
-                                    <CreditCard className="w-2.5 h-2.5 text-neutral-400" />
+                                    <PaymentMethodIcon method={purchase.paymentMethod} className="w-2.5 h-2.5 text-neutral-400" />
                                     <div className="flex flex-col leading-none">
                                       <span className="text-[8px] uppercase tracking-wider text-neutral-400 font-bold">Meio de Pagamento</span>
                                       <span className="text-[10px] text-neutral-700 dark:text-neutral-200 font-semibold">
-                                        {purchase.paymentMethod === 'cartao' ? 'Cartão de Crédito' : 
-                                         purchase.paymentMethod === 'parcelada' ? 'Parcelado' : 
-                                         purchase.paymentMethod === 'conta' ? 'Conta Bancária' : purchase.paymentMethod}
+                                        {getPaymentMethodLabel(purchase.paymentMethod)}
                                         {purchase.bankName && <span className="text-neutral-400 font-medium"> ({purchase.bankName})</span>}
                                         {purchase.cardName && <span className="text-indigo-400 font-medium ml-1">[{purchase.cardName}]</span>}
                                         {purchase.installments && purchase.installments > 1 && (
