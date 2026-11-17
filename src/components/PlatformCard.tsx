@@ -1090,23 +1090,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   )}
                                 </div>
                                 
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    cycleStatus(e, purchase);
-                                  }}
-                                  className="text-[9px] px-2.5 py-1 rounded-full font-extrabold font-sans shrink-0 transition-all active:scale-90 cursor-pointer hover:brightness-110 relative z-30 shadow-md border"
-                                  style={{
-                                    backgroundColor: `${getStatusColor(purchase.status)}15`,
-                                    borderColor: `${getStatusColor(purchase.status)}40`,
-                                    color: getStatusColor(purchase.status)
-                                  }}
-                                  title="Clique para mudar o status da entrega"
-                                >
-                                  {getStatusLabel(purchase.status)}
-                                </button>
+
                               </div>
                               
                               {/* Tracking Code / Notes */}
@@ -1199,7 +1183,17 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                           <div className="mt-3.5 mb-2 px-1 select-none border-t border-dashed border-neutral-200/40 dark:border-neutral-800/40 pt-2.5">
                             <div className="flex items-center justify-between text-[8px] uppercase tracking-wider text-neutral-400 font-bold mb-1.5">
                               <span>Progresso de Envio</span>
-                              <span className="text-indigo-600 dark:text-indigo-400 font-black">{getStatusLabel(purchase.status)}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); cycleStatus(e, purchase); }}
+                                disabled={!nextPurchaseStatus(orderedStatuses, purchase.status)}
+                                title={nextPurchaseStatus(orderedStatuses, purchase.status) ? 'Toque para avançar a etapa da entrega' : 'Status final da compra'}
+                                aria-label={`Status: ${getStatusLabel(purchase.status)}`}
+                                className="min-h-7 px-1 text-[9px] font-black uppercase tracking-wider bg-transparent border-0 disabled:cursor-default enabled:cursor-pointer enabled:hover:underline"
+                                style={{ color: getStatusColor(purchase.status) }}
+                              >
+                                {getStatusLabel(purchase.status)}
+                              </button>
                             </div>
                             <div className="relative h-1 w-full bg-neutral-200/60 dark:bg-neutral-800/60 rounded-full overflow-hidden flex">
                               {orderedStatuses.map((st, idx) => {
@@ -1226,7 +1220,8 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                   <span
                                     key={`dot-label-${st.id}-${idx}`}
                                     title={st.label}
-                                    className={`min-w-0 px-0.5 text-center text-[7px] min-[420px]:text-[8px] sm:text-[9px] leading-[1.2] font-bold break-words [overflow-wrap:anywhere] transition-colors ${isCurrent ? 'text-indigo-600 dark:text-indigo-400' : isActive ? 'text-neutral-500' : 'text-neutral-400'}`}
+                                    className={`min-w-0 px-0.5 text-center text-[7px] min-[420px]:text-[8px] sm:text-[9px] leading-[1.2] font-bold break-words [overflow-wrap:anywhere] transition-colors ${isCurrent ? '' : isActive ? 'text-neutral-500' : 'text-neutral-400'}`}
+                                    style={isCurrent ? { color: getStatusColor(purchase.status) } : undefined}
                                   >
                                     {st.label}
                                   </span>
