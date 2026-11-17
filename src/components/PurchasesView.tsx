@@ -469,18 +469,22 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
   const filteredPurchases = useMemo(() => {
     let result = [...allPurchases];
 
-    // Search Query (product name or platform name)
+    // Pesquisa também pelo e-mail do perfil associado à compra específica,
+    // identificado pelo ID para não misturar contas com o mesmo nome.
     if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      result = result.filter(
-        (p) =>
-          p.productName.toLowerCase().includes(q) ||
-          p.platformName.toLowerCase().includes(q) ||
-          (p.notes && p.notes.toLowerCase().includes(q)) ||
-          (p.tags && p.tags.some(tId => {
-            const tag = tags.find(tg => tg.id === tId);
-            return tag?.name.toLowerCase().includes(q);
-          }))
+      const q = search.toLocaleLowerCase('pt-BR').trim();
+      const profileEmails = new Map<string, string>();
+      platforms.forEach(platform => {
+        platform.profiles.forEach(profile => {
+          profileEmails.set(`${platform.id}:${profile.id}`, profile.email || '');
+        });
+      });
+      result = result.filter(p =>
+        p.productName.toLocaleLowerCase('pt-BR').includes(q) ||
+        p.platformName.toLocaleLowerCase('pt-BR').includes(q) ||
+        (p.notes || '').toLocaleLowerCase('pt-BR').includes(q) ||
+        (profileEmails.get(`${p.platformId}:${p.profileId}`) || '').toLocaleLowerCase('pt-BR').includes(q) ||
+        !!p.tags?.some(tId => tags.find(tag => tag.id === tId)?.name.toLocaleLowerCase('pt-BR').includes(q))
       );
     }
 
@@ -534,7 +538,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
     });
 
     return result;
-  }, [allPurchases, search, platformFilter, profileFilter, statusFilter, tagFilter, tags, sortOrder, startDate, endDate]);
+  }, [allPurchases, platforms, search, platformFilter, profileFilter, statusFilter, tagFilter, tags, sortOrder, startDate, endDate]);
 
   // Dynamic Bento stats calculation
   const stats = useMemo(() => {
@@ -635,7 +639,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar pelo nome do produto, plataforma ou observações..."
+              placeholder="Buscar produto, plataforma, e-mail ou observações..."
               className="w-full h-11 pl-10 pr-4 rounded-xl text-xs sm:text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#141414] dark:border-white/[0.06] dark:text-neutral-100 dark:placeholder-neutral-600 transition-all focus:ring-1 focus:ring-indigo-500/30"
             />
           </div>
