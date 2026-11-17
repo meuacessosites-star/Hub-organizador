@@ -650,7 +650,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       <div className="bg-white dark:bg-[#0d0d0d] p-4 rounded-2xl border border-neutral-200/80 dark:border-white/[0.06] shadow-sm flex flex-col gap-4 overflow-visible relative z-[40]">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search bar */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
               <Search className="w-4 h-4" />
             </span>
@@ -663,24 +663,24 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap w-full md:w-auto min-w-0">
             {/* Bulk Select Trigger / Actions */}
             {showPurchaseBulkSelect ? (
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full min-w-0">
                 {showPurchaseBulkDeleteConfirm ? (
-                  <div className="flex items-center gap-2 bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 px-3 h-11 rounded-xl text-xs">
-                    <span className="font-bold text-rose-600 dark:text-rose-400 text-[11px]">Excluir {selectedPurchaseKeys.size} compras?</span>
+                  <div className="col-span-2 grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full min-w-0 bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 p-2 rounded-xl text-xs">
+                    <span className="col-span-2 sm:col-span-1 font-bold text-rose-600 dark:text-rose-400 text-[11px] text-center sm:text-left">Excluir {selectedPurchaseKeys.size} compras?</span>
                     <button
                       type="button"
                       onClick={handleBulkDeletePurchases}
-                      className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                      className="min-h-9 px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer"
                     >
                       Sim
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowPurchaseBulkDeleteConfirm(false)}
-                      className="px-2.5 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold text-[10px] uppercase tracking-wider hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+                      className="min-h-9 px-2.5 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold text-[10px] uppercase tracking-wider hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all cursor-pointer"
                     >
                       Não
                     </button>
@@ -691,7 +691,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setSelectedPurchaseKeys(new Set())}
-                        className="h-11 px-4 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                        className="min-w-0 min-h-11 px-2 sm:px-4 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-xl text-[11px] sm:text-xs leading-tight font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
                       >
                         Manualmente
                       </button>
@@ -699,7 +699,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setSelectedPurchaseKeys(new Set(filteredPurchases.map(p => `${p.platformId}:${p.id}`)))}
-                        className="h-11 px-4 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
+                        className="min-w-0 min-h-11 px-2 sm:px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 active:scale-95 text-indigo-600 dark:text-indigo-400 rounded-xl text-[11px] sm:text-xs leading-tight font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-indigo-100 dark:border-indigo-500/15"
                       >
                         Selecionar tudo
                       </button>
@@ -714,7 +714,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                           addToast('Nenhuma compra selecionada', 'warning');
                         }
                       }}
-                      className="h-11 px-4 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                      className="min-w-0 min-h-11 px-2 sm:px-4 py-2 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-xl text-[11px] sm:text-xs leading-tight font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm flex items-center justify-center text-center gap-1.5"
                     >
                       Excluir Selecionadas ({selectedPurchaseKeys.size})
                     </button>
@@ -725,7 +725,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                         setSelectedPurchaseKeys(new Set());
                         setShowPurchaseBulkDeleteConfirm(false);
                       }}
-                      className="h-11 px-4 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
+                      className="col-span-2 sm:col-span-1 min-w-0 min-h-11 px-2 sm:px-4 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 active:scale-95 text-neutral-700 dark:text-neutral-200 rounded-xl text-[11px] sm:text-xs leading-tight font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm border border-neutral-200 dark:border-neutral-700"
                     >
                       Cancelar
                     </button>
