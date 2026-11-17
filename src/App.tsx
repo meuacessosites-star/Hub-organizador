@@ -726,6 +726,19 @@ export default function App() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Acesso rápido pequeno e no fluxo da página: nunca cobre cartões ou imagens. */}
+            <div className="flex w-full justify-end pb-12 pr-1">
+              <button
+                type="button"
+                aria-label="Adicionar conta ou registrar compra"
+                title="Adicionar conta ou registrar compra"
+                onClick={() => setIsQuickAddOpen(true)}
+                className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/15 transition-colors active:scale-95"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
           </main>
         </div>
 
@@ -827,18 +840,6 @@ export default function App() {
 
         </AnimatePresence>
 
-        {/* Atalho sempre acessível na lateral inferior, sem cobrir os botões de rolagem. */}
-        {!isQuickAddOpen && (
-          <button
-            type="button"
-            aria-label="Adicionar conta ou registrar compra"
-            title="Adicionar conta ou registrar compra"
-            onClick={() => setIsQuickAddOpen(true)}
-            className="fixed right-6 bottom-[calc(10.5rem+env(safe-area-inset-bottom,0px))] z-50 h-14 w-14 flex items-center justify-center rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 transition-colors active:scale-95"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
-        )}
         <ScrollButtons />
         <OnboardingTutorial 
           isActive={isTutorialActive}
