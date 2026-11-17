@@ -1,7 +1,36 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Plus, ShoppingBag, UserRoundPlus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, EyeOff, ShoppingBag, UserRoundPlus, X } from 'lucide-react';
 import type { Platform } from '../types';
 import { ProfileAvatarDisplay } from './ProfileAvatarDisplay';
+import { SmartImage } from './SmartImage';
+import { getInitials, getLogoUrl } from '../utils/logoHelper';
+
+/** Mostra o mesmo logo da plataforma usado nos cartões da tela inicial. */
+function PlatformQuickLogo({ platform }: { platform: Platform }) {
+  const generatedLogo = !platform.logoUrl || [
+    'logo.clearbit.com', 't3.gstatic.com/favicon', 's2/favicons',
+    'simpleicons.org', 'unavatar.io', 'vectorlogo.zone', 'iconfinder.com'
+  ].some(source => platform.logoUrl?.includes(source));
+  const logoUrl = generatedLogo
+    ? getLogoUrl(platform.name, platform.url)
+    : platform.logoUrl;
+
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#141414]">
+      <SmartImage
+        src={logoUrl}
+        alt={`Logo de ${platform.name}`}
+        containerClassName="w-full h-full"
+        className="w-full h-full object-contain p-1 pointer-events-none"
+        fallbackIcon={
+          <span className="flex h-full w-full items-center justify-center bg-neutral-100 dark:bg-neutral-800 text-xs font-extrabold text-neutral-700 dark:text-neutral-200">
+            {getInitials(platform.name)}
+          </span>
+        }
+      />
+    </span>
+  );
+}
 
 interface QuickAddMenuProps {
   platforms: Platform[];
@@ -88,7 +117,7 @@ export function QuickAddMenu({ platforms, onClose, onAddProfile, onAddPurchase }
                 {platforms.map(item => (
                   <button key={item.id} type="button" onClick={() => selectPlatform(item.id)}
                     className="w-full min-w-0 flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-white/10 p-3 text-left hover:border-indigo-500/60">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500"><Plus className="w-4 h-4" /></span>
+                    <PlatformQuickLogo platform={item} />
                     <span className="flex-1 min-w-0">
                       <span className="block truncate text-sm font-bold">{item.name}</span>
                       <span className="block text-xs text-neutral-500">{item.profiles.length} {item.profiles.length === 1 ? 'conta' : 'contas'}</span>
