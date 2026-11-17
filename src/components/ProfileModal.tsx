@@ -1793,7 +1793,17 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       </label>
                       <label className="text-[10px] font-semibold text-neutral-500">Animação
                         <select value={avatarFrame.motion} onChange={e=>setAvatarFrame(v=>({...v,motion:e.target.value as AvatarFrameSettings['motion']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
-                          <option value="none">Sem movimento</option><option value="soft-pulse">Pulso suave</option><option value="soft-glow">Brilho suave</option><option value="color-shift">Mudança de cores</option><option value="soft-shimmer">Cintilação discreta</option>
+                          <option value="none">Sem movimento</option>
+                          <option value="soft-pulse">Pulso delicado</option>
+                          <option value="soft-glow">Brilho respirando</option>
+                          <option value="color-shift">Cores em transição</option>
+                          <option value="soft-shimmer">Cintilação discreta</option>
+                          <option value="color-wave">Onda de brilho</option>
+                          <option value="twinkle">Pontinhos cintilantes</option>
+                          <option value="soft-breathe">Respiração suave</option>
+                          <option value="glint">Reflexo perolado</option>
+                          <option value="rainbow-wave">Arco-íris delicado</option>
+                          <option value="sparkle-wave">Brilhos alternados</option>
                         </select>
                       </label>
                       <label className="text-[10px] font-semibold text-neutral-500">Cor principal
