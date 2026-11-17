@@ -32,6 +32,8 @@ import { getPlatformColor, getInitials, getDomainFromInput, getLogoUrl } from '.
 import { SmartImage, preloadImages } from './SmartImage';
 import { CategoryChartPanel } from './CategoryChartPanel';
 import { useToast } from '../context/ToastContext';
+import { PaymentMethodIcon, getPaymentMethodLabel } from './PaymentMethodIcon';
+import { ProfileAvatarDisplay } from './ProfileAvatarDisplay';
 
 interface PurchasesViewProps {
   platforms: Platform[];
@@ -1124,12 +1126,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                     {/* Payment Info Pill */}
                     {purchase.paymentMethod && (
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-100/50 dark:bg-neutral-800/40 border border-neutral-200/50 dark:border-neutral-700/30 w-fit">
-                        <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                        <PaymentMethodIcon method={purchase.paymentMethod} className="w-3.5 h-3.5 text-neutral-400" />
                         <div className="flex items-center gap-1.5 text-[10px]">
                           <span className="font-bold text-neutral-600 dark:text-neutral-300">
-                            {purchase.paymentMethod === 'cartao' ? 'Cartão de Crédito' : 
-                             purchase.paymentMethod === 'parcelada' ? 'Parcelado' : 
-                             purchase.paymentMethod === 'conta' ? 'Conta Bancária' : purchase.paymentMethod}
+                            {getPaymentMethodLabel(purchase.paymentMethod)}
                           </span>
                           {purchase.cardName && <span className="text-indigo-500 font-black">[{purchase.cardName}]</span>}
                           {purchase.bankName && <span className="text-neutral-400 font-medium">({purchase.bankName})</span>}
@@ -1143,42 +1143,11 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                     {/* Footer: Buyer & Pricing */}
                     <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800/60 flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        {buyerProfile && (
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white uppercase shadow-md border-2 border-white dark:border-neutral-800 overflow-hidden shrink-0"
-                            style={{
-                              backgroundColor:
-                                (buyerProfile.avatar.type === 'image' || (buyerProfile.avatar.value && (buyerProfile.avatar.value.startsWith('http') || buyerProfile.avatar.value.startsWith('data:') || buyerProfile.avatar.value.startsWith('blob:')))) && buyerProfile.avatar.value
-                                  ? 'transparent'
-                                  : buyerProfile.avatar.bgColor || (buyerProfile.avatar.type === 'color'
-                                    ? buyerProfile.avatar.value
-                                    : '#4f46e5'),
-                            }}
-                          >
-                            {buyerProfile.avatar.type === 'emoji' && buyerProfile.avatar.value ? (
-                              buyerProfile.avatar.value
-                            ) : (buyerProfile.avatar.type === 'image' || (buyerProfile.avatar.value && (buyerProfile.avatar.value.startsWith('http') || buyerProfile.avatar.value.startsWith('data:') || buyerProfile.avatar.value.startsWith('blob:')))) && buyerProfile.avatar.value ? (
-                              <SmartImage
-                                src={buyerProfile.avatar.value}
-                                alt={buyerProfile.name}
-                                className="w-full h-full object-cover rounded-full"
-                                style={{ transform: `scale(${buyerProfile.avatar.zoom || 1})` }}
-                                fallbackIcon={
-                                  <div
-                                    className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white uppercase"
-                                    style={{ backgroundColor: buyerProfile.avatar.bgColor || '#4f46e5' }}
-                                  >
-                                    {buyerProfile.name ? buyerProfile.name.slice(0, 2).toUpperCase() : 'PF'}
-                                  </div>
-                                }
-                              />
-                            ) : (
-                              buyerProfile.name ? buyerProfile.name.slice(0, 1).toUpperCase() : 'P'
-                            )}
-                          </div>
-                        )}
+                        {buyerProfile && <ProfileAvatarDisplay profile={buyerProfile} size={40} />}
                         <span className="text-xs font-bold text-neutral-600 dark:text-neutral-200">
                           {buyerProfile ? buyerProfile.name : 'Outro'}
+                          {buyerProfile?.email && platform?.profiles.some(other => other.id !== buyerProfile.id && other.name.trim().toLowerCase() === buyerProfile.name.trim().toLowerCase()) &&
+                            <span className="block text-[10px] font-normal text-neutral-500 break-all">{buyerProfile.email}</span>}
                         </span>
                       </div>
 
