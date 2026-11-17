@@ -758,32 +758,34 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               )}
             </button>
 
-            {/* Limpa busca, filtros, datas, ordenação e itens marcados. */}
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              aria-label="Limpar pesquisa e todos os filtros"
-              className="h-11 px-3 rounded-xl border border-neutral-200 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all bg-white text-neutral-600 hover:bg-neutral-50 dark:bg-[#050505] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02]"
-            >
-              <RotateCcw className="w-4 h-4 shrink-0" />
-              <span>Limpar filtros</span>
-            </button>
-
-            {/* Sort Dropdown */}
-            <div className="relative">
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as any)}
-                className="h-11 px-4 rounded-xl border border-neutral-200 text-xs font-semibold bg-white text-neutral-600 hover:bg-neutral-50 focus:outline-none focus:border-indigo-500 dark:bg-[#050505] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02] cursor-pointer appearance-none pr-8"
-              >
-                <option value="date_desc">Mais Recentes</option>
-                <option value="date_asc">Mais Antigas</option>
-                <option value="price_desc">Preço: Maior primeiro</option>
-                <option value="price_asc">Preço: Menor primeiro</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-neutral-400">
-                <ArrowUpDown className="w-3.5 h-3.5" />
+            {/* Ordenação e limpar filtros ficam lado a lado, inclusive no celular. */}
+            <div className="flex w-full min-w-0 items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as any)}
+                  aria-label="Ordenar compras"
+                  className="w-full min-w-0 h-11 px-2.5 pr-7 rounded-xl border border-neutral-200 text-[11px] sm:text-xs font-semibold bg-white text-neutral-600 hover:bg-neutral-50 focus:outline-none focus:border-indigo-500 dark:bg-[#050505] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02] cursor-pointer appearance-none"
+                >
+                  <option value="date_desc">Mais Recentes</option>
+                  <option value="date_asc">Mais Antigas</option>
+                  <option value="price_desc">Preço: Maior primeiro</option>
+                  <option value="price_asc">Preço: Menor primeiro</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-neutral-400">
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                aria-label="Limpar pesquisa e todos os filtros"
+                className="h-11 shrink-0 px-2 sm:px-3 rounded-xl border border-neutral-200 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all bg-white text-neutral-600 hover:bg-neutral-50 dark:bg-[#050505] dark:border-white/[0.08] dark:text-neutral-400 dark:hover:bg-white/[0.02]"
+              >
+                <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">Limpar filtros</span>
+              </button>
             </div>
           </div>
         </div>
