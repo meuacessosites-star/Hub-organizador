@@ -24,7 +24,7 @@ export interface ProfilePreset {
   ownerId?: string;
 }
 
-export interface Profile {
+export interface Profile {\n  avatarFrame?: { model: string; finish: string; colors: string[]; motion: string };
   id: string;
   name: string; // Pessoal, Trabalho, Família, Estudos, Freelance, Empresa, or Custom
   username?: string; // Optional username
