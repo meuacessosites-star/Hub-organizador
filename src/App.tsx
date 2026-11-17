@@ -25,6 +25,8 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { ScrollButtons } from './components/ScrollButtons';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { ProfilesView } from './components/ProfilesView';
+import { QuickAddMenu } from './components/QuickAddMenu';
+import { Plus } from 'lucide-react';
 
 import { useTheme } from './context/ThemeContext';
 import { safeStorage } from './utils/storage';
@@ -180,6 +182,7 @@ export default function App() {
 
   // Modals state management
   const [isNewPlatformOpen, setIsNewPlatformOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
   const [isManageStatusesOpen, setIsManageStatusesOpen] = useState(false);
 
@@ -205,10 +208,12 @@ export default function App() {
     isOpen: boolean;
     platformId: string | null;
     purchase: Purchase | null;
+    initialProfileId?: string | null;
   }>({
     isOpen: false,
     platformId: null,
     purchase: null,
+    initialProfileId: null,
   });
 
   // Category mapping
@@ -381,11 +386,12 @@ export default function App() {
   };
 
   // Purchase registration triggers
-  const handleOpenAddPurchase = (platformId: string) => {
+  const handleOpenAddPurchase = (platformId: string, profileId?: string) => {
     setPurchaseModal({
       isOpen: true,
       platformId,
       purchase: null,
+      initialProfileId: profileId || null,
     });
   };
 
@@ -539,6 +545,15 @@ export default function App() {
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>Compras</span>
+              </button>
+              <button
+                type="button"
+                aria-label="Adicionar conta ou registrar compra"
+                title="Adicionar conta ou registrar compra"
+                onClick={() => setIsQuickAddOpen(true)}
+                className="ml-2 h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
               </button>
             </div>
 
@@ -724,6 +739,14 @@ export default function App() {
         </div>
 
         {/* MODAL SYSTEM */}
+        {isQuickAddOpen && (
+          <QuickAddMenu
+            platforms={userPlatforms}
+            onClose={() => setIsQuickAddOpen(false)}
+            onAddProfile={handleOpenAddProfile}
+            onAddPurchase={handleOpenAddPurchase}
+          />
+        )}
         <AnimatePresence>
           {/* New Platform Step 1 & 2 Wizard */}
           {isNewPlatformOpen && (
@@ -787,6 +810,7 @@ export default function App() {
               onClose={() => setPurchaseModal({ isOpen: false, platformId: null, purchase: null })}
               platform={currentPlatformForPurchase}
               purchase={purchaseModal.purchase}
+              initialProfileId={purchaseModal.initialProfileId || undefined}
               onSave={handleSavePurchase}
               onEdit={handleEditPurchase}
               onDelete={handleDeletePurchase}
