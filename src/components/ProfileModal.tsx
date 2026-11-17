@@ -224,7 +224,7 @@ const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing
       value={preset}
       dragListener={false}
       dragControls={dragControls}
-      className={`flex items-center gap-2 p-2 rounded-lg border shadow-sm select-none transition-all ${
+      className={`flex items-center min-w-0 w-full gap-2 p-2 rounded-lg border shadow-sm select-none transition-all ${
         isEditing 
           ? 'bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-500/50 ring-1 ring-indigo-500/20' 
           : 'bg-white dark:bg-[#13141c] border-neutral-100 dark:border-[#2a2d40]/40'
@@ -274,7 +274,7 @@ const PresetReorderItem: React.FC<PresetReorderItemProps> = ({ preset, isEditing
           <span className="text-white font-bold">{activeName ? activeName.slice(0, 2).toUpperCase() : 'PF'}</span>
         )}
       </div>
-      <span className="flex-1 text-xs font-medium truncate">{activeName}</span>
+      <span className="flex-1 min-w-0 text-xs font-medium truncate">{activeName}</span>
       <div className="flex items-center gap-1">
         <button
           type="button"
@@ -1012,13 +1012,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   if (!isOpen || (!platform && !openPresetsManager)) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 z-50 overflow-y-auto backdrop-blur-sm scrollbar-hide">
+    <div className="fixed inset-0 bg-black/75 z-50 overflow-y-auto overflow-x-hidden backdrop-blur-sm scrollbar-hide">
       <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="w-full max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 flex flex-col"
+          className="w-full min-w-0 max-w-lg bg-white dark:bg-[#0a0a0a] rounded-2xl border border-neutral-200 dark:border-white/[0.08] overflow-hidden shadow-2xl text-neutral-800 dark:text-neutral-200 flex flex-col"
         >
         {/* Header */}
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-white/[0.08] flex items-center justify-between bg-neutral-50 dark:bg-[#0d0d0d]">
@@ -1048,7 +1048,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 max-h-[80vh] sm:max-h-[75vh] overflow-y-auto">
+        <div className="p-3 sm:p-6 max-h-[80vh] sm:max-h-[75vh] overflow-y-auto overflow-x-hidden min-w-0">
           {openPresetsManager ? (
             /* PRESETS MANAGER VIEW */
             <div className="flex flex-col gap-4 select-none">
@@ -1073,10 +1073,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </div>
 
               {/* Reordering container box */}
-              <div className="bg-neutral-50/50 dark:bg-neutral-900/10 border border-neutral-150 dark:border-neutral-800/40 rounded-2xl p-4 flex flex-col">
+              <div className="min-w-0 bg-neutral-50/50 dark:bg-neutral-900/10 border border-neutral-150 dark:border-neutral-800/40 rounded-2xl p-3 sm:p-4 flex flex-col">
                 <div className="flex flex-col gap-2.5 pb-2 border-b border-neutral-100 dark:border-neutral-800/40">
                   {/* Top Row: Title and Drag Instruction perfectly aligned horizontally */}
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center sm:justify-between w-full min-w-0">
                     <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                       GERENCIAR E REORDENAR PERFIS
                     </span>
@@ -1153,7 +1153,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   axis="y"
                   values={localProfilePresets}
                   onReorder={setLocalProfilePresets}
-                  className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1 mt-3"
+                  className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto overflow-x-hidden min-w-0 pr-1 mt-3"
                 >
                   {localProfilePresets.map((preset) => {
                     const isEditingThis = editingPresetId === preset.id;
@@ -1187,9 +1187,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               </div>
 
               {/* Creation / Editing Form (Always open in Manager view) */}
-              <div ref={editingFormRef} className="flex flex-col gap-4 mt-2 bg-neutral-50/80 dark:bg-neutral-900/20 border border-neutral-200/80 dark:border-neutral-800/60 p-4 rounded-2xl shadow-sm">
+              <div ref={editingFormRef} className="min-w-0 flex flex-col gap-4 mt-2 bg-neutral-50/80 dark:bg-neutral-900/20 border border-neutral-200/80 dark:border-neutral-800/60 p-3 sm:p-4 rounded-2xl shadow-sm">
                 {/* Header row for form: Title & Actions */}
-                <div className="flex items-center justify-between pb-2 border-b border-neutral-200/60 dark:border-neutral-800/50">
+                <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-neutral-200/60 dark:border-neutral-800/50">
                   <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
                     {editingPresetId && editingPresetId !== 'new_preset_creation_mode' ? (
                       <>
@@ -2086,7 +2086,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-4 sm:px-6 py-4 border-t border-neutral-200 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 bg-neutral-50 select-none dark:border-[#26283b]/70 dark:bg-[#111219]/90">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-neutral-200 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 min-w-0 bg-neutral-50 select-none dark:border-[#26283b]/70 dark:bg-[#111219]/90">
           {/* Delete Button (Only visible in edit-mode, when editing) */}
           <div className="flex justify-center sm:justify-start w-full sm:w-auto">
             {isEditMode && onDelete && (
@@ -2121,7 +2121,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             )}
           </div>
 
-          <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
+          <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto min-w-0">
             {openPresetsManager ? (
               <>
                 {editingPresetId && editingPresetId !== 'new_preset_creation_mode' ? (
