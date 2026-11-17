@@ -14,6 +14,7 @@ import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useStorage, deduplicatePresets } from '../hooks/useStorage';
 import { SmartImage } from './SmartImage';
+import { AvatarFrame, defaultAvatarFrame, AVATAR_FRAME_MODELS, AvatarFrameSettings } from './AvatarFrame';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -580,6 +581,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [copiedUser, setCopiedUser] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
+  const [avatarFrame, setAvatarFrame] = useState<AvatarFrameSettings>(() => defaultAvatarFrame(profile?.id || 'new-profile'));
+
+  useEffect(() => {
+    if (profile?.id) setAvatarFrame(profile.avatarFrame || defaultAvatarFrame(profile.id));
+    else setAvatarFrame(defaultAvatarFrame('new-profile'));
+  }, [profile?.id, profile?.avatarFrame, isOpen]);
 
   const colorWheelRef = useRef<HTMLDivElement>(null);
   const colorWheelContainerRef = useRef<HTMLDivElement>(null);
@@ -1478,25 +1485,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <div className="flex flex-col gap-5 select-text">
               {/* Profile Avatar Card */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/[0.06]">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-md uppercase overflow-hidden shrink-0"
-                  style={{
-                    backgroundColor: selectedColor,
-                  }}
-                >
-                  {avatarTab === 'emoji' && selectedEmoji ? (
-                    selectedEmoji
-                  ) : avatarTab === 'image' && imageUrl ? (
-                    <SmartImage 
-                      src={imageUrl} 
-                      alt="profile" 
-                      className="w-full h-full object-cover transition-transform duration-200" 
-                      style={{ transform: `scale(${avatarZoom})` }} 
-                    />
-                  ) : (
-                    (isCustomProfile ? customProfileName : profileName).slice(0, 2).toUpperCase()
-                  )}
-                </div>
+                <AvatarFrame profileId={profile?.id || 'new-profile'} settings={avatarFrame} size={60}>
+                  <div className="w-full h-full rounded-full flex items-center justify-center text-xl font-bold text-white uppercase overflow-hidden" style={{backgroundColor:selectedColor}}>
+                    {avatarTab === 'emoji' && selectedEmoji ? selectedEmoji : avatarTab === 'image' && imageUrl ? <SmartImage src={imageUrl} alt="profile" className="w-full h-full object-cover" style={{transform:`scale(${avatarZoom})`}}/> : (isCustomProfile ? customProfileName : profileName).slice(0,2).toUpperCase()}
+                  </div>
+                </AvatarFrame>
                 <div>
                   <h3 className="font-sans font-bold text-neutral-900 dark:text-white text-sm">
                     {isCustomProfile ? customProfileName : profileName}
@@ -1762,6 +1755,44 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     placeholder="Ex: Pessoal, Trabalho, Romulo..."
                     className="w-full h-11 pl-10 pr-4 rounded-lg text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200"
                   />
+                </div>
+              </div>
+
+              {/* Moldura do avatar - personalização por conta */}
+              <div className="rounded-2xl border border-indigo-200/70 dark:border-indigo-500/20 bg-indigo-50/40 dark:bg-indigo-500/[0.04] p-3.5 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">Moldura do avatar</p>
+                    <p className="text-[10px] text-neutral-500">Escolha um desenho, acabamento e movimento</p>
+                  </div>
+                  <AvatarFrame profileId={profile?.id || 'new-profile'} settings={avatarFrame} size={48}>
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden" style={{backgroundColor:selectedColor}}>
+                      {avatarTab === 'emoji' ? selectedEmoji : avatarTab === 'image' && imageUrl ? <SmartImage src={imageUrl} alt="" className="w-full h-full object-cover"/> : profileName.slice(0,2).toUpperCase()}
+                    </div>
+                  </AvatarFrame>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-[10px] font-semibold text-neutral-500">Modelo
+                    <select value={avatarFrame.model} onChange={e=>setAvatarFrame(v=>({...v,model:e.target.value as AvatarFrameSettings['model']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
+                      {AVATAR_FRAME_MODELS.map((m,i)=><option key={m} value={m}>{String(i+1).padStart(2,'0')} · {({ 'micro-hearts':'Corações mini','open-hearts':'Corações vazados','petals':'Pétalas','petal-outline':'Pétalas finas','droplets':'Gotas','pearls':'Pérolas','pearls-alternating':'Pérolas alternadas','mini-links':'Elos delicados','open-links':'Elos abertos','moons':'Luas','tiny-stars':'Estrelinhas','sparkles':'Brilhos','diamonds':'Diamantes','diamond-outline':'Diamantes finos','mini-arches':'Arcos','arches-alternating':'Arcos alternados','tiny-waves':'Ondinhas','seeds':'Sementes','clovers':'Trevos','tiny-flowers':'Flores mini','flower-outline':'Flores finas','tiny-bows':'Lacinhos','light-dots':'Pontos','micro-dashes':'Traços','tiny-leaves':'Folhinhas' } as Record<string,string>)[m]}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-[10px] font-semibold text-neutral-500">Acabamento
+                    <select value={avatarFrame.finish} onChange={e=>setAvatarFrame(v=>({...v,finish:e.target.value as AvatarFrameSettings['finish']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
+                      <option value="solid">Clássico</option><option value="gradient">Degradê</option><option value="pastel-rainbow">Arco-íris suave</option><option value="soft-neon">Neon suave</option><option value="pearl">Perolado</option><option value="metallic">Metálico</option>
+                    </select>
+                  </label>
+                  <label className="text-[10px] font-semibold text-neutral-500">Cor principal
+                    <input type="color" value={avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[e.target.value,v.colors[1] || e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
+                  </label>
+                  <label className="text-[10px] font-semibold text-neutral-500">Segunda cor
+                    <input type="color" value={avatarFrame.colors[1] || avatarFrame.colors[0] || '#A99AE8'} onChange={e=>setAvatarFrame(v=>({...v,colors:[v.colors[0] || '#A99AE8',e.target.value,v.colors[2] || e.target.value]}))} className="mt-1 w-full h-9 rounded-lg bg-transparent border border-neutral-200 dark:border-neutral-700"/>
+                  </label>
+                  <label className="text-[10px] font-semibold text-neutral-500 col-span-2">Animação
+                    <select value={avatarFrame.motion} onChange={e=>setAvatarFrame(v=>({...v,motion:e.target.value as AvatarFrameSettings['motion']}))} className="mt-1 w-full h-9 rounded-lg px-2 bg-white dark:bg-[#111219] border border-neutral-200 dark:border-neutral-700 text-xs">
+                      <option value="none">Sem movimento</option><option value="soft-pulse">Pulso suave</option><option value="soft-glow">Brilho suave</option><option value="color-shift">Mudança de cores</option><option value="soft-shimmer">Cintilação discreta</option>
+                    </select>
+                  </label>
                 </div>
               </div>
 
