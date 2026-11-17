@@ -247,7 +247,7 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
           ? [mixHex(color,'#FFFFFF',.24),mixHex(color,'#777777',.08),mixHex(color,'#FFFFFF',.38)]
           : frame.finish === 'crystal'
             ? [mixHex(color,'#FFFFFF',.72),mixHex(color,'#B9DDF5',.48),mixHex(color,'#FFFFFF',.88)]
-            : [color,second,third,color];
+            : frame.colors?.length === 1 ? [color, color] : frame.colors?.length === 2 ? [color, second, color] : [color, second, third, color];
   const count = 24;
   const radius = 46;
   const svg = Array.from({length: count}, (_, i) => {
