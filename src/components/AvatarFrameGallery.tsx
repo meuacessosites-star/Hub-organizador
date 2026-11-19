@@ -6,6 +6,7 @@ import {
 } from './AvatarFrame';
 import { EXTRA_FRAME_MODELS } from './avatarFrameExtras';
 import { THEME_FRAME_MODELS } from './avatarFrameThemes';
+import { MORE_THEME_FRAME_MODELS } from './avatarFrameThemesMore';
 
 type GalleryCategory = 'todos' | 'novos' | 'flores' | 'coracoes' | 'natureza' | 'geometricos' | 'brilhos' | 'delicados'
   | 'realeza' | 'celestiais' | 'joias' | 'animais' | 'aquaticas' | 'festivas' | 'lacos' | 'mosaicos'
@@ -40,18 +41,18 @@ const CATEGORY_MODELS: Record<Exclude<GalleryCategory, 'todos' | 'novos' | 'favo
   geometricos: ['diamonds','diamond-outline','diamond-dots','mini-squares','tiny-squares','fine-triangles','tiny-triangles','tiny-circles','hollow-rings','tiny-rings','mini-links','open-links','rounded-dashes','fine-chevron','corner-marks','soft-x','large-hollow-diamonds','bold-zigzags','diagonal-strokes','stroke-blocks','separated-crosses','wide-links','slender-links','hexagon-badges','tile-mosaic','checker-blocks','single-diamonds'],
   brilhos: ['tiny-stars','sparkles','star-dots','star-outline','mini-snowflakes','tiny-sunbursts','tiny-comets','light-dots','bold-stars','star-clusters','four-corner-sparkles','long-sun-rays','bead-clusters','tiny-flames','constellation-clusters'],
   delicados: ['pearls','pearls-alternating','light-dots','micro-dashes','mini-arches','arches-alternating','tiny-waves','scallops','mini-swirls','tiny-spirals','fine-spirals','curved-waves','soft-braid','woven-ribbon','double-waves','tiny-crosses','delicate-crosses','tiny-pluses','tiny-fans','mini-ribbons','mini-crowns','alternating-grand-arches','broad-scallops','bead-clusters','pearl-necklace'],
-  realeza: ['royal-tiara','royal-fleur','mini-crowns','faceted-gems','diamond-outline','crystal','pearl-necklace'].filter(id => id !== 'crystal'),
-  celestiais: ['orbit-planets','constellation-clusters','moons','tiny-crescents','tiny-stars','bold-stars','star-clusters','mini-sunbursts','tiny-sunbursts','four-corner-sparkles'],
-  joias: ['faceted-gems','pearl-necklace','pearls','pearls-alternating','diamonds','diamond-outline','bead-clusters','large-hollow-diamonds'],
-  animais: ['paw-prints','little-bees','butterflies'],
-  aquaticas: ['sea-stars','sea-bubbles','mini-shells','tiny-waves','curved-waves','round-drops','pointed-drops','broad-scallops'],
-  festivas: ['confetti-bursts','party-bells','tiny-stars','ribbon-bows','four-corner-sparkles','star-clusters'],
-  lacos: ['crossed-ribbons','braided-bows','ribbon-bows','tiny-bows','mini-ribbons','woven-ribbon','soft-braid'],
-  mosaicos: ['tile-mosaic','checker-blocks','hexagon-badges','mini-squares','tiny-squares','corner-marks','stroke-blocks'],
-  romanticas: ['lace-hearts','rosebuds','paired-hearts','inverted-hearts','cherry-blossoms','tiny-bows','long-petals','flower-outline'],
-  divertidas: ['smiley-faces','candy-swirls','confetti-bursts','little-clouds','paw-prints','ribbon-bows','butterflies'],
-  minimalistas: ['spaced-bars','single-diamonds','light-dots','micro-dashes','rounded-dashes','separated-crosses','tiny-circles','tiny-squares','fine-chevron','hexagon-badges'],
-  tecnologicas: ['circuit-nodes','pixel-squares','checker-blocks','tiny-squares','corner-marks','hexagon-badges','tile-mosaic']
+  realeza: ['royal-tiara','royal-fleur','mini-crowns','faceted-gems','diamond-outline','pearl-necklace','royal-scepters','royal-shields','royal-crests','royal-jewels'],
+  celestiais: ['orbit-planets','constellation-clusters','moons','tiny-crescents','tiny-stars','bold-stars','star-clusters','mini-sunbursts','tiny-sunbursts','four-corner-sparkles','shooting-meteors','crescent-companions','galaxy-spirals','solar-halos'],
+  joias: ['faceted-gems','pearl-necklace','pearls','pearls-alternating','diamonds','diamond-outline','bead-clusters','large-hollow-diamonds','emerald-cuts','hanging-pendants','ruby-hearts','crystal-clusters'],
+  animais: ['paw-prints','little-bees','butterflies','cat-faces','bunny-ears','bird-wings','tiny-foxes'],
+  aquaticas: ['sea-stars','sea-bubbles','mini-shells','tiny-waves','curved-waves','round-drops','pointed-drops','broad-scallops','shell-fans','little-fish','wave-crests','coral-branches'],
+  festivas: ['confetti-bursts','party-bells','tiny-stars','ribbon-bows','four-corner-sparkles','star-clusters','party-balloons','party-hats','star-garlands','firework-bursts'],
+  lacos: ['crossed-ribbons','braided-bows','ribbon-bows','tiny-bows','mini-ribbons','woven-ribbon','soft-braid','twin-bows','ribbon-tails','heart-bows','knotted-ribbons'],
+  mosaicos: ['tile-mosaic','checker-blocks','hexagon-badges','mini-squares','tiny-squares','corner-marks','stroke-blocks','chevron-tiles','honeycomb-hexes','circular-tiles','triangle-mosaic'],
+  romanticas: ['lace-hearts','rosebuds','paired-hearts','inverted-hearts','cherry-blossoms','tiny-bows','long-petals','flower-outline','rose-sprays','cupid-arrows','rose-vines','love-letters'],
+  divertidas: ['smiley-faces','candy-swirls','confetti-bursts','little-clouds','paw-prints','ribbon-bows','butterflies','tiny-cupcakes','lollipops','smile-clouds','lucky-clovers'],
+  minimalistas: ['spaced-bars','single-diamonds','light-dots','micro-dashes','rounded-dashes','separated-crosses','tiny-circles','tiny-squares','fine-chevron','hexagon-badges','cardinal-arcs','wide-spaced-dashes','single-dot-pairs','square-brackets'],
+  tecnologicas: ['circuit-nodes','pixel-squares','checker-blocks','tiny-squares','corner-marks','hexagon-badges','tile-mosaic','microchips','binary-blocks','wifi-arcs','gear-teeth']
 };
 
 const FAVORITES_KEY = 'hub-organizador-avatar-frame-favorites-v1';
@@ -85,7 +86,7 @@ export function AvatarFrameGallery({ frame, onChange, profileId, avatarText, ava
   const [showMoreCategories, setShowMoreCategories] = useState(false);
   const [favorites, setFavorites] = useState<AvatarFrameModel[]>(() => readSavedModels(FAVORITES_KEY));
   const [recents, setRecents] = useState<AvatarFrameModel[]>(() => readSavedModels(RECENTS_KEY));
-  const newModels = useMemo(() => new Set<string>([...EXTRA_FRAME_MODELS, ...THEME_FRAME_MODELS]), []);
+  const newModels = useMemo(() => new Set<string>([...EXTRA_FRAME_MODELS, ...THEME_FRAME_MODELS, ...MORE_THEME_FRAME_MODELS]), []);
 
   const selectModel = (model: AvatarFrameModel) => {
     onChange({ ...frame, model });
