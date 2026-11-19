@@ -10,6 +10,7 @@ import { CategoryIcon } from './CategoryIcon';
 import { AvatarFrame } from './AvatarFrame';
 import { PaymentMethodIcon, getPaymentMethodLabel } from './PaymentMethodIcon';
 import { ProfileAvatarDisplay } from './ProfileAvatarDisplay';
+import { BundleItemStatusPicker } from './BundleItemStatusPicker';
 import {
   ChevronDown,
   ChevronUp,
@@ -211,26 +212,12 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
     onEditPurchase(platform.id, updatedPurchase);
   };
 
-  const cycleBundleItemStatus = (e: React.MouseEvent, purchase: Purchase, itemIndex: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!purchase.bundleItems) return;
-    const item = purchase.bundleItems[itemIndex];
-    const nextStatus = nextPurchaseStatus(orderedStatuses, item.status || 'pedido_feito');
-    if (!nextStatus) return;
-
-    const updatedBundleItems = [...purchase.bundleItems];
-    updatedBundleItems[itemIndex] = {
-      ...item,
-      status: nextStatus
-    };
-
-    const updatedPurchase = {
-      ...purchase,
-      bundleItems: updatedBundleItems
-    };
-    
-    onEditPurchase(platform.id, updatedPurchase);
+  const changeBundleItemStatus = (purchase: Purchase, itemIndex: number, nextStatus: string) => {
+    if (!purchase.bundleItems?.[itemIndex]) return;
+    const updatedBundleItems = purchase.bundleItems.map((item, index) =>
+      index === itemIndex ? { ...item, status: nextStatus } : item
+    );
+    onEditPurchase(platform.id, { ...purchase, bundleItems: updatedBundleItems });
   };
   const [activeTab, setActiveTab] = useState<'contas' | 'compras'>('contas');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -1109,12 +1096,12 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     const itemStatus = item.status || 'pedido_feito';
                                     return (
                                       <span key={item.id ? `${item.id}-${idx}` : `bi-${purchase.id}-${idx}`} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
-                                        <button
-                                          type="button"
-                                          onClick={(e) => cycleBundleItemStatus(e, purchase, idx)}
-                                          className="w-1.5 h-1.5 rounded-full border transition-transform hover:scale-125 cursor-pointer"
-                                          style={{ backgroundColor: `${getStatusColor(itemStatus)}40`, borderColor: getStatusColor(itemStatus) }}
-                                          title={`${getStatusLabel(itemStatus)} - Clique para mudar`}
+                                        <BundleItemStatusPicker
+                                          compact
+                                          itemName={item.name || `Item ${idx + 1}`}
+                                          currentStatus={itemStatus}
+                                          statuses={orderedStatuses}
+                                          onChange={(nextStatus) => changeBundleItemStatus(purchase, idx, nextStatus)}
                                         />
                                         {item.name || `Item ${idx + 1}`}
                                         {item.link && (
