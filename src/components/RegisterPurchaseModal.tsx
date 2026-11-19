@@ -153,6 +153,26 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   const [quantity, setQuantity] = useState<number>(1);
   const [isBundle, setIsBundle] = useState(false);
   const [bundleItems, setBundleItems] = useState<BundleItem[]>([]);
+  // A soma dos itens é o padrão; editar desconto ou preço final permite
+  // ajustes manuais, com opção de voltar ao cálculo automático.
+  const [bundlePriceMode, setBundlePriceMode] = useState<'items' | 'discount' | 'final'>('items');
+
+  // Calculamos em centavos para evitar erros de ponto flutuante na tela.
+  const roundMoney = (value: number) =>
+    Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+  const itemsTotal = bundleItems.reduce((total, item) =>
+    total + Math.round((Number.isFinite(item.price) ? item.price! : 0) * 100), 0) / 100;
+  const bundleFinalPrice = bundlePriceMode === 'items'
+    ? itemsTotal
+    : bundlePriceMode === 'discount'
+      ? roundMoney(Math.max(0, originalPrice - discount))
+      : roundMoney(finalPrice);
+  const bundleDiscount = bundlePriceMode === 'discount'
+    ? roundMoney(discount)
+    : roundMoney(Math.max(0, originalPrice - bundleFinalPrice));
+  const displayedFinalPrice = isBundle ? bundleFinalPrice : roundMoney(finalPrice);
+  const displayedDiscount = isBundle ? bundleDiscount : roundMoney(discount);
+
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [tagSearch, setTagSearch] = useState('');
   const [fullScreenCarousel, setFullScreenCarousel] = useState<{images: string[]; initialIndex: number} | null>(null);
@@ -587,6 +607,8 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setQuantity(purchase.quantity || 1);
         setIsBundle(purchase.isBundle || false);
         setBundleItems(purchase.bundleItems || []);
+        // Ao abrir uma compra em conjunto, a soma será aplicada aos itens.
+        setBundlePriceMode('items');
         setSelectedTagIds(purchase.tags || []);
         setPurchaseType(purchase.purchaseType || 'single');
       } else {
@@ -613,17 +635,18 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setQuantity(1);
         setIsBundle(false);
         setBundleItems([]);
+        setBundlePriceMode('items');
         setSelectedTagIds([]);
         setPurchaseType('single');
       }
     }
   }, [purchase, isOpen, isEditMode, platform, initialProfileId]);
 
-  // Recalculate final price when original or discount changes
+  // Compras simples seguem o cálculo tradicional; compras em conjunto
+  // usam os itens ou o campo manual selecionado, sem sobrescrever edição.
   useEffect(() => {
-    const calc = Math.max(0, (originalPrice || 0) - (discount || 0));
-    setFinalPrice(calc);
-  }, [originalPrice, discount]);
+    if (!isBundle) setFinalPrice(roundMoney(Math.max(0, originalPrice - discount)));
+  }, [originalPrice, discount, isBundle]);
 
   // Auto-set delivery date when status changes to "entregue"
   useEffect(() => {
@@ -646,11 +669,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   }, [originalPrice, validationErrors.originalPrice]);
 
   useEffect(() => {
-    const calculatedFinalPrice = Math.max(0, originalPrice - discount);
+    const calculatedFinalPrice = displayedFinalPrice;
     if (validationErrors.finalPrice && calculatedFinalPrice >= 0) {
       setValidationErrors(prev => ({ ...prev, finalPrice: undefined }));
     }
-  }, [originalPrice, discount, validationErrors.finalPrice]);
+  }, [displayedFinalPrice, validationErrors.finalPrice]);
 
   const handlePriceChange = (valStr: string, setter: (val: number) => void) => {
     const numeric = parseFloat(valStr.replace(/[^\d.]/g, ''));
@@ -1181,7 +1204,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       validation.originalPrice = 'O preço original deve ser um valor positivo maior que zero.';
     }
 
-    const calculatedFinalPrice = isEditMode ? finalPrice : Math.max(0, originalPrice - discount);
+    const calculatedFinalPrice = isBundle
+      ? displayedFinalPrice
+      : (isEditMode ? roundMoney(finalPrice) : roundMoney(Math.max(0, originalPrice - discount)));
     if (!Number.isFinite(calculatedFinalPrice) || calculatedFinalPrice < 0) {
       validation.finalPrice = 'O preço final não pode ser negativo ou inválido.';
     }
@@ -1252,9 +1277,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       productName: purchaseTitle,
       productLink,
       status,
-      originalPrice,
-      discount,
-      finalPrice: isEditMode ? finalPrice : Math.max(0, originalPrice - discount),
+      originalPrice: roundMoney(originalPrice),
+      discount: displayedDiscount,
+      finalPrice: calculatedFinalPrice,
       notes,
       productImages,
       date: dateToSave,
@@ -1654,6 +1679,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 onChange={(e) => {
                   setIsBundle(e.target.checked);
                   if (e.target.checked) {
+                    setBundlePriceMode('items');
                     setValidationErrors(prev => ({ ...prev, productName: undefined }));
                   }
                 }}
@@ -1664,7 +1690,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   Compra em conjunto (Vários produtos)
                 </label>
                 <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                  Calcule automaticamente o valor final de cada produto baseado no desconto total da compra.
+                  Some os valores dos itens no preço final e calcule o desconto automaticamente. Você ainda pode editar os dois campos.
                 </span>
               </div>
             </div>
@@ -1677,7 +1703,10 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                   </h4>
                   <button
                     type="button"
-                    onClick={() => setBundleItems([...bundleItems, { id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, name: '', link: '', image: '' }])}
+                    onClick={() => {
+                      setBundleItems([...bundleItems, { id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, name: '', link: '', image: '' }]);
+                      setBundlePriceMode('items');
+                    }}
                     className="h-7 px-3 text-[10px] font-bold bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors cursor-pointer"
                   >
                     + Adicionar Item
@@ -1694,6 +1723,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                             onClick={() => {
                               const newItems = bundleItems.filter((_, i) => i !== index);
                               setBundleItems(newItems);
+                              setBundlePriceMode('items');
                             }}
                             className="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border border-rose-200 dark:border-rose-800 hover:bg-rose-500 hover:text-white"
                           >
@@ -1723,8 +1753,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                                   onChange={(e) => {
                                     const newItems = [...bundleItems];
                                     const val = e.target.value;
-                                    newItems[index].price = val === '' ? undefined : parseFloat(val);
+                                    newItems[index].price = val === '' ? undefined : roundMoney(parseFloat(val));
                                     setBundleItems(newItems);
+                                    setBundlePriceMode('items');
                                   }}
                                   className="w-full h-9 pl-8 pr-3 rounded-md text-xs font-mono bg-neutral-50 dark:bg-[#111219] border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-indigo-500"
                                 />
@@ -1874,6 +1905,27 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
               </div>
             )}
 
+            {/* Resumo compacto da soma e restauração do cálculo automático. */}
+            {isBundle && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3">
+                <div className="min-w-0">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-indigo-500">Soma dos itens</span>
+                  <span className="text-sm font-bold text-neutral-800 dark:text-neutral-100">
+                    R$ {itemsTotal.toFixed(2).replace('.', ',')}
+                  </span>
+                  <span className="block text-[10px] text-neutral-500 dark:text-neutral-400">
+                    {bundlePriceMode === 'items' ? 'Aplicada automaticamente ao preço final' : 'Preço ajustado manualmente'}
+                  </span>
+                </div>
+                {bundlePriceMode !== 'items' && (
+                  <button type="button" onClick={() => setBundlePriceMode('items')}
+                    className="shrink-0 rounded-lg border border-indigo-500/40 px-3 py-2 text-[11px] font-bold text-indigo-500">
+                    Usar soma dos itens
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Numerical rows (original, discount, final price) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               {/* Preço original */}
@@ -1890,7 +1942,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                     step="0.01"
                     min="0"
                     value={originalPrice || ''}
-                    onChange={(e) => setOriginalPrice(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setOriginalPrice(roundMoney(parseFloat(e.target.value) || 0))}
                     className={`w-full h-11 pl-8 pr-3 rounded-xl text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 dark:bg-[#111219] dark:text-neutral-200 transition-all font-mono font-medium ${
                       validationErrors.originalPrice
                         ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 dark:border-rose-500/80'
@@ -1907,7 +1959,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
               {/* Desconto */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest truncate">
-                  Desconto
+                  Desconto {isBundle && bundlePriceMode !== 'discount' ? '(automático)' : ''}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-neutral-400">
@@ -1917,8 +1969,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                     type="number"
                     step="0.01"
                     min="0"
-                    value={discount || ''}
-                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    value={displayedDiscount || ''}
+                    onChange={(e) => {
+                      setDiscount(roundMoney(parseFloat(e.target.value) || 0));
+                      if (isBundle) setBundlePriceMode('discount');
+                    }}
                     className="w-full h-11 pl-8 pr-3 rounded-xl text-sm bg-neutral-50 border border-neutral-200 text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:bg-[#111219] dark:border-[#2a2d40] dark:text-neutral-200 transition-all font-mono font-medium text-emerald-600 dark:text-emerald-400"
                   />
                 </div>
@@ -1926,7 +1981,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
               {/* Preço final */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate">
-                  Preço final
+                  Preço final {isBundle && bundlePriceMode === 'items' ? '(soma dos itens)' : ''}
                 </label>
                 <div className="relative">
                   <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold ${validationErrors.finalPrice ? 'text-rose-500' : 'text-indigo-400 dark:text-indigo-500'}`}>
@@ -1936,8 +1991,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                     type="number"
                     step="0.01"
                     min="0"
-                    value={Number.isFinite(finalPrice) ? finalPrice : ''}
-                    onChange={(e) => setFinalPrice(parseFloat(e.target.value) || 0)}
+                    value={Number.isFinite(displayedFinalPrice) ? displayedFinalPrice : ''}
+                    onChange={(e) => {
+                      setFinalPrice(roundMoney(parseFloat(e.target.value) || 0));
+                      if (isBundle) setBundlePriceMode('final');
+                    }}
                     className={`w-full h-11 pl-8 pr-3 rounded-xl text-lg bg-indigo-50/50 border text-indigo-700 placeholder-indigo-300 focus:outline-none focus:ring-2 transition-all font-mono font-black shadow-sm dark:bg-indigo-900/20 dark:text-indigo-300 ${
                       validationErrors.finalPrice
                         ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 dark:border-rose-500/40'
