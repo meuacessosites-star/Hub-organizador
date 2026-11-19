@@ -607,8 +607,15 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setQuantity(purchase.quantity || 1);
         setIsBundle(purchase.isBundle || false);
         setBundleItems(purchase.bundleItems || []);
-        // Ao abrir uma compra em conjunto, a soma será aplicada aos itens.
-        setBundlePriceMode('items');
+        // Preserve ajustes manuais previamente salvos ao reabrir a compra.
+        // Somente usa a soma automaticamente quando ela corresponde ao
+        // preço final armazenado; caso contrário, permite recalcular depois.
+        const storedItemsCents = (purchase.bundleItems || []).reduce((sum, item) =>
+          sum + Math.round((Number.isFinite(item.price) ? item.price! : 0) * 100), 0);
+        const storedFinalCents = Math.round((purchase.finalPrice || 0) * 100);
+        setBundlePriceMode(
+          purchase.isBundle && storedItemsCents !== storedFinalCents ? 'final' : 'items'
+        );
         setSelectedTagIds(purchase.tags || []);
         setPurchaseType(purchase.purchaseType || 'single');
       } else {
