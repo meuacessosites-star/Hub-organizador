@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { resizeImage } from "../utils/imageHelper";
+import { resizePurchaseImage } from "../utils/imageHelper";
 import { Platform, Profile, Purchase, PurchaseStatus, Tag, Status, BundleItem } from '../types';
 import { X, ShoppingBag, Link, CreditCard, Receipt, AlignLeft, Trash2, Image as ImageIcon, Upload, Loader2, Sparkles, ExternalLink, Plus, Settings2, Check, Pencil, Palette, Building2, CreditCard as CardIcon, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -920,7 +920,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
     try {
       const resizedImages = await Promise.all(
-        Array.from(files).map((file: File) => resizeImage(file, 600, 600, false))
+        Array.from(files).map((file: File) => resizePurchaseImage(file))
       );
       setProductImages((prev) => [...prev, ...resizedImages]);
     } catch (error) {
@@ -1103,7 +1103,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
     try {
       const resizedImages = await Promise.all(
-        Array.from(files).map((file: File) => resizeImage(file, 600, 600, false))
+        Array.from(files).map((file: File) => resizePurchaseImage(file))
       );
       
       const newItems = [...bundleItems];
