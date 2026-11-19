@@ -1167,8 +1167,8 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     // mantém seu próprio nome obrigatório na seção "Itens da Compra".
     if (!trimmedName && !isBundle) {
       validation.productName = 'O nome do produto/serviço não pode ser vazio.';
-    } else if (trimmedName.length < 2) {
-      validation.productName = 'O nome do produto deve conter pelo menos 2 caracteres.';
+    } else if (trimmedName && trimmedName.length < 3) {
+      validation.productName = 'O nome do produto deve conter pelo menos 3 caracteres.';
     } else if (/^[^a-zA-Z0-9]+$/.test(trimmedName)) {
       validation.productName = 'O nome do produto não pode conter apenas caracteres especiais.';
     } else if (trimmedName === '<INVALID NAME>') {
