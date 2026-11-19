@@ -35,6 +35,7 @@ import { CategoryChartPanel } from './CategoryChartPanel';
 import { useToast } from '../context/ToastContext';
 import { PaymentMethodIcon, getPaymentMethodLabel } from './PaymentMethodIcon';
 import { ProfileAvatarDisplay } from './ProfileAvatarDisplay';
+import { BundleItemStatusPicker } from './BundleItemStatusPicker';
 
 interface PurchasesViewProps {
   platforms: Platform[];
@@ -378,25 +379,12 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
     onEditPurchase(platformId, updatedPurchase);
   };
 
-  const cycleBundleItemStatus = (e: React.MouseEvent, platformId: string, purchase: Purchase, itemIndex: number) => {
-    e.stopPropagation();
-    if (!purchase.bundleItems) return;
-    const item = purchase.bundleItems[itemIndex];
-    const nextStatus = nextPurchaseStatus(statuses, item.status || 'pedido_feito');
-    if (!nextStatus) return;
-
-    const updatedBundleItems = [...purchase.bundleItems];
-    updatedBundleItems[itemIndex] = {
-      ...item,
-      status: nextStatus
-    };
-
-    const updatedPurchase = {
-      ...purchase,
-      bundleItems: updatedBundleItems
-    };
-    
-    onEditPurchase(platformId, updatedPurchase);
+  const changeBundleItemStatus = (platformId: string, purchase: Purchase, itemIndex: number, nextStatus: string) => {
+    if (!purchase.bundleItems?.[itemIndex]) return;
+    const updatedBundleItems = purchase.bundleItems.map((item, index) =>
+      index === itemIndex ? { ...item, status: nextStatus } : item
+    );
+    onEditPurchase(platformId, { ...purchase, bundleItems: updatedBundleItems });
   };
   const [platformFilter, setPlatformFilter] = useState('todos');
   const [profileFilter, setProfileFilter] = useState('todos');
@@ -1090,15 +1078,11 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                             return (
                               <div key={item.id ? `${item.id}-${idx}` : `bi-${purchase.id}-${idx}`} className="flex justify-between items-center text-[11px] py-1 border-b border-indigo-500/10 last:border-0">
                                 <div className="flex items-center gap-2 max-w-[200px]">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => cycleBundleItemStatus(e, purchase.platformId, purchase, idx)}
-                                    className="w-2.5 h-2.5 rounded-full shrink-0 border transition-transform hover:scale-125 cursor-pointer"
-                                    style={{
-                                      backgroundColor: `${getStatusColor(itemStatus)}20`,
-                                      borderColor: getStatusColor(itemStatus)
-                                    }}
-                                    title={`${getStatusLabel(itemStatus)} - Clique para mudar`}
+                                  <BundleItemStatusPicker
+                                    itemName={item.name || `Item ${idx + 1}`}
+                                    currentStatus={itemStatus}
+                                    statuses={statuses}
+                                    onChange={(nextStatus) => changeBundleItemStatus(purchase.platformId, purchase, idx, nextStatus)}
                                   />
                                   {item.image && (
                                     <div 
