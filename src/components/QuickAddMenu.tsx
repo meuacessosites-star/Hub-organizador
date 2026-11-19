@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, EyeOff, ShoppingBag, UserRoundPlus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Search, ShoppingBag, UserRoundPlus, X } from 'lucide-react';
 import type { Platform } from '../types';
 import { ProfileAvatarDisplay } from './ProfileAvatarDisplay';
 import { SmartImage } from './SmartImage';
@@ -44,8 +44,15 @@ export function QuickAddMenu({ platforms, onClose, onAddProfile, onAddPurchase }
   const [action, setAction] = useState<'profile' | 'purchase' | null>(null);
   const [platformId, setPlatformId] = useState<string | null>(null);
   const [revealedPasswordId, setRevealedPasswordId] = useState<string | null>(null);
+  const [profileSearch, setProfileSearch] = useState('');
   const platform = platforms.find(item => item.id === platformId);
   const selectingProfile = action === 'purchase' && !!platform;
+  const query = profileSearch.trim().toLocaleLowerCase('pt-BR');
+  const matchingProfiles = platform?.profiles.filter(profile =>
+    !query || [profile.name, profile.email, profile.username].some(value =>
+      (value || '').toLocaleLowerCase('pt-BR').includes(query)
+    )
+  ) ?? [];
 
   const selectPlatform = (id: string) => {
     if (action === 'profile') {
@@ -55,6 +62,7 @@ export function QuickAddMenu({ platforms, onClose, onAddProfile, onAddPurchase }
     }
     setPlatformId(id);
     setRevealedPasswordId(null);
+    setProfileSearch('');
   };
 
   return (
@@ -81,6 +89,7 @@ export function QuickAddMenu({ platforms, onClose, onAddProfile, onAddPurchase }
                 if (selectingProfile) {
                   setPlatformId(null);
                   setRevealedPasswordId(null);
+                  setProfileSearch('');
                 } else {
                   setAction(null);
                 }
@@ -132,13 +141,34 @@ export function QuickAddMenu({ platforms, onClose, onAddProfile, onAddPurchase }
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {platform.name} — escolha o e-mail e a moldura da conta correta para registrar a compra.
               </p>
+              <div className="relative min-w-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                <input
+                  type="search"
+                  value={profileSearch}
+                  onChange={event => setProfileSearch(event.target.value)}
+                  placeholder="Buscar nome, e-mail ou usuário..."
+                  aria-label="Buscar conta por nome, e-mail ou usuário"
+                  className="w-full min-w-0 h-11 pl-10 pr-10 rounded-xl text-sm bg-neutral-50 dark:bg-[#171720] border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                />
+                {profileSearch && (
+                  <button type="button" onClick={() => setProfileSearch('')} aria-label="Limpar pesquisa de contas"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-neutral-400 hover:text-indigo-500">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
               {platform.profiles.length === 0 ? (
                 <div className="space-y-3 rounded-xl border border-neutral-200 dark:border-white/10 p-4">
                   <p className="text-sm text-neutral-500">Esta plataforma ainda não tem contas cadastradas.</p>
                   <button type="button" onClick={() => { onClose(); onAddProfile(platform.id); }}
                     className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Adicionar conta</button>
                 </div>
-              ) : platform.profiles.map(profile => (
+              ) : matchingProfiles.length === 0 ? (
+                <div role="status" className="rounded-xl border border-neutral-200 dark:border-white/10 p-4 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                  Nenhuma conta encontrada para “{profileSearch.trim()}”.
+                </div>
+              ) : matchingProfiles.map(profile => (
                 <div key={profile.id} className="min-w-0 rounded-xl border border-neutral-200 dark:border-white/10 p-3 space-y-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <ProfileAvatarDisplay profile={profile} size={42} />
