@@ -1163,7 +1163,9 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
     const validation: { productName?: string; originalPrice?: string; finalPrice?: string; profile?: string } = {};
 
     const trimmedName = productName.trim();
-    if (!trimmedName) {
+    // Em compras em conjunto, o campo de nome geral é opcional. Cada item
+    // mantém seu próprio nome obrigatório na seção "Itens da Compra".
+    if (!trimmedName && !isBundle) {
       validation.productName = 'O nome do produto/serviço não pode ser vazio.';
     } else if (trimmedName.length < 2) {
       validation.productName = 'O nome do produto deve conter pelo menos 2 caracteres.';
@@ -1237,9 +1239,17 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
       };
     });
 
+    // Título automático para as listas, buscas e cartões quando todos os
+    // produtos são cadastrados nos itens do conjunto, sem nome geral.
+    const firstItemName = normalizedBundleItems[0]?.name.trim() || 'Produtos';
+    const autoBundleTitle = normalizedBundleItems.length > 1
+      ? `Compra em conjunto: ${firstItemName} + ${normalizedBundleItems.length - 1} ${normalizedBundleItems.length === 2 ? 'item' : 'itens'}`
+      : `Compra em conjunto: ${firstItemName}`;
+    const purchaseTitle = isBundle && !trimmedName ? autoBundleTitle : trimmedName;
+
     const purchaseData = {
       profileId: selectedProfileId,
-      productName,
+      productName: purchaseTitle,
       productLink,
       status,
       originalPrice,
@@ -1263,10 +1273,10 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
     if (isEditMode && purchase) {
       onEdit(purchase.id, purchaseData);
-      addToast(`Compra "${productName}" atualizada com sucesso! 🛒`, 'success');
+      addToast(`Compra "${purchaseTitle}" atualizada com sucesso! 🛒`, 'success');
     } else {
       onSave(purchaseData);
-      addToast(`Compra "${productName}" adicionada com sucesso! 🛍️`, 'success');
+      addToast(`Compra "${purchaseTitle}" adicionada com sucesso! 🛍️`, 'success');
     }
     onClose();
   };
@@ -1455,8 +1465,8 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
 
             {/* Nome do produto */}
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest whitespace-nowrap">
-                Nome do produto / serviço
+              <label htmlFor="input-nome-do-produto" className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">
+                {isBundle ? 'Nome geral da compra (opcional)' : 'Nome do produto / serviço'}
               </label>
               <div className="relative group">
                 <span className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${validationErrors.productName ? 'text-rose-500' : 'text-neutral-400 group-focus-within:text-indigo-500'}`}>
@@ -1465,10 +1475,10 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 <input
                   id="input-nome-do-produto"
                   type="text"
-                  required
+                  required={!isBundle}
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  placeholder="Ex: Teclado Mecânico RGB"
+                  placeholder={isBundle ? 'Opcional: título para este conjunto' : 'Ex: Teclado Mecânico RGB'}
                   className={`w-full h-12 pl-11 pr-4 rounded-xl text-sm bg-neutral-50 border text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 dark:bg-[#050505] dark:text-neutral-200 transition-all ${
                     validationErrors.productName
                       ? 'border-rose-500 focus:ring-rose-500/20 focus:border-rose-500 dark:border-rose-500/80'
@@ -1479,6 +1489,11 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
               {validationErrors.productName && (
                 <span className="text-[11px] font-bold text-rose-500 mt-0.5 flex items-center gap-1">
                   ⚠️ {validationErrors.productName}
+                </span>
+              )}
+              {isBundle && (
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                  Pode deixar vazio. O título será criado automaticamente a partir dos itens cadastrados abaixo.
                 </span>
               )}
             </div>
@@ -1636,7 +1651,12 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
                 type="checkbox"
                 id="isBundle"
                 checked={isBundle}
-                onChange={(e) => setIsBundle(e.target.checked)}
+                onChange={(e) => {
+                  setIsBundle(e.target.checked);
+                  if (e.target.checked) {
+                    setValidationErrors(prev => ({ ...prev, productName: undefined }));
+                  }
+                }}
                 className="w-4 h-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-neutral-900 dark:border-neutral-700"
               />
               <div className="flex flex-col">
