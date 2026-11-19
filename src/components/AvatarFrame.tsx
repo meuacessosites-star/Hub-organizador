@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import { EXTRA_FRAME_MODELS, EXTRA_FRAME_LABELS, extraFrameCount, extraFrameMotif } from './avatarFrameExtras';
+import { THEME_FRAME_MODELS, THEME_FRAME_LABELS, themeFrameCount, themeFrameMotif } from './avatarFrameThemes';
 
 export type AvatarFrameModel =
   | 'none' | 'micro-hearts' | 'open-hearts' | 'petals' | 'petal-outline' | 'droplets'
@@ -14,7 +15,8 @@ export type AvatarFrameModel =
   | 'tiny-branches' | 'mini-snowflakes' | 'tiny-crosses' | 'tiny-rings' | 'diamond-dots'
   | 'double-petals' | 'tiny-spirals' | 'mini-crowns' | 'tiny-sunbursts' | 'mini-feathers'
   | 'soft-braid' | 'woven-ribbon' | 'double-waves' | 'fine-chevron' | 'corner-marks' | 'tiny-sprigs' | 'delicate-crosses' | 'soft-x' | 'tiny-pluses' | 'fine-triangles' | 'hollow-rings' | 'hollow-stars' | 'outlined-stars' | 'tiny-squares' | 'rounded-dashes' | 'three-petals' | 'four-petal-flowers' | 'droplet-rays' | 'fine-spirals' | 'curved-waves' | 'starry-flower' | 'double-seeds' | 'infinity-links' | 'hollow-clovers' | 'soft-heartbeat'
-  | import('./avatarFrameExtras').ExtraFrameModel;
+  | import('./avatarFrameExtras').ExtraFrameModel
+  | import('./avatarFrameThemes').ThemeFrameModel;
 
 export type AvatarFrameFinish = 'solid' | 'gradient' | 'pastel-rainbow' | 'soft-neon' | 'pearl' | 'metallic' | 'matte' | 'satin' | 'crystal';
 export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave' | 'soft-blink' | 'slow-twinkle' | 'light-ripple' | 'gentle-glimmer' | 'color-breathe' | 'soft-sway' | 'petal-dance' | 'fireflies' | 'comet-tail' | 'double-beat' | 'bloom';
@@ -31,6 +33,7 @@ export interface AvatarFrameSettings {
 
 export const AVATAR_FRAME_MODEL_LABELS: Record<AvatarFrameModel, string> = {
   ...EXTRA_FRAME_LABELS,
+  ...THEME_FRAME_LABELS,
   'none': 'Sem moldura',
   "micro-hearts": "Coraçõezinhos",
   "open-hearts": "Corações vazados",
@@ -121,7 +124,8 @@ export const AVATAR_FRAME_MODELS: AvatarFrameModel[] = [
   'tiny-branches','mini-snowflakes','tiny-crosses','tiny-rings','diamond-dots',
   'double-petals','tiny-spirals','mini-crowns','tiny-sunbursts','mini-feathers',
   'soft-braid','woven-ribbon','double-waves','fine-chevron','corner-marks','tiny-sprigs','delicate-crosses','soft-x','tiny-pluses','fine-triangles','hollow-rings','hollow-stars','outlined-stars','tiny-squares','rounded-dashes','three-petals','four-petal-flowers','droplet-rays','fine-spirals','curved-waves','starry-flower','double-seeds','infinity-links','hollow-clovers','soft-heartbeat',
-  ...EXTRA_FRAME_MODELS
+  ...EXTRA_FRAME_MODELS,
+  ...THEME_FRAME_MODELS
 ];
 const PALETTES = [
   ['#E7A2BD'], ['#A99AE8'], ['#80B9E9'], ['#79C9AD'], ['#D9B77E'],
@@ -142,6 +146,8 @@ export function defaultAvatarFrame(profileId: string): AvatarFrameSettings {
 function motif(model: AvatarFrameModel, color: string, index: number) {
   const extra = extraFrameMotif(model, color, index);
   if (extra !== null) return extra;
+  const theme = themeFrameMotif(model, color, index);
+  if (theme !== null) return theme;
   const thin = 'fill="none" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"';
   switch (model) {
     case 'micro-hearts': return '<path d="M0 3 C-5 0 -4 -4 0 -1 C4 -4 5 0 0 3Z" fill="' + color + '"/>';
@@ -373,7 +379,7 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
           : frame.finish === 'crystal'
             ? finishPalette('#FFFFFF','#B9DDF5','#FFFFFF',.72,.48,.88)
             : chosenColors.length === 1 ? [color,color] : [...chosenColors,color];
-  const count = extraFrameCount(frame.model) ?? 24;
+  const count = extraFrameCount(frame.model) ?? themeFrameCount(frame.model) ?? 24;
   const radius = 46;
   // "Cores em transição": com uma única cor não existe animação, nem variação de tom.
   const effect = frame.motion === 'color-shift' && chosenColors.length < 2
@@ -396,7 +402,8 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
     const accent = effect ? frameMotionAccent(frame.motion, inkColor, i, effect.seconds) : '';
     // Desenhos novos têm poucos elementos maiores, evitando que todos
     // pareçam pontinhos iguais quando a foto do perfil é pequena.
-    const ornamentScale = extraFrameCount(frame.model) !== null ? (size < 76 ? 1.14 : 1.06) : (size < 76 ? 1.16 : 1);
+    const ornamentScale = (extraFrameCount(frame.model) !== null || themeFrameCount(frame.model) !== null)
+      ? (size < 76 ? 1.14 : 1.06) : (size < 76 ? 1.16 : 1);
     return '<g transform="translate(50 50) rotate(' + angle + ') translate(0 -' + radius + ') scale(' + ornamentScale + ')">' +
       '<g class="avatar-frame-ink" style="color:' + inkColor + ';transform-box:fill-box;transform-origin:center;' + animStyle + '">' +
       motif(frame.model, inkPaint, i) + '</g>' + accent + '</g>';
