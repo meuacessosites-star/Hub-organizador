@@ -17,6 +17,9 @@ export type AvatarFrameModel =
 export type AvatarFrameFinish = 'solid' | 'gradient' | 'pastel-rainbow' | 'soft-neon' | 'pearl' | 'metallic' | 'matte' | 'satin' | 'crystal';
 export type AvatarFrameMotion = 'none' | 'soft-pulse' | 'soft-glow' | 'color-shift' | 'soft-shimmer' | 'color-wave' | 'twinkle' | 'soft-breathe' | 'glint' | 'rainbow-wave' | 'sparkle-wave' | 'soft-blink' | 'slow-twinkle' | 'light-ripple' | 'gentle-glimmer' | 'color-breathe' | 'soft-sway' | 'petal-dance' | 'fireflies' | 'comet-tail' | 'double-beat' | 'bloom';
 
+// Uma só referência para o limite aplicado no editor e no renderizador.
+export const MAX_AVATAR_FRAME_COLORS = 12;
+
 export interface AvatarFrameSettings {
   model: AvatarFrameModel;
   finish: AvatarFrameFinish;
@@ -340,25 +343,30 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
   const frame = settings || defaultAvatarFrame(profileId);
   if (frame.model === 'none') return <span className={'relative inline-flex items-center justify-center rounded-full ' + className} style={{width:size,height:size,flex:'0 0 auto'}}><span className="relative rounded-full overflow-hidden w-full h-full">{children}</span></span>;
   const color = frame.colors?.[0] || '#A99AE8';
-  const chosenColors = (frame.colors || []).filter(c => /^#[0-9a-fA-F]{6}$/.test(c)).slice(0, 3);
+  const chosenColors = (frame.colors || []).filter(c => /^#[0-9a-fA-F]{6}$/.test(c)).slice(0, MAX_AVATAR_FRAME_COLORS);
   if (chosenColors.length === 0) chosenColors.push('#A99AE8');
   const isSelectedColorEffect = frame.motion === 'color-shift' || frame.motion === 'color-breathe';
   const colorAnimation = isSelectedColorEffect
     ? selectedColorKeyframes(chosenColors, frame.motion === 'color-breathe')
     : null;
-  const second = frame.colors?.[1] || color;
-  const third = frame.colors?.[2] || second;
+  // Todas as cores selecionadas precisam aparecer nos ornamentos — também
+  // quando o usuário escolhe mais de três cores. Os acabamentos preservam
+  // suas variações de brilho e são aplicados a cada tonalidade escolhida.
+  const finishPalette = (light: string, middle: string, high: string, a: number, b: number, c: number) =>
+    chosenColors.length === 1
+      ? [mixHex(color,light,a),mixHex(color,middle,b),mixHex(color,high,c)]
+      : chosenColors.map((base,i) => mixHex(base, i % 3 === 1 ? middle : (i % 3 === 2 ? high : light), [a,b,c][i % 3]));
   const palette = frame.finish === 'pastel-rainbow'
     ? ['#E9A9C4','#E9D49B','#9BD4B7','#9EC7EB','#C3A9E8','#E9A9C4']
     : frame.finish === 'pearl'
-      ? [mixHex(color,'#FFFFFF',.58),mixHex(color,'#D9D2E8',.32),mixHex(color,'#FFFFFF',.78)]
+      ? finishPalette('#FFFFFF','#D9D2E8','#FFFFFF',.58,.32,.78)
       : frame.finish === 'metallic'
-        ? [mixHex(color,'#FFFFFF',.42),mixHex(color,'#8A806F',.18),mixHex(color,'#FFFFFF',.62)]
+        ? finishPalette('#FFFFFF','#8A806F','#FFFFFF',.42,.18,.62)
         : frame.finish === 'satin'
-          ? [mixHex(color,'#FFFFFF',.24),mixHex(color,'#777777',.08),mixHex(color,'#FFFFFF',.38)]
+          ? finishPalette('#FFFFFF','#777777','#FFFFFF',.24,.08,.38)
           : frame.finish === 'crystal'
-            ? [mixHex(color,'#FFFFFF',.72),mixHex(color,'#B9DDF5',.48),mixHex(color,'#FFFFFF',.88)]
-            : frame.colors?.length === 1 ? [color, color] : frame.colors?.length === 2 ? [color, second, color] : [color, second, third, color];
+            ? finishPalette('#FFFFFF','#B9DDF5','#FFFFFF',.72,.48,.88)
+            : chosenColors.length === 1 ? [color,color] : [...chosenColors,color];
   const count = 24;
   const radius = 46;
   // "Cores em transição": com uma única cor não existe animação, nem variação de tom.
@@ -371,7 +379,7 @@ export function AvatarFrame({ profileId, settings, children, className = '', siz
       ? colorAt(palette, position)
       : frame.finish === 'pearl' || frame.finish === 'metallic'
         ? palette[i % palette.length]
-        : frame.finish === 'soft-neon' ? color : frame.finish === 'matte' ? mixHex(color,'#777777',.12) : palette[i % palette.length];
+        : frame.finish === 'soft-neon' ? palette[i % palette.length] : frame.finish === 'matte' ? mixHex(palette[i % palette.length],'#777777',.12) : palette[i % palette.length];
     const inkColor = isSelectedColorEffect ? chosenColors[0] : motifColor;
     const inkPaint = colorAnimation ? 'currentColor' : inkColor;
     const delay = effect ? frameMotionDelay(effect.pattern, i, count, effect.seconds) : 0;
