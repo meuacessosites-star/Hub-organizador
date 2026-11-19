@@ -1065,10 +1065,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                       )}
                     </div>
 
-                    {/* Tracking Code / Notes Box */}
+                    {/* Observação / rascunho com destaque suave, sem mudar o conteúdo. */}
                     {purchase.notes && (
-                      <div className="bg-neutral-50 dark:bg-neutral-900/60 rounded-xl p-2.5 border border-neutral-100 dark:border-neutral-800/50">
-                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 italic leading-relaxed">
+                      <div className="bg-amber-50 dark:bg-amber-400/10 rounded-xl p-2.5 border border-amber-200 dark:border-amber-400/30">
+                        <p className="text-[11px] text-amber-900 dark:text-amber-100 italic leading-relaxed">
                           {purchase.notes}
                         </p>
                       </div>
