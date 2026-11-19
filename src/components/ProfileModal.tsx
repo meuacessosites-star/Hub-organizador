@@ -14,10 +14,10 @@ import { safeParse, safeSetItem, safeUrl } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useStorage, deduplicatePresets } from '../hooks/useStorage';
 import { SmartImage } from './SmartImage';
-import { AvatarFrame, defaultAvatarFrame, AVATAR_FRAME_MODELS, AVATAR_FRAME_MODEL_LABELS, AvatarFrameSettings } from './AvatarFrame';
+import { AvatarFrame, defaultAvatarFrame, AVATAR_FRAME_MODELS, AVATAR_FRAME_MODEL_LABELS, MAX_AVATAR_FRAME_COLORS, AvatarFrameSettings } from './AvatarFrame';
 
 function FrameColorControls({ frame, onChange }: { frame: AvatarFrameSettings; onChange: (frame: AvatarFrameSettings) => void }) {
-  const colors = (frame.colors?.length ? frame.colors : ['#A99AE8']).slice(0, 3);
+  const colors = (frame.colors?.length ? frame.colors : ['#A99AE8']).slice(0, MAX_AVATAR_FRAME_COLORS);
   const [activeColor, setActiveColor] = React.useState(0);
   const [expanded, setExpanded] = React.useState(false);
   const selectedIndex = Math.min(activeColor, colors.length - 1);
@@ -31,8 +31,9 @@ function FrameColorControls({ frame, onChange }: { frame: AvatarFrameSettings; o
     onChange({ ...frame, colors: next });
   };
   const addColor = () => {
-    if (colors.length >= 3) return;
-    onChange({ ...frame, colors: [...colors, colors.length === 1 ? '#F2B8D0' : '#80B9E9'] });
+    if (colors.length >= MAX_AVATAR_FRAME_COLORS) return;
+    const suggestions = ['#F2B8D0','#80B9E9','#79C9AD','#F5C86E','#EF9494','#A99AE8','#E7A2BD','#FFFFFF','#161616','#106EBD','#C48FF0'];
+    onChange({ ...frame, colors: [...colors, suggestions[(colors.length - 1) % suggestions.length]] });
     setActiveColor(colors.length);
     setExpanded(true);
   };
@@ -46,7 +47,7 @@ function FrameColorControls({ frame, onChange }: { frame: AvatarFrameSettings; o
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">Cores da moldura</p>
-          <p className="text-[10px] text-neutral-500">Uma cor ou combinação de até três.</p>
+          <p className="text-[10px] text-neutral-500">Uma cor ou combinação de até 12 tonalidades.</p>
         </div>
         <button type="button" onClick={() => setExpanded(v => !v)}
           aria-expanded={expanded}
@@ -62,7 +63,7 @@ function FrameColorControls({ frame, onChange }: { frame: AvatarFrameSettings; o
             <span className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: color }} />Cor {index + 1}
           </button>
         ))}
-        {colors.length < 3 && <button type="button" onClick={addColor} className="rounded-lg border border-dashed border-indigo-400/60 px-2.5 py-2 text-[10px] font-semibold text-indigo-500">+ Adicionar cor</button>}
+        {colors.length < MAX_AVATAR_FRAME_COLORS && <button type="button" onClick={addColor} className="rounded-lg border border-dashed border-indigo-400/60 px-2.5 py-2 text-[10px] font-semibold text-indigo-500">+ Adicionar cor</button>}
       </div>
       {expanded && (
         <div className="space-y-3 pt-2 border-t border-neutral-200 dark:border-neutral-700">
