@@ -500,6 +500,8 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       });
       result = result.filter(p =>
         p.productName.toLocaleLowerCase('pt-BR').includes(q) ||
+        // Busca também por qualquer produto cadastrado em "Itens do conjunto".
+        !!p.bundleItems?.some(item => (item.name || '').toLocaleLowerCase('pt-BR').includes(q)) ||
         p.platformName.toLocaleLowerCase('pt-BR').includes(q) ||
         (p.notes || '').toLocaleLowerCase('pt-BR').includes(q) ||
         (profileEmails.get(`${p.platformId}:${p.profileId}`) || '').toLocaleLowerCase('pt-BR').includes(q) ||
