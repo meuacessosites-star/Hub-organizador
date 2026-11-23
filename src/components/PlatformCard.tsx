@@ -1021,10 +1021,13 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                       const currentStatusIndex = orderedStatuses.findIndex(s => s.id === purchase.status);
 
                       return (
+                        <React.Fragment key={`plat-pur-${platform.id}-${purchase.id}-${purIdx}`}>
+                          {purIdx > 0 && (
+                            <div role="separator" aria-label="Separação entre compras" className="h-px mx-1 my-1 bg-neutral-200/80 dark:bg-indigo-400/25" />
+                          )}
                         <div
-                          key={`plat-pur-${platform.id}-${purchase.id}-${purIdx}`}
                           onClick={() => onViewPurchase(platform.id, purchase)}
-                          className="flex flex-col p-3.5 rounded-xl bg-neutral-50/60 border border-neutral-200/40 hover:border-neutral-300 dark:border-transparent dark:hover:border-neutral-800/40 transition-all duration-150 cursor-pointer dark:bg-[#111219] dark:hover:bg-[#151622] group/p shadow-xs"
+                          className="flex flex-col p-3.5 rounded-xl bg-neutral-50/60 border border-neutral-200/70 hover:border-neutral-300 dark:border-indigo-400/15 dark:hover:border-indigo-400/30 transition-all duration-150 cursor-pointer dark:bg-[#111219] dark:hover:bg-[#151622] group/p shadow-xs"
                         >
                           <div className="flex gap-3">
                             {/* Product Image Thumbnail */}
@@ -1219,25 +1222,29 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             </div>
                           </div>
   
-                          {/* Purchase detail metadata */}
-                          <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-neutral-200/50 dark:border-[#2a2d40]/40 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 select-none">
-                            <div className="min-w-0">
+                          {/* Buyer uses a full row on phones; avoids splitting emails in a narrow column. */}
+                          <div className="grid grid-cols-2 sm:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_auto] gap-x-3 gap-y-3 mt-2 pt-2 border-t border-neutral-200/50 dark:border-[#2a2d40]/40 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 select-none">
+                            <div className="col-span-2 sm:col-span-1 min-w-0">
                               <span className="text-[9px] text-neutral-500 block">Comprador</span>
-                              {buyerProfile && <div className="mt-1 mb-1"><ProfileAvatarDisplay profile={buyerProfile} size={28} /></div>}
-                              <span className="font-semibold text-neutral-700 dark:text-neutral-300 block break-words">
-                                {buyerProfile ? buyerProfile.name : 'Conta não encontrada'}
-                              </span>
-                              {buyerProfile?.email?.trim() ? (
-                                <span className="block text-[9px] leading-relaxed text-neutral-500 break-all">{buyerProfile.email}</span>
-                              ) : buyerProfile?.username?.trim() ? (
-                                <span className="block text-[9px] leading-relaxed text-neutral-500 break-all">Usuário: {buyerProfile.username}</span>
-                              ) : (
-                                <span className="block text-[9px] leading-relaxed text-neutral-500 break-words">
-                                  {buyerProfile ? 'E-mail ou usuário não cadastrado' : 'Perfil associado não encontrado'}
-                                </span>
-                              )}
+                              <div className="mt-1 flex min-w-0 items-center gap-2">
+                                {buyerProfile && <div className="shrink-0"><ProfileAvatarDisplay profile={buyerProfile} size={28} /></div>}
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-semibold text-neutral-700 dark:text-neutral-300 block break-words">
+                                    {buyerProfile ? buyerProfile.name : 'Conta não encontrada'}
+                                  </span>
+                                  {buyerProfile?.email?.trim() ? (
+                                    <span className="block text-[10px] leading-relaxed text-neutral-500 break-words [overflow-wrap:anywhere]">{buyerProfile.email}</span>
+                                  ) : buyerProfile?.username?.trim() ? (
+                                    <span className="block text-[10px] leading-relaxed text-neutral-500 break-words [overflow-wrap:anywhere]">Usuário: {buyerProfile.username}</span>
+                                  ) : (
+                                    <span className="block text-[10px] leading-relaxed text-neutral-500 break-words">
+                                      {buyerProfile ? 'E-mail ou usuário não cadastrado' : 'Perfil associado não encontrado'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <span className="text-[9px] text-neutral-500 block">Preço Final</span>
                               <span className="font-semibold font-mono text-indigo-600 dark:text-indigo-400 flex items-center gap-1 flex-wrap">
                                 <span>R$ {purchase.finalPrice.toFixed(2)}</span>
@@ -1261,7 +1268,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
 
                             {/* Payment and Delivery info row */}
                             {(purchase.paymentMethod || purchase.deliveryDate) && (
-                              <div className="col-span-3 mt-2 pt-2 border-t border-neutral-200/40 dark:border-[#2a2d40]/40 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                              <div className="col-span-2 sm:col-span-3 mt-2 pt-2 border-t border-neutral-200/40 dark:border-[#2a2d40]/40 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                                 {purchase.paymentMethod && (
                                   <div className="flex items-center gap-1.5">
                                     <PaymentMethodIcon method={purchase.paymentMethod} className="w-2.5 h-2.5 text-neutral-400" />
@@ -1310,6 +1317,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             </button>
                           </div>
                         </div>
+                        </React.Fragment>
                       );
                     })}
                   </div>
