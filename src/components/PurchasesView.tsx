@@ -1163,17 +1163,24 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                     )}
 
                     {/* Footer: Buyer & Pricing */}
-                    <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800/60 flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800/60 flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1 flex items-center gap-2.5">
                         {buyerProfile && <ProfileAvatarDisplay profile={buyerProfile} size={40} />}
-                        <span className="text-xs font-bold text-neutral-600 dark:text-neutral-200">
-                          {buyerProfile ? buyerProfile.name : 'Outro'}
-                          {buyerProfile?.email && platform?.profiles.some(other => other.id !== buyerProfile.id && other.name.trim().toLowerCase() === buyerProfile.name.trim().toLowerCase()) &&
-                            <span className="block text-[10px] font-normal text-neutral-500 break-all">{buyerProfile.email}</span>}
-                        </span>
+                        <div className="min-w-0 flex-1 text-xs font-bold text-neutral-600 dark:text-neutral-200">
+                          <span className="block break-words">{buyerProfile ? buyerProfile.name : 'Conta não encontrada'}</span>
+                          {buyerProfile?.email?.trim() ? (
+                            <span className="block text-[10px] leading-relaxed font-normal text-neutral-500 break-all">{buyerProfile.email}</span>
+                          ) : buyerProfile?.username?.trim() ? (
+                            <span className="block text-[10px] leading-relaxed font-normal text-neutral-500 break-all">Usuário: {buyerProfile.username}</span>
+                          ) : (
+                            <span className="block text-[10px] leading-relaxed font-normal text-neutral-500">
+                              {buyerProfile ? 'E-mail ou usuário não cadastrado' : 'Perfil associado não encontrado'}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex flex-col items-end">
+                      <div className="shrink-0 flex flex-col items-end">
                         {purchase.discount > 0 && (
                           <span className="text-[10px] text-rose-500 font-bold line-through font-mono opacity-80 mb-0.5">
                             R$ {purchase.originalPrice.toFixed(2)}
