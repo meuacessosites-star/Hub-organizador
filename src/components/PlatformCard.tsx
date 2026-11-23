@@ -1224,11 +1224,18 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                             <div className="min-w-0">
                               <span className="text-[9px] text-neutral-500 block">Comprador</span>
                               {buyerProfile && <div className="mt-1 mb-1"><ProfileAvatarDisplay profile={buyerProfile} size={28} /></div>}
-                              <span className="font-semibold text-neutral-700 dark:text-neutral-300">
-                                {buyerProfile ? buyerProfile.name : 'N/A'}
+                              <span className="font-semibold text-neutral-700 dark:text-neutral-300 block break-words">
+                                {buyerProfile ? buyerProfile.name : 'Conta não encontrada'}
                               </span>
-                              {buyerProfile?.email && platform.profiles.some(other => other.id !== buyerProfile.id && other.name.trim().toLowerCase() === buyerProfile.name.trim().toLowerCase()) &&
-                                <span className="block text-[9px] text-neutral-500 break-all">{buyerProfile.email}</span>}
+                              {buyerProfile?.email?.trim() ? (
+                                <span className="block text-[9px] leading-relaxed text-neutral-500 break-all">{buyerProfile.email}</span>
+                              ) : buyerProfile?.username?.trim() ? (
+                                <span className="block text-[9px] leading-relaxed text-neutral-500 break-all">Usuário: {buyerProfile.username}</span>
+                              ) : (
+                                <span className="block text-[9px] leading-relaxed text-neutral-500 break-words">
+                                  {buyerProfile ? 'E-mail ou usuário não cadastrado' : 'Perfil associado não encontrado'}
+                                </span>
+                              )}
                             </div>
                             <div>
                               <span className="text-[9px] text-neutral-500 block">Preço Final</span>
