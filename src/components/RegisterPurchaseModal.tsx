@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { resizePurchaseImage } from "../utils/imageHelper";
+import { localCalendarDate } from '../lib/utils';
 import { Platform, Profile, Purchase, PurchaseStatus, Tag, Status, BundleItem } from '../types';
 import { X, ShoppingBag, Link, CreditCard, Receipt, AlignLeft, Trash2, Image as ImageIcon, Upload, Loader2, Sparkles, ExternalLink, Plus, Settings2, Check, Pencil, Palette, Building2, CreditCard as CardIcon, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -585,7 +586,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setNotes(purchase.notes || '');
         setProductImages(purchase.productImages || []);
 
-        setPurchaseDate(purchase.date ? purchase.date.substring(0, 10) : new Date().toISOString().substring(0, 10));
+        setPurchaseDate(purchase.date ? purchase.date.substring(0, 10) : localCalendarDate());
         setPaymentDate(purchase.paymentDate ? purchase.paymentDate.substring(0, 10) : '');
         const pm = purchase.paymentMethod || '';
         const standardPmList = ['Pix', 'cartao', 'parcelada', 'Boleto Bancário', 'Dinheiro', 'conta'];
@@ -630,7 +631,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
         setNotes('');
         setProductImages([]);
 
-        setPurchaseDate(new Date().toISOString().substring(0, 10));
+        setPurchaseDate(localCalendarDate());
         setPaymentDate('');
         setPaymentMethod('');
         setPaymentMethodSelect('');
@@ -658,7 +659,7 @@ export const RegisterPurchaseModal: React.FC<RegisterPurchaseModalProps> = ({
   // Auto-set delivery date when status changes to "entregue"
   useEffect(() => {
     if (status === 'entregue' && !deliveryDate) {
-      setDeliveryDate(new Date().toISOString().substring(0, 10));
+      setDeliveryDate(localCalendarDate());
     }
   }, [status]);
 
