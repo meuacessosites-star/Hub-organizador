@@ -1,4 +1,4 @@
-import { safeUrl, nextPurchaseStatus } from "../lib/utils";
+import { safeUrl, nextPurchaseStatus, localCalendarDate, formatCalendarDateBR } from "../lib/utils";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -372,7 +372,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
       ...purchase,
       status: nextStatus,
       deliveryDate: nextStatus === 'entregue' && !purchase.deliveryDate
-        ? new Date().toISOString().substring(0, 10)
+        ? localCalendarDate()
         : purchase.deliveryDate
     };
     
@@ -1140,7 +1140,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                       {purchase.deliveryDate && (
                         <div className="flex items-center gap-1.5">
                           <ShoppingBag className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>Entregue: <span className="font-bold text-emerald-600 dark:text-emerald-400">{new Date(purchase.deliveryDate).toLocaleDateString('pt-BR')}</span></span>
+                          <span>Entregue: <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCalendarDateBR(purchase.deliveryDate)}</span></span>
                         </div>
                       )}
                     </div>
