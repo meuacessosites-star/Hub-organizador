@@ -105,3 +105,23 @@ export function nextPurchaseStatus(statuses: Status[], currentId: string): strin
   const currentIndex = normalFlow.findIndex(status => status.id === currentId);
   return normalFlow[currentIndex + 1]?.id ?? null;
 }
+
+
+/**
+ * Datas de calendário (YYYY-MM-DD) representam um dia escolhido pelo usuário,
+ * não um instante em UTC. Evita que 25/11 apareça como 24/11 no Brasil.
+ */
+export function localCalendarDate(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function formatCalendarDateBR(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+  // Valores antigos em formato timestamp continuam sendo tratados como instantes.
+  const timestamp = new Date(value);
+  return Number.isNaN(timestamp.getTime()) ? value : timestamp.toLocaleDateString('pt-BR');
+}
