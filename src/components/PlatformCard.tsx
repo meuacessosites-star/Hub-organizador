@@ -1,4 +1,4 @@
-import { safeUrl, orderPurchaseStatuses, nextPurchaseStatus, isPurchaseFinalStatus } from "../lib/utils";
+import { safeUrl, orderPurchaseStatuses, nextPurchaseStatus, isPurchaseFinalStatus, localCalendarDate, formatCalendarDateBR } from "../lib/utils";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -206,7 +206,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
       ...purchase,
       status: nextStatus,
       deliveryDate: nextStatus === 'entregue' && !purchase.deliveryDate
-        ? new Date().toISOString().substring(0, 10)
+        ? localCalendarDate()
         : purchase.deliveryDate
     };
     onEditPurchase(platform.id, updatedPurchase);
@@ -1291,7 +1291,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
                                     <div className="flex flex-col leading-none">
                                       <span className="text-[8px] uppercase tracking-wider text-emerald-500/60 font-bold">Entregue em</span>
                                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-                                        {new Date(purchase.deliveryDate).toLocaleDateString('pt-BR')}
+                                        {formatCalendarDateBR(purchase.deliveryDate)}
                                       </span>
                                     </div>
                                   </div>
